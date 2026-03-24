@@ -21,7 +21,33 @@
         "store-view-name": "Default Store View",
         "website-id": 1,
         "website-name": "Main Website"
+      },
+      "hcl-commerce": {
+        "api-url": "https://20.40.52.251/wcs/resources/store/715842834/cart?langId=1",
+        "auth-endpoint": "https://es-db2.hclcomdev.com:6443/wcs/resources/oauth/token",
+        "client-id": "YOUR_HCL_CLIENT_ID",
+        "WCToken": "1009003%2CuJ5MyIHRWPRuJpmkgg4ztWBOlc1sRjoFYWJV34rm9JXSCYS0frnA8HE5BVZZsML6H0snPVrIgAYfGlJAJrEb5A9g04FO43lTS4iCIwP56l2nMotTsSzpNjZaqt8uYO6bBUE7529K3%2BOIPlyrRLjopjhQm4EYCo49V%2F3BluAju22Tvirq%2FZW59zODPa641uAq1y6S1CvYJio3tbPa0HEosqJDQv8kW0Em0WWRIplTc4AOYdvBzcN1DgTul0whS42%2FsFg%2F30GxbjOk%2F1w0z45iiw%3D%3D",
+        "client-secret": "YOUR_HCL_CLIENT_SECRET",
+        "store-id": "41",
+        "locale": "en_US",
+        "userId": "1009003",
+        "WCTrustedToken": "1009003%2CUvUl44Zgje49XzqV6LBHgLakT%2BAgeYoXD9xt9kSZKfc%3D",
+        "Cookie": "JSESSIONID=0000BAvD-WbaEY1Jz18M5hsUaSU:-1; WC_PERSISTENT=FRRe%2F7jx%2BmZwSryu2MUGEH6%2BAEGLdAVV7DbVQgAbKD8%3D%3B2025-10-17+04%3A13%3A30.953_1760435807007-2_715842834",
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS,POST,PUT",
+        "Access-Control-Allow-Headers": "Origin,X-Requested-With,Content-Type,Accept,Authorization,cache-control,expires,pragma,wclogonid,wctoken,wctrustedtoken,wcuserid,X-RequestId,X-Request-ID,WCPersonalization,WC_MarketingTrackingConsents,WCPreviewToken",
+        "Access-Control-Expose-Headers": "Access-Control-Allow-Headers",
+        "Access-Control-Max-Age": "3600"
       }
     }
+  },
+  "headers": {
+    "/**": [
+      {
+        "key": "access-control-allow-origin",
+        "value": "*"
+      }
+    ]
   }
 }

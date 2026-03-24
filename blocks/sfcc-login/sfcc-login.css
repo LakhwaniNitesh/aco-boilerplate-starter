@@ -1,0 +1,119 @@
+.sfcc-login-component {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 400px;
+  padding-bottom: 48px;
+}
+
+.sfcc-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sfcc-login-form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.sfcc-login-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.sfcc-login-password-label-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sfcc-login-forgot-password {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.sfcc-login-forgot-password:hover {
+  color: #4338ca;
+}
+
+.sfcc-login-form-group input {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 12px 14px;
+  border: 1px solid #d1d1d1;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: #fff;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.sfcc-login-form-group input:focus {
+  outline: none;
+  border-color: #5b5fff;
+}
+
+.sfcc-login-form-group input::placeholder {
+  color: #999;
+}
+
+.sfcc-login-submit-button {
+  width: 100%;
+  padding: 16px;
+  background: #5b5fff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sfcc-login-submit-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.sfcc-login-submit-button:hover:not(:disabled) {
+  background: #4a4fdd;
+}
+
+.sfcc-login-register-link {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #666;
+}
+
+.sfcc-login-register-link a {
+  font-weight: 500;
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.sfcc-login-register-link a:hover {
+  color: #4338ca;
+}
+
+.sfcc-login-form .error-message {
+  padding: 16px;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  color: #c33;
+  font-size: 14px;
+  line-height: 1.5;
+  display: none;
+}
