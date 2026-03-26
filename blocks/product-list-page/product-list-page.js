@@ -46,12 +46,10 @@ export default async function decorate(block) {
       currentCategoryUrlPath: null,
       displayMode: '', // "" for plp || "PAGE" for category/catalog
       addToCart: async (...args) => {
-        const { addProductsToCart } = await import('../../scripts/__dropins__/storefront-cart/api.js');
-        await addProductsToCart([{
-          sku: args[0],
-          options: args[1],
-          quantity: args[2],
-        }]);
+        // Use HCL Commerce for add to cart
+        const { createHclAddToCartHandler } = await import('../../scripts/hcl-plp-integration.js');
+        const hclAddToCart = createHclAddToCartHandler();
+        await hclAddToCart(args[0], args[1], args[2]);
       },
       route: {
         route: rootLink('/search'),

@@ -31,6 +31,9 @@ import {
   fetchPlaceholders,
 } from '../../scripts/commerce.js';
 
+// HCL Commerce Integration
+import { initializeHclPdpIntegration } from '../../scripts/hcl-pdp-integration.js';
+
 // Initializers
 import { IMAGES_SIZES } from '../../scripts/initializers/pdp.js';
 import '../../scripts/initializers/cart.js';
@@ -279,15 +282,15 @@ if (product?.images && Array.isArray(product.images)) {
         // add or update the product in the cart
         if (valid) {
           if (isUpdateMode) {
-            // --- Update existing item ---
-            // const { updateProductsFromCart } = await import("../../scripts/salesforce/api.js"
-            //   //'@dropins/storefront-cart/test.js'
-            // );
-
-            // await updateProductsFromCart([{ ...values, uid: itemUidFromUrl }]);
-            // --- Update existing item ---
-const { updateCartQuantity } = await import("../../scripts/salesforce/api.js");
-await updateCartQuantity(values.sku, values.quantity);
+            // --- Update existing item in HCL ---
+            const { HclSession } = await import('../../scripts/hcl-commerce-api.js');
+            const session = new HclSession();
+            if (!session.isValid()) {
+              await session.createSession();
+            }
+            
+            // Update the order item in HCL with new quantity
+            await session.updateHclOrderItem(itemUidFromUrl, values.quantity);
 
             // --- START REDIRECT ON UPDATE ---
             const updatedSku = values?.sku;
@@ -307,20 +310,19 @@ await updateCartQuantity(values.sku, values.quantity);
             }
             return;
           }
-          // --- Add new item ---
-          // const { addProductsToCart} = await import(
-          //   //"../../scripts/salesforce/api.js"
-          //   '@dropins/storefront-cart/test.js'
-          // );
-          // await addProductsToCart([{ ...values}]);
-
-          // --- Add new item ---
-const { addToCart: addToCartSalesforce } = await import(
-  "../../scripts/salesforce/api.js"
-);
-await addToCartSalesforce(values.sku, values.quantity);
-
-
+          // --- Add new item to HCL ---
+          const { HclSession } = await import('../../scripts/hcl-commerce-api.js');
+          const session = new HclSession();
+          if (!session.isValid()) {
+            await session.createSession();
+          }
+          
+          await session.addToCart(values.sku, values.quantity);
+          
+          // Emit event for mini-cart to listen
+          window.dispatchEvent(new CustomEvent('hcl:product-added-to-cart', {
+            detail: { sku: values.sku, quantity: values.quantity }
+          }));
         }
 
         // reset any previous alerts if successful

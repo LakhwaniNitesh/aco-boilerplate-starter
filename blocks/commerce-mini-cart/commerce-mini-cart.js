@@ -1,6 +1,9 @@
 import { render as provider } from '@dropins/storefront-cart/render.js';
 import MiniCart from '@dropins/storefront-cart/containers/MiniCart.js';
 
+// HCL Commerce Integration
+import { initializeHclMiniCart } from '../../scripts/hcl-mini-cart-integration.js';
+
 // Initializers
 import '../../scripts/initializers/cart.js';
 
@@ -15,6 +18,9 @@ export default async function decorate(block) {
   } = readBlockConfig(block);
 
   block.innerHTML = '';
+
+  // Initialize HCL mini-cart integration
+  await initializeHclMiniCart(block);
 
   return provider.render(MiniCart, {
     routeEmptyCartCTA: startShoppingURL ? () => rootLink(startShoppingURL) : undefined,

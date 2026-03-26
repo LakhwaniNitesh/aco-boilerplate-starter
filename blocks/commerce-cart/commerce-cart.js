@@ -14,6 +14,9 @@ import GiftOptions from '@dropins/storefront-cart/containers/GiftOptions.js';
 // API
 import { publishShoppingCartViewEvent } from '@dropins/storefront-cart/api.js';
 
+// HCL Commerce Integration
+import { initializeHclCart } from '../../scripts/hcl-cart-integration.js';
+
 // Initializers
 import '../../scripts/initializers/cart.js';
 
@@ -60,6 +63,9 @@ export default async function decorate(block) {
 
   block.innerHTML = '';
   block.appendChild(fragment);
+
+  // Initialize HCL cart integration
+  await initializeHclCart(block);
 
   // Toggle Empty Cart
   function toggleEmptyCart(state) {
