@@ -32,12 +32,11 @@ import {
 } from '../../scripts/commerce.js';
 
 // HCL Commerce Integration
-import { initializeHclPdpIntegration } from '../../scripts/hcl-pdp-integration.js';
+// import { initializeHclPdpIntegration } from '../../scripts/hcl-pdp-integration.js';
 
 // Initializers
 import { IMAGES_SIZES } from '../../scripts/initializers/pdp.js';
 import '../../scripts/initializers/cart.js';
-import '../../scripts/initializers/wishlist.js';
 
 // Function to update the Add to Cart button text
 function updateAddToCartButtonText(addToCartInstance, inCart, labels) {
@@ -52,46 +51,26 @@ function updateAddToCartButtonText(addToCartInstance, inCart, labels) {
   }
 }
 
-
-
-const sku = "HLG028_281401";
-
-// simplest: get the product model (transformed)
-const product = await pdpApi.fetchProductData(sku);
-
-if (product) {
-  console.log('name', product.name);
-  console.log('sku', product.sku);
-  // images is an array of image objects (check product.images[0].url)
-  let imageUrl = product.images?.[0]?.url || product.image?.url || null;
-  imageUrl = 'https:' + imageUrl;
-  console.log('image', imageUrl);
-  // price / availability
-  console.log('price', product.price);
-  console.log('inStock', product.inStock);
-}
 export default async function decorate(block) {
-  
   const product = events.lastPayload('pdp/data') ?? null;
   // --- Force HTTPS for all product image URLs ---
-if (product?.images && Array.isArray(product.images)) {
-  product.images = product.images.map((img) => {
-    if (!img.url) return img;
+  if (product?.images && Array.isArray(product.images)) {
+    product.images = product.images.map((img) => {
+      if (!img.url) return img;
 
-    let cleanUrl = img.url.trim();
+      let cleanUrl = img.url.trim();
 
-    // If the image URL starts with "http://", convert it to "https://"
-    cleanUrl = cleanUrl.replace(/^http:\/\//i, "https://");
+      // If the image URL starts with "http://", convert it to "https://"
+      cleanUrl = cleanUrl.replace(/^http:\/\//i, 'https://');
 
-    // (Optional) also fix any accidental double slashes
-    cleanUrl = cleanUrl.replace(/([^:])\/{2,}/g, "$1/");
-    cleanUrl = "https:" + cleanUrl;
+      // (Optional) also fix any accidental double slashes
+      cleanUrl = cleanUrl.replace(/([^:])\/{2,}/g, '$1/');
+      cleanUrl = `https:${cleanUrl}`;
 
-    return { ...img, url: cleanUrl };
-  });
-}
-// console.log("new",product);
-//   console.log(product?.name);
+      return { ...img, url: cleanUrl };
+    });
+  }
+
   const labels = await fetchPlaceholders();
 
   // Read itemUid from URL
@@ -132,7 +111,6 @@ if (product?.images && Array.isArray(product.images)) {
   const $gallery = fragment.querySelector('.product-details__gallery');
   const $header = fragment.querySelector('.product-details__header');
   const $price = fragment.querySelector('.product-details__price');
-  const $brand = fragment.querySelector('.product-details__brand'); //added code
   const $galleryMobile = fragment.querySelector('.product-details__right-column .product-details__gallery');
   const $shortDescription = fragment.querySelector('.product-details__short-description');
   const $options = fragment.querySelector('.product-details__options');
@@ -158,10 +136,6 @@ if (product?.images && Array.isArray(product.images)) {
       });
     },
   };
-
-//console.log('Product attributes:', product?.attributes);
-
-//console.log('Product attributes:', product?.attributes);
 
   // Alert
   let inlineAlert = null;
@@ -212,19 +186,6 @@ if (product?.images && Array.isArray(product.images)) {
 
     // Price
     pdpRendered.render(ProductPrice, {})($price),
-
-
-    // Brand added code
-(async () => {
-  const brandAttr = product?.attributes?.find((attr) => attr.id === 'brand');
-  if (brandAttr?.value) {
-    const brandDiv = document.createElement('div');
-    brandDiv.className = 'product-brand';
-    brandDiv.textContent = `Brand: ${brandAttr.value}`;
-    $brand.appendChild(brandDiv);
-  }
-})(),
-
 
     // Short Description
     pdpRendered.render(ProductShortDescription, {})($shortDescription),
@@ -437,7 +398,7 @@ if (product?.images && Array.isArray(product.images)) {
 
 
 
-// Fetch product details by part number (SKU) via storefront GraphQL
+// Fetch product details via storefront GraphQL
 async function fetchProductDetailsByPartNumber(partNumber) {
   if (!partNumber) return null;
 
@@ -509,54 +470,6 @@ async function fetchProductDetailsByPartNumber(partNumber) {
   }
 }
 
-const productInfo = await fetchProductDetailsByPartNumber('CLA022_220601');
-if (productInfo) {
-  console.log('productInfo', productInfo);
-  // populate UI, set meta tags, etc.
-}
-// async function fetchProductDetails(partNumber) {
-//     const query = `
-//       query GetProduct($sku: String!) {
-//         products(filter: { sku: { eq: $sku } }) {
-//           items {
-//             sku
-//             name
-//             image {
-//               url
-//             }
-//             media_gallery {
-//               url
-//             }
-//           }
-//         }
-//       }
-//     `;
-//     try {
-//       const { data } = await pdpApi.fetchGraphQl(query, {
-//         variables: { sku: partNumber },
-//       });
-
-//       const product = data?.products?.items?.[0];
-//       if (!product) return null;
-
-//       return {
-//         name: product.name,
-//         image: product.image?.url || product.media_gallery?.[0]?.url || "",
-//       };
-//     } catch (err) {
-//       console.warn(`❌ Product lookup failed for ${partNumber}:`, err);
-//       return null;
-//     }
-//   }  (async () => {
-//   const result = await fetchProductDetails(CLA022_220601);
-//   console.log('Fetched Product Details →', result);
-// })();
-
-
-//   const productData = await fetchProductDetails('CLA022_220601');
-//   console.log("helllllllo",productData );
-
-
 async function setJsonLdProduct(product) {
   const {
     name,
@@ -598,8 +511,6 @@ async function setJsonLdProduct(product) {
     variables: { sku },
   });
 
-
-  console.log("he;llokds vd",data)
   const variants = data?.variants?.variants || [];
   const ldJson = {
     '@context': 'http://schema.org',
