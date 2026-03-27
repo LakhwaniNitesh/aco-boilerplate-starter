@@ -106,7 +106,7 @@ function transformOrderItem(product, salesforceOrderItem) {
 
 async function transformOrderInfo(salesforceOrder) {
   const products = await fetchProducts(
-    salesforceOrder.productItems?.map((item) => item.productId) ?? []
+    salesforceOrder.productItems?.map((item) => item.productId) ?? [],
   );
 
   const items = [];
@@ -120,7 +120,7 @@ async function transformOrderInfo(salesforceOrder) {
 
   const status = getOrderStatus(
     salesforceOrder.status ?? 'unknown',
-    salesforceOrder.shippingStatus ?? 'unknown'
+    salesforceOrder.shippingStatus ?? 'unknown',
   );
 
   return {
@@ -139,7 +139,7 @@ async function transformOrderInfo(salesforceOrder) {
       : undefined,
     paymentInfo: transformOrderPaymentInfo(
       salesforceOrder.paymentInstruments?.[0],
-      salesforceOrder.billingAddress
+      salesforceOrder.billingAddress,
     ),
   };
 }

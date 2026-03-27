@@ -1,10 +1,10 @@
 /**
  * HCL Commerce API - Direct Call Wrapper
  * Handles CORS, self-signed certificates, WCToken management
- * 
+ *
  * This module provides an interface to interact with HCL Commerce APIs directly
  * from the storefront for POC purposes.
- * 
+ *
  * @module hcl-commerce-api
  */
 
@@ -97,7 +97,7 @@ async function makeHclRequest(endpoint, options = {}) {
 /**
  * Create a guest session in HCL Commerce
  * Must be called before making any cart operations
- * 
+ *
  * @returns {Promise<Object>} Session data with WCToken and WCTrustedToken
  * @throws {Error} If session creation fails
  */
@@ -115,7 +115,7 @@ export async function createHclGuestSession() {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `Failed to create HCL guest session: ${response.status} ${response.statusText}`
+        `Failed to create HCL guest session: ${response.status} ${response.statusText}`,
       );
     }
 
@@ -129,9 +129,8 @@ export async function createHclGuestSession() {
       console.log('[HCL API] Guest session created successfully');
       emitEvent('sessionCreated', { orderId: data.orderId });
       return data;
-    } else {
-      throw new Error('Failed to get tokens from HCL response');
     }
+    throw new Error('Failed to get tokens from HCL response');
   } catch (error) {
     console.error('[HCL API] Error creating guest session:', error);
     emitEvent('sessionError', { error: error.message });
@@ -141,7 +140,7 @@ export async function createHclGuestSession() {
 
 /**
  * Add product to HCL cart using part number
- * 
+ *
  * @param {string} partNumber - Product part number (e.g., "CLA022_220601")
  * @param {number} quantity - Quantity to add (default: 1)
  * @returns {Promise<Object>} Response with orderId and orderItemId
@@ -161,7 +160,7 @@ export async function addToHclCart(partNumber, quantity = 1) {
       orderItem: [
         {
           quantity: String(quantity),
-          partNumber: partNumber,
+          partNumber,
         },
       ],
       x_inventoryValidation: true,
@@ -184,7 +183,7 @@ export async function addToHclCart(partNumber, quantity = 1) {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `Failed to add to cart: ${response.status} ${response.statusText}`
+        `Failed to add to cart: ${response.status} ${response.statusText}`,
       );
     }
 
@@ -216,7 +215,7 @@ export async function addToHclCart(partNumber, quantity = 1) {
 
 /**
  * Add product to HCL cart using product ID
- * 
+ *
  * @param {string} productId - HCL Product ID
  * @param {number} quantity - Quantity to add (default: 1)
  * @returns {Promise<Object>} Response with orderId and orderItemId
@@ -234,7 +233,7 @@ export async function addToHclCartByProductId(productId, quantity = 1) {
       orderItem: [
         {
           quantity: String(quantity),
-          productId: productId,
+          productId,
         },
       ],
       x_inventoryValidation: true,
@@ -282,7 +281,7 @@ export async function addToHclCartByProductId(productId, quantity = 1) {
 
 /**
  * Get current HCL cart
- * 
+ *
  * @returns {Promise<Object>} Full cart data with items and totals
  */
 export async function getHclCart() {
@@ -390,7 +389,7 @@ export async function getHclCart() {
 
 /**
  * Update order item (used for checkout transitions)
- * 
+ *
  * @param {string} orderItemId - Order item ID to update
  * @returns {Promise<Object>} Updated order item data
  */
@@ -412,7 +411,7 @@ export async function updateHclOrderItem(orderItemId) {
       x_isCheckout: 'true',
       orderItem: [
         {
-          orderItemId: orderItemId,
+          orderItemId,
         },
       ],
     };
@@ -444,7 +443,7 @@ export async function updateHclOrderItem(orderItemId) {
 
 /**
  * Remove item from cart
- * 
+ *
  * @param {string} orderItemId - Order item ID to remove
  * @returns {Promise<Object>} Updated cart data
  */
@@ -477,7 +476,7 @@ export async function removeFromHclCart(orderItemId) {
 /**
  * Validate product availability
  * Checks if product exists and is in stock
- * 
+ *
  * @param {string} partNumber - Product part number
  * @returns {Promise<Object>} Availability data
  */
@@ -486,7 +485,7 @@ export async function checkProductAvailability(partNumber) {
     // This would typically call a product details/availability API
     // For now, we'll rely on the inventory validation in addToHclCart
     // But you could implement a dedicated endpoint here
-    
+
     console.log('[HCL API] Checking availability for:', partNumber);
     // Placeholder - implement based on HCL product availability API
     return {
@@ -506,7 +505,7 @@ export async function checkProductAvailability(partNumber) {
 
 /**
  * Format price for display
- * 
+ *
  * @param {string|number} price - Price value
  * @param {string} currency - Currency code (default: USD)
  * @returns {string} Formatted price string
@@ -514,17 +513,17 @@ export async function checkProductAvailability(partNumber) {
 export function formatPrice(price, currency = 'USD') {
   const amount = typeof price === 'string' ? parseFloat(price) : price;
   if (isNaN(amount)) return '$0.00';
-  
+
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: currency,
+    currency,
   }).format(amount);
 }
 
 /**
  * Emit custom event for cart updates
  * @private
- * 
+ *
  * @param {string} eventName - Event name
  * @param {object} detail - Event detail data
  */
@@ -536,7 +535,7 @@ function emitEvent(eventName, detail) {
 
 /**
  * Listen for HCL cart events
- * 
+ *
  * @param {string} eventName - Event name to listen for
  * @param {Function} callback - Callback function
  * @returns {Function} Unsubscribe function
@@ -560,7 +559,7 @@ export function onCartEvent(eventName, callback) {
 
 /**
  * Get current session status
- * 
+ *
  * @returns {Object} Session status information
  */
 export function getSessionStatus() {
@@ -588,7 +587,7 @@ export function clearHclSession() {
 export async function initializeHclCommerce() {
   try {
     console.log('[HCL API] Initializing HCL Commerce integration...');
-    
+
     // Check if we already have a valid session
     if (HclSession.isValid()) {
       console.log('[HCL API] Valid session found, skipping initialization');

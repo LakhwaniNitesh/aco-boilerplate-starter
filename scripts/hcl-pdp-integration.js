@@ -14,7 +14,7 @@ import {
 /**
  * Initialize HCL Commerce integration on the PDP
  * Attach event listeners and set up cart functionality
- * 
+ *
  * @param {HTMLElement} block - The block element
  * @param {Object} product - Product data from storefront
  * @returns {Promise<void>}
@@ -99,7 +99,7 @@ export async function initializeHclPdpIntegration(block, product) {
         showAlert(
           'success',
           `${product.name} added to cart! (Order: ${response.orderId})`,
-          5000
+          5000,
         );
 
         // Emit custom event for other components to listen

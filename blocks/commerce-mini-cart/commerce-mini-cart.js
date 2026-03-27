@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unresolved */
 import { render as provider } from '@dropins/storefront-cart/render.js';
 import MiniCart from '@dropins/storefront-cart/containers/MiniCart.js';
 

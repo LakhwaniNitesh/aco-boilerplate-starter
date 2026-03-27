@@ -20,11 +20,11 @@ export async function hclSignIn(logonId, logonPassword) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json',
       },
       body: JSON.stringify({
         logonId,
-        logonPassword
+        logonPassword,
       }),
     });
 
@@ -34,7 +34,7 @@ export async function hclSignIn(logonId, logonPassword) {
     }
 
     const data = await response.json();
-    
+
     if (!data.WCToken || !data.WCTrustedToken) {
       throw new Error('Invalid response from authentication server');
     }
@@ -72,13 +72,13 @@ export async function hclSignIn(logonId, logonPassword) {
     events.emit('hcl/tokens-updated', {
       WCToken: data.WCToken,
       WCTrustedToken: data.WCTrustedToken,
-      userId: data.userId
+      userId: data.userId,
     });
 
     return {
       WCToken: data.WCToken,
       WCTrustedToken: data.WCTrustedToken,
-      userId: data.userId
+      userId: data.userId,
     };
   } catch (error) {
     console.error('HCL login error:', error);
@@ -94,7 +94,7 @@ export function getHclTokens() {
   return {
     WCToken: sessionStorage.getItem('hcl-wctoken'),
     WCTrustedToken: sessionStorage.getItem('hcl-wctrustedtoken'),
-    userId: sessionStorage.getItem('hcl-userid')
+    userId: sessionStorage.getItem('hcl-userid'),
   };
 }
 

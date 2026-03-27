@@ -3,7 +3,9 @@
  * Displays real-time cart data from HCL Commerce
  */
 
-import { getHclCart, onCartEvent, formatPrice, getSessionStatus } from '../../scripts/hcl-commerce-api.js';
+import {
+  getHclCart, onCartEvent, formatPrice, getSessionStatus,
+} from '../../scripts/hcl-commerce-api.js';
 
 /**
  * Initialize HCL mini-cart integration

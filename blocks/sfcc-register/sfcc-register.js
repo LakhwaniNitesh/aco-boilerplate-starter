@@ -39,10 +39,9 @@ const passwordRequirements = [
   {
     id: 'special',
     label: 'Contains at least one special character',
-    test: (password) =>
-      new RegExp(`[${ALLOWED_SPECIAL_CHARACTERS.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`).test(
-        password
-      ),
+    test: (password) => new RegExp(`[${ALLOWED_SPECIAL_CHARACTERS.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`).test(
+      password,
+    ),
   },
 ];
 
@@ -71,7 +70,7 @@ function hideError(form) {
 function updatePasswordRequirements(password, requirementsContainer) {
   passwordRequirements.forEach((requirement) => {
     const requirementElement = requirementsContainer.querySelector(
-      `[data-requirement="${requirement.id}"]`
+      `[data-requirement="${requirement.id}"]`,
     );
     const isMet = requirement.test(password);
 
@@ -89,8 +88,8 @@ function createPasswordRequirementsHTML() {
       <p class="sfcc-register-requirements-label">Password requirements:</p>
       <div class="sfcc-register-requirements-list">
         ${passwordRequirements
-          .map(
-            (req) => `
+    .map(
+      (req) => `
           <div class="sfcc-register-requirement" data-requirement="${req.id}">
             <div class="sfcc-register-requirement-indicator">
               <svg class="sfcc-register-requirement-checkmark" viewBox="0 0 20 20" fill="currentColor">
@@ -99,9 +98,9 @@ function createPasswordRequirementsHTML() {
             </div>
             <span class="sfcc-register-requirement-label">${req.label}</span>
           </div>
-        `
-          )
-          .join('')}
+        `,
+    )
+    .join('')}
       </div>
     </div>
   `;

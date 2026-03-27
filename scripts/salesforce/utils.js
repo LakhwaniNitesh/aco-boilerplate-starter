@@ -73,4 +73,6 @@ function getAttribute(attributes, name) {
   return attr?.value || '';
 }
 
-export { debounce, formatCurrency, formatDate, getAttribute };
+export {
+  debounce, formatCurrency, formatDate, getAttribute,
+};

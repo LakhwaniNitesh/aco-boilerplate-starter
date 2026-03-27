@@ -15,7 +15,6 @@ import { debounce, formatCurrency, getAttribute } from '../../../scripts/salesfo
 import { TrashIcon } from '../icons/trash.js';
 import { CheckmarkIcon } from '../icons/checkmark.js';
 
-
 const debouncedUpdateQuantity = debounce(async (itemId, quantity) => {
   await updateCartQuantity(itemId, quantity);
 }, 500);
@@ -26,8 +25,8 @@ export function CartItem(item) {
   const imgs = Array.isArray(item.images)
     ? item.images
     : item.images
-    ? (typeof item.images === 'string' ? [{ url: item.images }] : [item.images])
-    : [];
+      ? (typeof item.images === 'string' ? [{ url: item.images }] : [item.images])
+      : [];
 
   // Helpful debug when images are missing
   // if (process && process.env && process.env.NODE_ENV !== 'production') {
@@ -42,8 +41,8 @@ export function CartItem(item) {
   const component = document.createElement('div');
   component.className = 'cart-item';
   component.dataset.itemId = item.itemId;
-  
-console.log("hi",item);
+
+  console.log('hi', item);
   component.innerHTML = `
     <div class="cart-item-image">
       <img src="${imageUrl}" alt="${item.name}" />

@@ -1,35 +1,32 @@
 import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
 
-
 function getHclConfig() {
   const configObject = getConfigValue('hcl-commerce');
   return {
     apiUrl: configObject['api-url'],
     WCToken: sessionStorage.getItem('hcl-wctoken'),
     WCTrustedToken: sessionStorage.getItem('hcl-wctrustedtoken'),
-    userId: configObject['userId'],
+    userId: configObject.userId,
     storeId: configObject['store-id'],
-    locale: configObject['locale'],
-    Cookie: configObject['Cookie']
+    locale: configObject.locale,
+    Cookie: configObject.Cookie,
   };
 }
-
 
 // Ensure a URL is https and idempotent. Returns original value when falsy.
 function ensureHttps(url) {
   if (!url || typeof url !== 'string') return url;
   const s = url.trim();
   if (s.startsWith('https://')) return s;
-  if (s.startsWith('//')) return 'https:' + s;
+  if (s.startsWith('//')) return `https:${s}`;
   if (/^http:\/\//i.test(s)) return s.replace(/^http:\/\//i, 'https://');
   // No scheme, assume https
-  if (!/^[a-z0-9+.-]+:\/\//i.test(s)) return 'https://' + s;
+  if (!/^[a-z0-9+.-]+:\/\//i.test(s)) return `https://${s}`;
   return s;
 }
 
 async function normalizeHclCartInfo(hclCartResponse) {
   if (!hclCartResponse) return null;
- 
 
   const items = await Promise.all((hclCartResponse.orderItem || []).map(async (item, idx) => {
     const sku = item.partNumber || item.productId || `itm-${idx}`;
@@ -60,7 +57,6 @@ async function normalizeHclCartInfo(hclCartResponse) {
     if (!imageUrl && nproduct?.productContext && Array.isArray(nproduct.productContext) && nproduct.productContext[0]) {
       imageUrl = nproduct.productContext[0]?.images?.[0]?.url || null;
     }
-
 
     if (!imageUrl) imageUrl = item?.image || null;
     imageUrl = ensureHttps(imageUrl);
@@ -118,32 +114,31 @@ async function normalizeHclCartInfo(hclCartResponse) {
   return normalizedCart;
 }
 
-
-//added function for attocart API call to HCL 
+// added function for attocart API call to HCL
 async function addToCart(sku, quantity) {
   quantity = quantity.toString();
-  
+
   const config = getHclConfig();
   // HCL Commerce expects orderItem array in the body
   const body = {
-    "orderId": ".",
-    "x_calculateOrder": "0",
-    "orderItem": [
-        {
-            "quantity": quantity,
-            "partNumber":  sku
-        }
+    orderId: '.',
+    x_calculateOrder: '0',
+    orderItem: [
+      {
+        quantity,
+        partNumber: sku,
+      },
     ],
-    "x_inventoryValidation": true
-};
+    x_inventoryValidation: true,
+  };
 
   const response = await fetch(config.apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'WCToken': config.WCToken,
-      'WCTrustedToken': config.WCTrustedToken,
-      'Cookie': config.Cookie
+      WCToken: config.WCToken,
+      WCTrustedToken: config.WCTrustedToken,
+      Cookie: config.Cookie,
     },
     body: JSON.stringify(body),
   });
@@ -152,18 +147,18 @@ async function addToCart(sku, quantity) {
     throw new Error('Could not add item to cart.');
   }
 
-//code for cart info
-const cartInfoUrl = `https://20.40.52.251/wcs/resources/store/715842834/cart/@self`;
- const cartResponse = await fetch(cartInfoUrl, {
+  // code for cart info
+  const cartInfoUrl = 'https://20.40.52.251/wcs/resources/store/715842834/cart/@self';
+  const cartResponse = await fetch(cartInfoUrl, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'WCToken': config.WCToken,
-      'WCTrustedToken': config.WCTrustedToken,
-      'Cookie': config.Cookie
+      WCToken: config.WCToken,
+      WCTrustedToken: config.WCTrustedToken,
+      Cookie: config.Cookie,
     },
   });
-   if (!cartResponse.ok) {
+  if (!cartResponse.ok) {
     const txt = await cartResponse.text();
     throw new Error(`Failed to fetch cart info: ${cartResponse.status} – ${txt}`);
   }
@@ -172,56 +167,49 @@ const cartInfoUrl = `https://20.40.52.251/wcs/resources/store/715842834/cart/@se
 
   try {
     setCartId(normalizedCart.id);
-      setCartStore(normalizedCart);
+    setCartStore(normalizedCart);
   } catch (e) {
     console.warn('Could not persist normalized cart', e);
   }
 
- try {
-    const { events } = await import("@dropins/tools/event-bus.js");
-    events.emit("cart/data", normalizedCart);
+  try {
+    const { events } = await import('@dropins/tools/event-bus.js');
+    events.emit('cart/data', normalizedCart);
   } catch (e) {
-    console.warn("Could not emit cart event", e);
+    console.warn('Could not emit cart event', e);
   }
 
-console.log(JSON.parse(localStorage.getItem('shopper_cart')));
+  console.log(JSON.parse(localStorage.getItem('shopper_cart')));
 
-
-if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     window.location.href = '/cart';
   }
 
   return hclCart;
 }
 
-
-
 function setCartId(cartId) {
   localStorage.setItem('shopper_cart_id', cartId);
 }
 
-
 function getCartStore() {
-    try {
+  try {
     const v = localStorage.getItem('shopper_cart');
     return v ? JSON.parse(v) : null;
   } catch (e) {
     return null;
   }
-  //return JSON.parse(localStorage.getItem('shopper_cart') || '{}');
+  // return JSON.parse(localStorage.getItem('shopper_cart') || '{}');
 }
 
-
 function setCartStore(cart) {
-    try {
+  try {
     localStorage.setItem('shopper_cart', JSON.stringify(cart));
   } catch (e) {
     /* ignore storage errors */
   }
-  //localStorage.setItem('shopper_cart', JSON.stringify(cart));
+  // localStorage.setItem('shopper_cart', JSON.stringify(cart));
 }
-
-
 
 async function getOrRefreshTokenInfo() {
   try {

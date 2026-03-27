@@ -12,7 +12,7 @@
 
 function getProductContext(product) {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  console.log("hello",product);
+  console.log('hello', product);
   return {
     productId: 1,
     name: product.name,

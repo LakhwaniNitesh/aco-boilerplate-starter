@@ -100,4 +100,6 @@ function luhnCheck(cardNumber) {
   return sum % 10 === 0;
 }
 
-export { detectCardType, maskCardNumber, validateCardNumber, validateExpirationDate };
+export {
+  detectCardType, maskCardNumber, validateCardNumber, validateExpirationDate,
+};

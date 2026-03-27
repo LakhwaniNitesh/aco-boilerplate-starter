@@ -47,16 +47,16 @@ export function OrderSummary(order) {
         <h3>Payment information</h3>
         <div class="order-summary-payment">
           ${
-            paymentInfo?.cardLast4
-              ? `
+  paymentInfo?.cardLast4
+    ? `
             <div class="order-summary-payment-card">
               ${VisaIcon()}
             </div>
             <div>Ending with ${paymentInfo.cardLast4}</div>
             <div>Expires ${String(paymentInfo.cardExpirationMonth).padStart(2, '0')}/${String(paymentInfo.cardExpirationYear).slice(-2)}</div>
           `
-              : '<div>Payment method not available</div>'
-          }
+    : '<div>Payment method not available</div>'
+}
         </div>
       </div>
     </div>

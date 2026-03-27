@@ -108,7 +108,7 @@ async function handleSubmit(event, cart) {
         countryCode: formData.country,
       },
       cart,
-      false
+      false,
     );
 
     // Add billing address
@@ -124,7 +124,7 @@ async function handleSubmit(event, cart) {
         countryCode: formData.country,
       },
       cart,
-      false
+      false,
     );
 
     // Add payment method
@@ -144,7 +144,7 @@ async function handleSubmit(event, cart) {
         },
       },
       cart,
-      false
+      false,
     );
 
     // Place order
@@ -179,8 +179,8 @@ export async function CheckoutForm(cart, shippingMethods = []) {
       <h2>Shipping method</h2>
       <div class="shipping-options">
         ${shippingMethods
-          .map(
-            (method) => `
+    .map(
+      (method) => `
           <label class="shipping-option ${method.isDefault ? 'selected' : ''}" data-method-id="${method.id}">
             <input type="radio" name="shipping" value="${method.id}" ${method.isDefault ? 'checked' : ''} required />
             <div class="shipping-option-content">
@@ -191,9 +191,9 @@ export async function CheckoutForm(cart, shippingMethods = []) {
               ${method.description ? `<span class="shipping-option-delivery">${method.description}</span>` : ''}
             </div>
           </label>
-        `
-          )
-          .join('')}
+        `,
+    )
+    .join('')}
       </div>
     </section>
 

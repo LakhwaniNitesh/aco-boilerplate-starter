@@ -8,7 +8,7 @@ import HclSession from './hcl-commerce-api.js';
 /**
  * Creates HCL-aware addToCart function for PLP
  * This function will be called by the PLP widget when "Add to Cart" is clicked
- * 
+ *
  * @returns {Function} addToCart handler function
  */
 export function createHclAddToCartHandler() {
@@ -28,21 +28,20 @@ export function createHclAddToCartHandler() {
 
       if (result.success) {
         console.log('[HCL PLP] Successfully added to HCL cart', result);
-        
+
         // Emit custom event for other components to listen
         window.dispatchEvent(new CustomEvent('hcl:product-added-to-cart', {
-          detail: { sku, quantity, product: result.product }
+          detail: { sku, quantity, product: result.product },
         }));
 
         // Show success message
-        showAddToCartNotification(true, `Product added to cart!`);
-        
+        showAddToCartNotification(true, 'Product added to cart!');
+
         return result;
-      } else {
-        console.error('[HCL PLP] Failed to add to cart:', result);
-        showAddToCartNotification(false, result.error || 'Failed to add product to cart');
-        throw new Error(result.error || 'Failed to add to cart');
       }
+      console.error('[HCL PLP] Failed to add to cart:', result);
+      showAddToCartNotification(false, result.error || 'Failed to add product to cart');
+      throw new Error(result.error || 'Failed to add to cart');
     } catch (error) {
       console.error('[HCL PLP] Error adding to cart:', error);
       showAddToCartNotification(false, error.message || 'Error adding to cart');
@@ -54,7 +53,7 @@ export function createHclAddToCartHandler() {
 /**
  * Show success/error notification
  * Creates a temporary alert message in the PLP
- * 
+ *
  * @param {boolean} isSuccess - Whether the operation was successful
  * @param {string} message - Message to display
  */
@@ -96,7 +95,7 @@ function showAddToCartNotification(isSuccess, message) {
  */
 export function injectHclPlpStyles() {
   const styleId = 'hcl-plp-styles';
-  
+
   // Check if styles already exist
   if (document.getElementById(styleId)) {
     return;
@@ -147,7 +146,7 @@ export function injectHclPlpStyles() {
 /**
  * Initialize HCL integration for PLP
  * Called by the product-list-page block during decoration
- * 
+ *
  * @param {Object} storeConfig - The store configuration object from PLP
  * @returns {Function} The addToCart handler
  */

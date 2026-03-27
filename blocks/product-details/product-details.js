@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unresolved */
 import {
   InLineAlert,
   Icon,
@@ -26,10 +27,10 @@ import ProductGallery from '@dropins/storefront-pdp/containers/ProductGallery.js
 
 // Libs
 import {
-  rootLink,
   setJsonLd,
   fetchPlaceholders,
 } from '../../scripts/commerce.js';
+import { rootLink } from '../../scripts/scripts.js';
 
 // HCL Commerce Integration
 // import { initializeHclPdpIntegration } from '../../scripts/hcl-pdp-integration.js';
@@ -217,7 +218,7 @@ export default async function decorate(block) {
       product,
     })($wishlistToggleBtn),
   ]);
-//console.log("hi",product?.name);
+
   // Configuration – Button - Add to Cart
   const addToCart = await UI.render(Button, {
     children: labels.Global?.AddProductToCart,
@@ -236,10 +237,7 @@ export default async function decorate(block) {
         // get the current selection values
         const values = pdpApi.getProductConfigurationValues();
         const valid = pdpApi.isProductConfigurationValid();
-        
-        
 
-     
         // add or update the product in the cart
         if (valid) {
           if (isUpdateMode) {
@@ -249,7 +247,7 @@ export default async function decorate(block) {
             if (!session.isValid()) {
               await session.createSession();
             }
-            
+
             // Update the order item in HCL with new quantity
             await session.updateHclOrderItem(itemUidFromUrl, values.quantity);
 
@@ -277,12 +275,12 @@ export default async function decorate(block) {
           if (!session.isValid()) {
             await session.createSession();
           }
-          
+
           await session.addToCart(values.sku, values.quantity);
-          
+
           // Emit event for mini-cart to listen
           window.dispatchEvent(new CustomEvent('hcl:product-added-to-cart', {
-            detail: { sku: values.sku, quantity: values.quantity }
+            detail: { sku: values.sku, quantity: values.quantity },
           }));
         }
 
@@ -317,7 +315,7 @@ export default async function decorate(block) {
       }
     },
   })($addToCart);
-//console.log("hello",product);
+
   // Lifecycle Events
   events.on('pdp/valid', (valid) => {
     // update add to cart button disabled state based on product selection validity
@@ -395,10 +393,9 @@ export default async function decorate(block) {
   return Promise.resolve();
 }
 
-
-
-
 // Fetch product details via storefront GraphQL
+// NOTE: This function is for reference only and is not currently used
+/*
 async function fetchProductDetailsByPartNumber(partNumber) {
   if (!partNumber) return null;
 
@@ -437,18 +434,15 @@ async function fetchProductDetailsByPartNumber(partNumber) {
   try {
     const { data } = await pdpApi.fetchGraphQl(query, {
       variables: { sku },
-      method: 'GET', // adjust if your helper needs POST
+      method: 'GET',
     });
 
     const item = data?.products?.items?.[0];
     if (!item) return null;
 
-    // Prefer the explicit image fields, then fallback to media_gallery
     const mainImage = item.image?.url || item.media_gallery?.[0]?.url || '';
-
-    const priceObj =
-      item.price_range?.minimum_price?.final_price ??
-      item.price_range?.minimum_price?.regular_price ?? null;
+    const priceObj = item.price_range?.minimum_price?.final_price
+      ?? item.price_range?.minimum_price?.regular_price ?? null;
 
     return {
       sku: item.sku,
@@ -461,14 +455,14 @@ async function fetchProductDetailsByPartNumber(partNumber) {
       price: priceObj ? { value: priceObj.value, currency: priceObj.currency } : null,
       inStock: item.stock_status ? item.stock_status === 'IN_STOCK' : undefined,
       attributes: item.attributes || [],
-      raw: item, // keep raw payload for additional fields if needed
+      raw: item,
     };
   } catch (err) {
-    // centralize logging/warn and return null to the caller
     console.warn(`Product lookup failed for ${partNumber}:`, err);
     return null;
   }
 }
+*/
 
 async function setJsonLdProduct(product) {
   const {

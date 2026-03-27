@@ -11,13 +11,13 @@
  */
 
 import { events } from '@dropins/tools/event-bus.js';
+import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
+import * as pdpApi from '@dropins/storefront-pdp/api.js';
 import { sendCartViewEvent } from '../../scripts/aco/eventing/api.js';
 import { getOrCreateCart } from '../../scripts/salesforce/api.js';
 import { EmptyCart } from './components/empty-cart.js';
 import { CartList } from './components/cart-list.js';
 import { CartSummary } from './components/cart-summary.js';
-import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
-import * as pdpApi from '@dropins/storefront-pdp/api.js';
 
 function getHclConfig() {
   const configObject = getConfigValue('hcl-commerce');
@@ -25,10 +25,10 @@ function getHclConfig() {
     apiUrl: configObject['api-url'],
     WCToken: sessionStorage.getItem('hcl-wctoken'),
     WCTrustedToken: sessionStorage.getItem('hcl-wctrustedtoken'),
-    userId: configObject['userId'],
+    userId: configObject.userId,
     storeId: configObject['store-id'],
-    locale: configObject['locale'],
-    Cookie: configObject['Cookie']
+    locale: configObject.locale,
+    Cookie: configObject.Cookie,
   };
 }
 
@@ -36,18 +36,15 @@ function ensureHttps(url) {
   if (!url || typeof url !== 'string') return url;
   const s = url.trim();
   if (s.startsWith('https://')) return s;
-  if (s.startsWith('//')) return 'https:' + s;
+  if (s.startsWith('//')) return `https:${s}`;
   if (/^http:\/\//i.test(s)) return s.replace(/^http:\/\//i, 'https://');
   // No scheme, assume https
-  if (!/^[a-z0-9+.-]+:\/\//i.test(s)) return 'https://' + s;
+  if (!/^[a-z0-9+.-]+:\/\//i.test(s)) return `https://${s}`;
   return s;
 }
 
-
-
 async function normalizeHclCartInfo(hclCartResponse) {
   if (!hclCartResponse) return null;
-
 
   const items = await Promise.all((hclCartResponse.orderItem || []).map(async (item, idx) => {
     const sku = item.partNumber || item.productId || `itm-${idx}`;
@@ -134,58 +131,55 @@ async function normalizeHclCartInfo(hclCartResponse) {
   return normalizedCart;
 }
 
-
 const config = getHclConfig();
-const cartInfoUrl = `https://20.40.52.251/wcs/resources/store/715842834/cart/@self`;
- const cartResponse = await fetch(cartInfoUrl, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'WCToken': config.WCToken,
-      'WCTrustedToken': config.WCTrustedToken,
-      'Cookie': config.Cookie
-    },
-  });
-   if (!cartResponse.ok) {
-    const txt = await cartResponse.text();
-    throw new Error(`Failed to fetch cart info: ${cartResponse.status} – ${txt}`);
-  }
-  const hclCart = await cartResponse.json();
-  const normalizedCart = await normalizeHclCartInfo(hclCart);
+const cartInfoUrl = 'https://20.40.52.251/wcs/resources/store/715842834/cart/@self';
+const cartResponse = await fetch(cartInfoUrl, {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    WCToken: config.WCToken,
+    WCTrustedToken: config.WCTrustedToken,
+    Cookie: config.Cookie,
+  },
+});
+if (!cartResponse.ok) {
+  const txt = await cartResponse.text();
+  throw new Error(`Failed to fetch cart info: ${cartResponse.status} – ${txt}`);
+}
+const hclCart = await cartResponse.json();
+const normalizedCart = await normalizeHclCartInfo(hclCart);
 
-  try {
-    setCartId(normalizedCart.id);
-      setCartStore(normalizedCart);
-  } catch (e) {
-    console.warn('Could not persist normalized cart', e);
-  }
+try {
+  setCartId(normalizedCart.id);
+  setCartStore(normalizedCart);
+} catch (e) {
+  console.warn('Could not persist normalized cart', e);
+}
 
 function setCartId(cartId) {
   localStorage.setItem('shopper_cart_id', cartId);
 }
 
 function setCartStore(cart) {
-    try {
+  try {
     localStorage.setItem('shopper_cart', JSON.stringify(cart));
   } catch (e) {
     /* ignore storage errors */
   }
-  //localStorage.setItem('shopper_cart', JSON.stringify(cart));
+  // localStorage.setItem('shopper_cart', JSON.stringify(cart));
 }
 try {
-    const { events } = await import("@dropins/tools/event-bus.js");
-    events.emit("cart/data", normalizedCart);
-  } catch (e) {
-    console.warn("Could not emit cart event", e);
-  }
+  const { events } = await import('@dropins/tools/event-bus.js');
+  events.emit('cart/data', normalizedCart);
+} catch (e) {
+  console.warn('Could not emit cart event', e);
+}
 
-
-
-async function renderCart(container) {  
-    //added code 
+async function renderCart(container) {
+  // added code
   let cart = null;
-   const hclCartData = localStorage.getItem("shopper_cart");
- console.log(JSON.parse(localStorage.getItem('shopper_cart')));
+  const hclCartData = localStorage.getItem('shopper_cart');
+  console.log(JSON.parse(localStorage.getItem('shopper_cart')));
   if (hclCartData) {
     try {
       cart = JSON.parse(hclCartData);
@@ -196,12 +190,12 @@ async function renderCart(container) {
   if (!cart) {
     cart = await getOrCreateCart();
   }
-  //added code end
+  // added code end
   sendCartViewEvent(cart);
 
   container.innerHTML = '<h3>Shopping Cart</h3><hr/>';
 
-  if (!cart || !cart.items  || cart.items.length === 0) {
+  if (!cart || !cart.items || cart.items.length === 0) {
     container.appendChild(EmptyCart());
   } else {
     const cartContainer = document.createElement('div');
@@ -224,7 +218,7 @@ export default async function decorate(block) {
   await renderCart(container);
 
   events.on('cart/data', async () => {
-    //renderCart(document.querySelector("#main-cart-container"), updatedCart);
+    // renderCart(document.querySelector("#main-cart-container"), updatedCart);
     await renderCart(container);
   });
 }

@@ -25,7 +25,7 @@ export default async function decorate(block) {
   // Fetch shipping methods and sort so default is first
   const shippingMethods = await getShippingMethods(cart);
   const sortedShippingMethods = [...shippingMethods].sort(
-    (a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0)
+    (a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0),
   );
   // Set default shipping method to cart
   cart = await updateShippingMethod(sortedShippingMethods[0].id, cart);

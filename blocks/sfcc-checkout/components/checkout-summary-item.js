@@ -16,10 +16,9 @@ export function CheckoutSummaryItem(item) {
   const component = document.createElement('div');
   component.className = 'order-item';
 
-  const imageUrl =
-    item.images?.find((img) => img.roles?.includes('thumbnail'))?.url ||
-    item.images?.[0]?.url ||
-    '/images/placeholder.jpg';
+  const imageUrl = item.images?.find((img) => img.roles?.includes('thumbnail'))?.url
+    || item.images?.[0]?.url
+    || '/images/placeholder.jpg';
 
   const brand = getAttribute(item.attributes, 'brand');
   const model = getAttribute(item.attributes, 'model');
@@ -28,10 +27,9 @@ export function CheckoutSummaryItem(item) {
   const attributes = [];
   if (brand) attributes.push(brand);
   if (model) attributes.push(model);
-  const attributesHtml =
-    attributes.length > 0
-      ? `<div class="order-item-attributes">${attributes.join(' | ')}</div>`
-      : '';
+  const attributesHtml = attributes.length > 0
+    ? `<div class="order-item-attributes">${attributes.join(' | ')}</div>`
+    : '';
 
   component.innerHTML = `
       <div class="order-item-image">

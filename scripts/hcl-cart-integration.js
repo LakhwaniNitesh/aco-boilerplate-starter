@@ -12,7 +12,7 @@ import HclSession from './hcl-commerce-api.js';
 export async function updateHclCartDisplay(block) {
   try {
     const session = new HclSession();
-    
+
     // Ensure valid session
     if (!session.isValid()) {
       await session.createSession();
@@ -20,7 +20,7 @@ export async function updateHclCartDisplay(block) {
 
     // Get cart from HCL
     const hclCart = await session.getCart();
-    
+
     if (!hclCart || !hclCart.items || hclCart.items.length === 0) {
       showEmptyCart(block);
       return;
@@ -93,7 +93,7 @@ function createCartItemElement(item) {
  */
 function renderCartSummary(block, hclCart) {
   const summaryContainer = block.querySelector('.cart__summary') || createSummaryContainer(block);
-  
+
   const subtotal = (hclCart.subtotal || 0).toFixed(2);
   const tax = (hclCart.tax || 0).toFixed(2);
   const shipping = (hclCart.shipping || 0).toFixed(2);
@@ -142,9 +142,9 @@ async function updateItemQuantity(itemId, quantity) {
     }
 
     console.log(`[HCL Cart] Updating item ${itemId} to quantity ${quantity}`);
-    
+
     await session.updateHclOrderItem(itemId, quantity);
-    
+
     // Refresh display
     const block = document.querySelector('[class*="commerce-cart"]');
     if (block) {
@@ -170,9 +170,9 @@ async function removeCartItem(itemId) {
     }
 
     console.log(`[HCL Cart] Removing item ${itemId}`);
-    
+
     await session.removeFromCart(itemId);
-    
+
     // Refresh display
     const block = document.querySelector('[class*="commerce-cart"]');
     if (block) {
@@ -181,7 +181,7 @@ async function removeCartItem(itemId) {
 
     // Emit event for mini-cart to update
     window.dispatchEvent(new CustomEvent('hcl:itemRemoved', {
-      detail: { itemId }
+      detail: { itemId },
     }));
   } catch (error) {
     console.error('[HCL Cart] Error removing item:', error);
@@ -200,7 +200,7 @@ function showEmptyCart(block) {
       <a href="/" class="cart-empty__link">Continue Shopping</a>
     </div>
   `;
-  
+
   // Hide items and summary
   const itemsContainer = block.querySelector('.cart__items');
   const summaryContainer = block.querySelector('.cart__summary');
@@ -267,7 +267,7 @@ function createEmptyContainer(block) {
  */
 export function injectHclCartStyles() {
   const styleId = 'hcl-cart-styles';
-  
+
   if (document.getElementById(styleId)) {
     return;
   }

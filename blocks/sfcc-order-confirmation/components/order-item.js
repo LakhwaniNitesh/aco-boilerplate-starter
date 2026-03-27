@@ -41,8 +41,7 @@ function getStatusSteps(currentStatus) {
 }
 
 export function OrderItem(item, shippingAddress, orderDate, orderStatus) {
-  const imageUrl =
-    item.images.find((img) => img.roles?.includes('thumbnail'))?.url || item.images[0]?.url || '';
+  const imageUrl = item.images.find((img) => img.roles?.includes('thumbnail'))?.url || item.images[0]?.url || '';
   const priceAmount = item.price?.final?.amount?.value || 0;
   const steps = getStatusSteps(orderStatus);
 
@@ -60,28 +59,28 @@ export function OrderItem(item, shippingAddress, orderDate, orderStatus) {
         <div class="order-item-sku">${item.sku}</div>
         
         ${
-          shippingAddress
-            ? `
+  shippingAddress
+    ? `
           <div class="order-item-shipping">
             <h4>Shipping address</h4>
             <div class="order-item-address">${formatAddress(shippingAddress)}</div>
           </div>
         `
-            : ''
-        }
+    : ''
+}
         
         <div class="order-item-status">
           <div class="order-item-status-tracker">
             ${steps
-              .map(
-                (step) => `
+    .map(
+      (step) => `
               <div class="order-item-status-step ${step.isCompleted ? 'completed' : ''} ${step.isCurrent ? 'current' : ''}">
                 <div class="order-item-status-line"></div>
                 <div class="order-item-status-label">${step.label}</div>
               </div>
-            `
-              )
-              .join('')}
+            `,
+    )
+    .join('')}
           </div>
         </div>
       </div>
