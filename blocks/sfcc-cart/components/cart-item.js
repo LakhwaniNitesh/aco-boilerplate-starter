@@ -12,14 +12,14 @@
 
 import { removeFromCart, updateCartQuantity } from '../../../scripts/salesforce/api.js';
 import { debounce, formatCurrency, getAttribute } from '../../../scripts/salesforce/utils.js';
-import { TrashIcon } from '../icons/trash.js';
-import { CheckmarkIcon } from '../icons/checkmark.js';
+import TrashIcon from '../icons/trash.js';
+import CheckmarkIcon from '../icons/checkmark.js';
 
 const debouncedUpdateQuantity = debounce(async (itemId, quantity) => {
   await updateCartQuantity(itemId, quantity);
 }, 500);
 
-export function CartItem(item) {
+export default function CartItem(item) {
   // Defensive: ensure `images` is treated as an array. Some upstream flows may set
   // `item.images` to a string or object; coerce into an array so `.find` works.
   const imgs = Array.isArray(item.images)
@@ -42,7 +42,6 @@ export function CartItem(item) {
   component.className = 'cart-item';
   component.dataset.itemId = item.itemId;
 
-  console.log('hi', item);
   component.innerHTML = `
     <div class="cart-item-image">
       <img src="${imageUrl}" alt="${item.name}" />

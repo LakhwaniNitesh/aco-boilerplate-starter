@@ -1,11 +1,11 @@
-import { EmptyCartIcon } from '../icons/empty-cart.js';
+import EmptyCartIcon from '../icons/empty-cart.js';
 
 /**
  * Create empty cart element
  *
  * @returns {HTMLElement} Empty cart element
  */
-export function EmptyCart() {
+export default function EmptyCart() {
   const container = document.createElement('div');
   container.className = 'sfcc-cart-empty-cart';
 

@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { rootLink } from '../../../scripts/commerce.js';
+import { rootLink } from '../../../scripts/scripts.js';
 import {
   updateShippingMethod,
   addShippingAddress,

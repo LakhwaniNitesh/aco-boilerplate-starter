@@ -9,15 +9,16 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+/* eslint-disable import/no-unresolved */
 
 import { events } from '@dropins/tools/event-bus.js';
 import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
 import * as pdpApi from '@dropins/storefront-pdp/api.js';
 import { sendCartViewEvent } from '../../scripts/aco/eventing/api.js';
 import { getOrCreateCart } from '../../scripts/salesforce/api.js';
-import { EmptyCart } from './components/empty-cart.js';
-import { CartList } from './components/cart-list.js';
-import { CartSummary } from './components/cart-summary.js';
+import EmptyCart from './components/empty-cart.js';
+import CartList from './components/cart-list.js';
+import CartSummary from './components/cart-summary.js';
 
 function getHclConfig() {
   const configObject = getConfigValue('hcl-commerce');

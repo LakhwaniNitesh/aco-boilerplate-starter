@@ -11,9 +11,9 @@
  */
 
 import { formatCurrency } from '../../../scripts/salesforce/utils.js';
-import { rootLink } from '../../../scripts/commerce.js';
+import { rootLink } from '../../../scripts/scripts.js';
 
-export function CartSummary(cartData) {
+export default function CartSummary(cartData) {
   const component = document.createElement('div');
   component.className = 'cart-summary';
 
