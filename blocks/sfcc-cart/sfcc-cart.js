@@ -170,8 +170,9 @@ function setCartStore(cart) {
   // localStorage.setItem('shopper_cart', JSON.stringify(cart));
 }
 try {
-  const { events } = await import('@dropins/tools/event-bus.js');
-  events.emit('cart/data', normalizedCart);
+  // eslint-disable-next-line no-shadow
+  const { events: eventsApi } = await import('@dropins/tools/event-bus.js');
+  eventsApi.emit('cart/data', normalizedCart);
 } catch (e) {
   console.warn('Could not emit cart event', e);
 }
@@ -180,7 +181,7 @@ async function renderCart(container) {
   // added code
   let cart = null;
   const hclCartData = localStorage.getItem('shopper_cart');
-  console.log(JSON.parse(localStorage.getItem('shopper_cart')));
+  // eslint-disable-next-line no-console
   if (hclCartData) {
     try {
       cart = JSON.parse(hclCartData);

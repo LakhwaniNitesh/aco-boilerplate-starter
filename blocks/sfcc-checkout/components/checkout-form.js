@@ -160,7 +160,7 @@ async function handleSubmit(event, cart) {
   }
 }
 
-export async function CheckoutForm(cart, shippingMethods = []) {
+export default async function CheckoutForm(cart, shippingMethods = []) {
   const form = document.createElement('form');
   form.className = 'checkout-form';
 

@@ -12,7 +12,7 @@
 
 import { formatCurrency, getAttribute } from '../../../scripts/salesforce/utils.js';
 
-export function CheckoutSummaryItem(item) {
+export default function CheckoutSummaryItem(item) {
   const component = document.createElement('div');
   component.className = 'order-item';
 

@@ -22,11 +22,12 @@ const debouncedUpdateQuantity = debounce(async (itemId, quantity) => {
 export default function CartItem(item) {
   // Defensive: ensure `images` is treated as an array. Some upstream flows may set
   // `item.images` to a string or object; coerce into an array so `.find` works.
-  const imgs = Array.isArray(item.images)
-    ? item.images
-    : item.images
-      ? (typeof item.images === 'string' ? [{ url: item.images }] : [item.images])
-      : [];
+  let imgs = [];
+  if (Array.isArray(item.images)) {
+    imgs = item.images;
+  } else if (item.images) {
+    imgs = typeof item.images === 'string' ? [{ url: item.images }] : [item.images];
+  }
 
   // Helpful debug when images are missing
   // if (process && process.env && process.env.NODE_ENV !== 'production') {
