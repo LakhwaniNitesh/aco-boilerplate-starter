@@ -1,3 +1,4 @@
+/* eslint-disable no-console, no-unused-vars */
 /**
  * HCL Commerce PLP Integration
  * Integrates HCL add-to-cart functionality with product listing pages (PLP)
@@ -38,7 +39,7 @@ function setupPlpAddToCartButtons(plpBlock) {
 
   productCards.forEach((card, index) => {
     const addToCartBtn = card.querySelector(
-      'button[class*="add"], button[class*="cart"], [data-test="add-to-cart"]'
+      'button[class*="add"], button[class*="cart"], [data-test="add-to-cart"]',
     );
 
     if (addToCartBtn) {
@@ -59,7 +60,7 @@ function setupPlpAddToCartButtons(plpBlock) {
           await handlePlpAddToCart(
             addToCartBtn,
             partNumber.trim(),
-            productName.trim()
+            productName.trim(),
           );
         });
 

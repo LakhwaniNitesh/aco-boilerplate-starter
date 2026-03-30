@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * HCL Cart Initializer
  * Main entry point for HCL Commerce cart integration

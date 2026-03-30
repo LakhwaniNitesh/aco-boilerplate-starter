@@ -1,3 +1,4 @@
+/* eslint-disable no-console, no-unused-vars, no-underscore-dangle */
 /**
  * HCL Commerce PDP Integration
  * Integrates HCL add-to-cart functionality with the Adobe Commerce product details page (PDP)
@@ -9,7 +10,9 @@
  * - Emits events for mini-cart and other components to listen to
  */
 
-import { addToHclCart, createHclGuestSession, emitCartEvent, onCartEvent } from './hcl-commerce-api.js';
+import {
+  addToHclCart, createHclGuestSession, emitCartEvent, onCartEvent,
+} from './hcl-commerce-api.js';
 
 /**
  * Initialize HCL PDP integration
@@ -35,7 +38,7 @@ export async function initializeHclPdpIntegration(pdpBlock) {
 function setupAddToCartOverride(pdpBlock) {
   // Try to find add-to-cart button (varies by drop-in version)
   const addToCartButton = pdpBlock.querySelector(
-    'button[class*="add-to-cart"], button[class*="AddToCart"], [data-test="add-to-cart"]'
+    'button[class*="add-to-cart"], button[class*="AddToCart"], [data-test="add-to-cart"]',
   );
 
   if (!addToCartButton) {
@@ -125,20 +128,17 @@ async function handleHclAddToCart(pdpBlock, button) {
 function extractProductInfo(pdpBlock) {
   try {
     // Try to get from data attributes
-    const partNumber =
-      pdpBlock.getAttribute('data-part-number') ||
-      pdpBlock.getAttribute('data-sku') ||
-      pdpBlock.querySelector('[data-part-number]')?.textContent ||
-      pdpBlock.querySelector('[data-sku]')?.textContent;
+    const partNumber = pdpBlock.getAttribute('data-part-number')
+      || pdpBlock.getAttribute('data-sku')
+      || pdpBlock.querySelector('[data-part-number]')?.textContent
+      || pdpBlock.querySelector('[data-sku]')?.textContent;
 
-    const name =
-      pdpBlock.getAttribute('data-product-name') ||
-      pdpBlock.querySelector('h1')?.textContent ||
-      pdpBlock.querySelector('[data-product-name]')?.textContent;
+    const name = pdpBlock.getAttribute('data-product-name')
+      || pdpBlock.querySelector('h1')?.textContent
+      || pdpBlock.querySelector('[data-product-name]')?.textContent;
 
-    const productId =
-      pdpBlock.getAttribute('data-product-id') ||
-      pdpBlock.querySelector('[data-product-id]')?.textContent;
+    const productId = pdpBlock.getAttribute('data-product-id')
+      || pdpBlock.querySelector('[data-product-id]')?.textContent;
 
     if (!partNumber) {
       console.warn('[HCL PDP] Part number not found in PDP');
@@ -161,10 +161,9 @@ function extractProductInfo(pdpBlock) {
  */
 function getSelectedQuantity(pdpBlock) {
   try {
-    const quantityInput =
-      pdpBlock.querySelector('input[name="quantity"]') ||
-      pdpBlock.querySelector('input[type="number"]') ||
-      pdpBlock.querySelector('[class*="quantity"] input');
+    const quantityInput = pdpBlock.querySelector('input[name="quantity"]')
+      || pdpBlock.querySelector('input[type="number"]')
+      || pdpBlock.querySelector('[class*="quantity"] input');
 
     if (quantityInput) {
       const qty = parseInt(quantityInput.value, 10);

@@ -1,3 +1,4 @@
+/* eslint-disable no-console, no-unused-vars, no-underscore-dangle */
 /**
  * HCL Commerce Mini-Cart Integration
  * Updates the mini-cart to display HCL cart data

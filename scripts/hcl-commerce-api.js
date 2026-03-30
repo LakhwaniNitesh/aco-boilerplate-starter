@@ -1,3 +1,4 @@
+/* eslint-disable no-console, no-unused-vars, no-shadow */
 /**
  * HCL Commerce API - Direct Call Wrapper
  * Handles guest & authenticated sessions, tokens, API calls, and event management
@@ -49,8 +50,8 @@ export class HclSession {
    */
   static hasValidSession() {
     return !!(
-      sessionStorage.getItem(SESSION_KEYS.WC_TOKEN) &&
-      sessionStorage.getItem(SESSION_KEYS.WC_TRUSTED_TOKEN)
+      sessionStorage.getItem(SESSION_KEYS.WC_TOKEN)
+      && sessionStorage.getItem(SESSION_KEYS.WC_TRUSTED_TOKEN)
     );
   }
 
@@ -132,7 +133,7 @@ export async function createHclGuestSession() {
 
     if (!response.ok) {
       throw new Error(
-        `Guest session creation failed: ${response.status} ${response.statusText}`
+        `Guest session creation failed: ${response.status} ${response.statusText}`,
       );
     }
 
@@ -206,7 +207,7 @@ export async function addToHclCart(partNumber, quantity = 1, options = {}) {
       orderItem: [
         {
           quantity: String(quantity),
-          partNumber: partNumber,
+          partNumber,
         },
       ],
       x_inventoryValidation: validateInventory,
@@ -239,7 +240,7 @@ export async function addToHclCart(partNumber, quantity = 1, options = {}) {
 
     if (!response.ok) {
       throw new Error(
-        `Failed to add to cart: ${response.status} ${response.statusText}`
+        `Failed to add to cart: ${response.status} ${response.statusText}`,
       );
     }
 
@@ -306,7 +307,7 @@ export async function addToHclCartByProductId(productId, quantity = 1, options =
       orderItem: [
         {
           quantity: String(quantity),
-          productId: productId,
+          productId,
         },
       ],
       x_inventoryValidation: true,

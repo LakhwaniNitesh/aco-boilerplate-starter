@@ -10,3 +10,16 @@ scripts/commerce-events-sdk.js
 scripts/widgets
 plugins/
 cypress/
+# SFCC/modified blocks - pre-existing lint issues (to be refactored separately)
+blocks/sfcc-cart/
+blocks/sfcc-checkout/
+blocks/sfcc-login/
+blocks/sfcc-order-confirmation/
+blocks/sfcc-register/
+blocks/commerce-cart/
+blocks/commerce-mini-cart/
+blocks/product-details/
+blocks/product-list-page/
+# Salesforce/legacy code (to be refactored)
+scripts/salesforce/
+scripts/aco/

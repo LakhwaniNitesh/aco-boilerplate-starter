@@ -45,7 +45,7 @@
   padding: 40px 20px;
 }
 
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   .cart-container {
     grid-template-columns: 1fr;
   }
@@ -208,7 +208,7 @@
   margin: 0;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .cart-item {
     flex-direction: column;
   }

@@ -3,38 +3,38 @@ import {
   Icon,
   Button,
   provider as UI,
-} from "@dropins/tools/components.js";
-import { h } from "@dropins/tools/preact.js";
-import { events } from "@dropins/tools/event-bus.js";
-import { tryRenderAemAssetsImage } from "@dropins/tools/lib/aem/assets.js";
-import * as pdpApi from "@dropins/storefront-pdp/api.js";
-import { render as pdpRendered } from "@dropins/storefront-pdp/render.js";
-import { render as wishlistRender } from "@dropins/storefront-wishlist/render.js";
+} from '@dropins/tools/components.js';
+import { h } from '@dropins/tools/preact.js';
+import { events } from '@dropins/tools/event-bus.js';
+import { tryRenderAemAssetsImage } from '@dropins/tools/lib/aem/assets.js';
+import * as pdpApi from '@dropins/storefront-pdp/api.js';
+import { render as pdpRendered } from '@dropins/storefront-pdp/render.js';
+import { render as wishlistRender } from '@dropins/storefront-wishlist/render.js';
 
-import { WishlistToggle } from "@dropins/storefront-wishlist/containers/WishlistToggle.js";
-import { WishlistAlert } from "@dropins/storefront-wishlist/containers/WishlistAlert.js";
+import { WishlistToggle } from '@dropins/storefront-wishlist/containers/WishlistToggle.js';
+import { WishlistAlert } from '@dropins/storefront-wishlist/containers/WishlistAlert.js';
 
 // Containers
-import ProductHeader from "@dropins/storefront-pdp/containers/ProductHeader.js";
-import ProductPrice from "@dropins/storefront-pdp/containers/ProductPrice.js";
-import ProductShortDescription from "@dropins/storefront-pdp/containers/ProductShortDescription.js";
-import ProductOptions from "@dropins/storefront-pdp/containers/ProductOptions.js";
-import ProductQuantity from "@dropins/storefront-pdp/containers/ProductQuantity.js";
-import ProductDescription from "@dropins/storefront-pdp/containers/ProductDescription.js";
-import ProductAttributes from "@dropins/storefront-pdp/containers/ProductAttributes.js";
-import ProductGallery from "@dropins/storefront-pdp/containers/ProductGallery.js";
+import ProductHeader from '@dropins/storefront-pdp/containers/ProductHeader.js';
+import ProductPrice from '@dropins/storefront-pdp/containers/ProductPrice.js';
+import ProductShortDescription from '@dropins/storefront-pdp/containers/ProductShortDescription.js';
+import ProductOptions from '@dropins/storefront-pdp/containers/ProductOptions.js';
+import ProductQuantity from '@dropins/storefront-pdp/containers/ProductQuantity.js';
+import ProductDescription from '@dropins/storefront-pdp/containers/ProductDescription.js';
+import ProductAttributes from '@dropins/storefront-pdp/containers/ProductAttributes.js';
+import ProductGallery from '@dropins/storefront-pdp/containers/ProductGallery.js';
 
 // Libs
 import {
   rootLink,
   setJsonLd,
   fetchPlaceholders,
-} from "../../scripts/commerce.js";
+} from '../../scripts/commerce.js';
 
 // Initializers
-import { IMAGES_SIZES } from "../../scripts/initializers/pdp.js";
-import "../../scripts/initializers/cart.js";
-import "../../scripts/initializers/wishlist.js";
+import { IMAGES_SIZES } from '../../scripts/initializers/pdp.js';
+import '../../scripts/initializers/cart.js';
+import '../../scripts/initializers/wishlist.js';
 
 // Function to update the Add to Cart button text
 function updateAddToCartButtonText(addToCartInstance, inCart, labels) {
@@ -49,24 +49,24 @@ function updateAddToCartButtonText(addToCartInstance, inCart, labels) {
   }
 }
 
-const sku = "HLG028_281401";
+const sku = 'HLG028_281401';
 
 // simplest: get the product model (transformed)
 const product = await pdpApi.fetchProductData(sku);
 
 if (product) {
-  console.log("name", product.name);
-  console.log("sku", product.sku);
+  console.log('name', product.name);
+  console.log('sku', product.sku);
   // images is an array of image objects (check product.images[0].url)
   let imageUrl = product.images?.[0]?.url || product.image?.url || null;
-  imageUrl = "https:" + imageUrl;
-  console.log("image", imageUrl);
+  imageUrl = `https:${imageUrl}`;
+  console.log('image', imageUrl);
   // price / availability
-  console.log("price", product.price);
-  console.log("inStock", product.inStock);
+  console.log('price', product.price);
+  console.log('inStock', product.inStock);
 }
 export default async function decorate(block) {
-  const product = events.lastPayload("pdp/data") ?? null;
+  const product = events.lastPayload('pdp/data') ?? null;
   // --- Force HTTPS for all product image URLs ---
   if (product?.images && Array.isArray(product.images)) {
     product.images = product.images.map((img) => {
@@ -75,11 +75,11 @@ export default async function decorate(block) {
       let cleanUrl = img.url.trim();
 
       // If the image URL starts with "http://", convert it to "https://"
-      cleanUrl = cleanUrl.replace(/^http:\/\//i, "https://");
+      cleanUrl = cleanUrl.replace(/^http:\/\//i, 'https://');
 
       // (Optional) also fix any accidental double slashes
-      cleanUrl = cleanUrl.replace(/([^:])\/{2,}/g, "$1/");
-      cleanUrl = "https:" + cleanUrl;
+      cleanUrl = cleanUrl.replace(/([^:])\/{2,}/g, '$1/');
+      cleanUrl = `https:${cleanUrl}`;
 
       return { ...img, url: cleanUrl };
     });
@@ -90,7 +90,7 @@ export default async function decorate(block) {
 
   // Read itemUid from URL
   const urlParams = new URLSearchParams(window.location.search);
-  const itemUidFromUrl = urlParams.get("itemUid");
+  const itemUidFromUrl = urlParams.get('itemUid');
 
   // State to track if we are in update mode
   let isUpdateMode = false;
@@ -122,27 +122,27 @@ export default async function decorate(block) {
     </div>
   `);
 
-  const $alert = fragment.querySelector(".product-details__alert");
-  const $gallery = fragment.querySelector(".product-details__gallery");
-  const $header = fragment.querySelector(".product-details__header");
-  const $price = fragment.querySelector(".product-details__price");
-  const $brand = fragment.querySelector(".product-details__brand"); //added code
+  const $alert = fragment.querySelector('.product-details__alert');
+  const $gallery = fragment.querySelector('.product-details__gallery');
+  const $header = fragment.querySelector('.product-details__header');
+  const $price = fragment.querySelector('.product-details__price');
+  const $brand = fragment.querySelector('.product-details__brand'); // added code
   const $galleryMobile = fragment.querySelector(
-    ".product-details__right-column .product-details__gallery",
+    '.product-details__right-column .product-details__gallery',
   );
   const $shortDescription = fragment.querySelector(
-    ".product-details__short-description",
+    '.product-details__short-description',
   );
-  const $options = fragment.querySelector(".product-details__options");
-  const $quantity = fragment.querySelector(".product-details__quantity");
+  const $options = fragment.querySelector('.product-details__options');
+  const $quantity = fragment.querySelector('.product-details__quantity');
   const $addToCart = fragment.querySelector(
-    ".product-details__buttons__add-to-cart",
+    '.product-details__buttons__add-to-cart',
   );
   const $wishlistToggleBtn = fragment.querySelector(
-    ".product-details__buttons__add-to-wishlist",
+    '.product-details__buttons__add-to-wishlist',
   );
-  const $description = fragment.querySelector(".product-details__description");
-  const $attributes = fragment.querySelector(".product-details__attributes");
+  const $description = fragment.querySelector('.product-details__description');
+  const $attributes = fragment.querySelector('.product-details__attributes');
 
   block.replaceChildren(fragment);
 
@@ -150,7 +150,7 @@ export default async function decorate(block) {
     CarouselThumbnail: (ctx) => {
       tryRenderAemAssetsImage(ctx, {
         ...imageSlotConfig(ctx),
-        wrapper: document.createElement("span"),
+        wrapper: document.createElement('span'),
       });
     },
 
@@ -161,13 +161,13 @@ export default async function decorate(block) {
     },
   };
 
-  //console.log('Product attributes:', product?.attributes);
+  // console.log('Product attributes:', product?.attributes);
 
-  //console.log('Product attributes:', product?.attributes);
+  // console.log('Product attributes:', product?.attributes);
 
   // Alert
   let inlineAlert = null;
-  const routeToWishlist = "/wishlist";
+  const routeToWishlist = '/wishlist';
 
   const [
     _galleryMobile,
@@ -183,10 +183,10 @@ export default async function decorate(block) {
   ] = await Promise.all([
     // Gallery (Mobile)
     pdpRendered.render(ProductGallery, {
-      controls: "dots",
+      controls: 'dots',
       arrows: true,
       peak: false,
-      gap: "small",
+      gap: 'small',
       loop: false,
       imageParams: {
         ...IMAGES_SIZES,
@@ -197,10 +197,10 @@ export default async function decorate(block) {
 
     // Gallery (Desktop)
     pdpRendered.render(ProductGallery, {
-      controls: "thumbnailsColumn",
+      controls: 'thumbnailsColumn',
       arrows: true,
       peak: true,
-      gap: "small",
+      gap: 'small',
       loop: false,
       imageParams: {
         ...IMAGES_SIZES,
@@ -218,11 +218,11 @@ export default async function decorate(block) {
     // Brand added code
     (async () => {
       const brandAttr = product?.attributes?.find(
-        (attr) => attr.id === "brand",
+        (attr) => attr.id === 'brand',
       );
       if (brandAttr?.value) {
-        const brandDiv = document.createElement("div");
-        brandDiv.className = "product-brand";
+        const brandDiv = document.createElement('div');
+        brandDiv.className = 'product-brand';
         brandDiv.textContent = `Brand: ${brandAttr.value}`;
         $brand.appendChild(brandDiv);
       }
@@ -238,7 +238,7 @@ export default async function decorate(block) {
         SwatchImage: (ctx) => {
           tryRenderAemAssetsImage(ctx, {
             ...imageSlotConfig(ctx),
-            wrapper: document.createElement("span"),
+            wrapper: document.createElement('span'),
           });
         },
       },
@@ -258,11 +258,11 @@ export default async function decorate(block) {
       product,
     })($wishlistToggleBtn),
   ]);
-  //console.log("hi",product?.name);
+  // console.log("hi",product?.name);
   // Configuration – Button - Add to Cart
   const addToCart = await UI.render(Button, {
     children: labels.Global?.AddProductToCart,
-    icon: h(Icon, { source: "Cart" }),
+    icon: h(Icon, { source: 'Cart' }),
     onClick: async () => {
       const buttonActionText = isUpdateMode
         ? labels.Global?.UpdatingInCart
@@ -288,25 +288,24 @@ export default async function decorate(block) {
 
             // await updateProductsFromCart([{ ...values, uid: itemUidFromUrl }]);
             // --- Update existing item ---
-            const { updateCartQuantity } =
-              await import("../../scripts/salesforce/api.js");
+            const { updateCartQuantity } = await import('../../scripts/salesforce/api.js');
             await updateCartQuantity(values.sku, values.quantity);
 
             // --- START REDIRECT ON UPDATE ---
             const updatedSku = values?.sku;
             if (updatedSku) {
               const cartRedirectUrl = new URL(
-                rootLink("/cart"),
+                rootLink('/cart'),
                 window.location.origin,
               );
-              cartRedirectUrl.searchParams.set("itemUid", itemUidFromUrl);
+              cartRedirectUrl.searchParams.set('itemUid', itemUidFromUrl);
               window.location.href = cartRedirectUrl.toString();
             } else {
               // Fallback if SKU is somehow missing (shouldn't happen in normal flow)
               console.warn(
-                "Could not retrieve SKU for updated item. Redirecting to cart without parameter.",
+                'Could not retrieve SKU for updated item. Redirecting to cart without parameter.',
               );
-              window.location.href = rootLink("/cart");
+              window.location.href = rootLink('/cart');
             }
             return;
           }
@@ -318,8 +317,7 @@ export default async function decorate(block) {
           // await addProductsToCart([{ ...values}]);
 
           // --- Add new item ---
-          const { addToCart: addToCartSalesforce } =
-            await import("../../scripts/salesforce/api.js");
+          const { addToCart: addToCartSalesforce } = await import('../../scripts/salesforce/api.js');
           await addToCartSalesforce(values.sku, values.quantity);
         }
 
@@ -328,11 +326,11 @@ export default async function decorate(block) {
       } catch (error) {
         // add alert message
         inlineAlert = await UI.render(InLineAlert, {
-          heading: "Error",
+          heading: 'Error',
           description: error.message,
-          icon: h(Icon, { source: "Warning" }),
-          "aria-live": "assertive",
-          role: "alert",
+          icon: h(Icon, { source: 'Warning' }),
+          'aria-live': 'assertive',
+          role: 'alert',
           onDismiss: () => {
             inlineAlert.remove();
           },
@@ -340,8 +338,8 @@ export default async function decorate(block) {
 
         // Scroll the alertWrapper into view
         $alert.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
+          behavior: 'smooth',
+          block: 'center',
         });
       } finally {
         // Reset button text using the helper function which respects the current mode
@@ -354,10 +352,10 @@ export default async function decorate(block) {
       }
     },
   })($addToCart);
-  //console.log("hello",product);
+  // console.log("hello",product);
   // Lifecycle Events
   events.on(
-    "pdp/valid",
+    'pdp/valid',
     (valid) => {
       // update add to cart button disabled state based on product selection validity
       addToCart.setProps((prev) => ({ ...prev, disabled: !valid }));
@@ -367,19 +365,18 @@ export default async function decorate(block) {
 
   // Handle option changes
   events.on(
-    "pdp/values",
+    'pdp/values',
     () => {
       if (wishlistToggleBtn) {
         const configValues = pdpApi.getProductConfigurationValues();
 
         // Check URL parameter for empty optionsUIDs
-        const urlOptionsUIDs = urlParams.get("optionsUIDs");
+        const urlOptionsUIDs = urlParams.get('optionsUIDs');
 
         // If URL has empty optionsUIDs parameter, treat as base product (no options)
-        const optionUIDs =
-          urlOptionsUIDs === ""
-            ? undefined
-            : configValues?.optionsUIDs || undefined;
+        const optionUIDs = urlOptionsUIDs === ''
+          ? undefined
+          : configValues?.optionsUIDs || undefined;
 
         wishlistToggleBtn.setProps((prev) => ({
           ...prev,
@@ -393,7 +390,7 @@ export default async function decorate(block) {
     { eager: true },
   );
 
-  events.on("wishlist/alert", ({ action, item }) => {
+  events.on('wishlist/alert', ({ action, item }) => {
     wishlistRender.render(WishlistAlert, {
       action,
       item,
@@ -401,20 +398,20 @@ export default async function decorate(block) {
     })($alert);
 
     setTimeout(() => {
-      $alert.innerHTML = "";
+      $alert.innerHTML = '';
     }, 5000);
 
     setTimeout(() => {
       $alert.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
+        behavior: 'smooth',
+        block: 'center',
       });
     }, 0);
   });
 
   // --- Add new event listener for cart/data ---
   events.on(
-    "cart/data",
+    'cart/data',
     (cartData) => {
       let itemIsInCart = false;
       if (itemUidFromUrl && cartData?.items) {
@@ -433,7 +430,7 @@ export default async function decorate(block) {
 
   // Set JSON-LD and Meta Tags
   events.on(
-    "aem/lcp",
+    'aem/lcp',
     () => {
       if (product) {
         setJsonLdProduct(product);
@@ -486,19 +483,18 @@ async function fetchProductDetailsByPartNumber(partNumber) {
   try {
     const { data } = await pdpApi.fetchGraphQl(query, {
       variables: { sku },
-      method: "GET", // adjust if your helper needs POST
+      method: 'GET', // adjust if your helper needs POST
     });
 
     const item = data?.products?.items?.[0];
     if (!item) return null;
 
     // Prefer the explicit image fields, then fallback to media_gallery
-    const mainImage = item.image?.url || item.media_gallery?.[0]?.url || "";
+    const mainImage = item.image?.url || item.media_gallery?.[0]?.url || '';
 
-    const priceObj =
-      item.price_range?.minimum_price?.final_price ??
-      item.price_range?.minimum_price?.regular_price ??
-      null;
+    const priceObj = item.price_range?.minimum_price?.final_price
+      ?? item.price_range?.minimum_price?.regular_price
+      ?? null;
 
     return {
       sku: item.sku,
@@ -511,7 +507,7 @@ async function fetchProductDetailsByPartNumber(partNumber) {
       price: priceObj
         ? { value: priceObj.value, currency: priceObj.currency }
         : null,
-      inStock: item.stock_status ? item.stock_status === "IN_STOCK" : undefined,
+      inStock: item.stock_status ? item.stock_status === 'IN_STOCK' : undefined,
       attributes: item.attributes || [],
       raw: item, // keep raw payload for additional fields if needed
     };
@@ -522,9 +518,9 @@ async function fetchProductDetailsByPartNumber(partNumber) {
   }
 }
 
-const productInfo = await fetchProductDetailsByPartNumber("CLA022_220601");
+const productInfo = await fetchProductDetailsByPartNumber('CLA022_220601');
 if (productInfo) {
-  console.log("productInfo", productInfo);
+  console.log('productInfo', productInfo);
   // populate UI, set meta tags, etc.
 }
 // async function fetchProductDetails(partNumber) {
@@ -581,7 +577,7 @@ async function setJsonLdProduct(product) {
     attributes,
   } = product;
   const amount = priceRange?.minimum?.final?.amount || price?.final?.amount;
-  const brand = attributes.find((attr) => attr.name === "brand");
+  const brand = attributes.find((attr) => attr.name === 'brand');
 
   // get variants
   const { data } = await pdpApi.fetchGraphQl(
@@ -607,56 +603,56 @@ async function setJsonLdProduct(product) {
     }
   `,
     {
-      method: "GET",
+      method: 'GET',
       variables: { sku },
     },
   );
 
-  console.log("he;llokds vd", data);
+  console.log('he;llokds vd', data);
   const variants = data?.variants?.variants || [];
   const ldJson = {
-    "@context": "http://schema.org",
-    "@type": "Product",
+    '@context': 'http://schema.org',
+    '@type': 'Product',
     name,
     description,
     image: images[0]?.url,
     offers: [],
     productID: sku,
     brand: {
-      "@type": "Brand",
+      '@type': 'Brand',
       name: brand?.value,
     },
     url: new URL(rootLink(`/products/${urlKey}/${sku}`), window.location),
     sku,
-    "@id": new URL(rootLink(`/products/${urlKey}/${sku}`), window.location),
+    '@id': new URL(rootLink(`/products/${urlKey}/${sku}`), window.location),
   };
 
   if (variants.length > 1) {
     ldJson.offers.push(
       ...variants.map((variant) => ({
-        "@type": "Offer",
+        '@type': 'Offer',
         name: variant.product.name,
         image: variant.product.images[0]?.url,
         price: variant.product.price.final.amount.value,
         priceCurrency: variant.product.price.final.amount.currency,
         availability: variant.product.inStock
-          ? "http://schema.org/InStock"
-          : "http://schema.org/OutOfStock",
+          ? 'http://schema.org/InStock'
+          : 'http://schema.org/OutOfStock',
         sku: variant.product.sku,
       })),
     );
   } else {
     ldJson.offers.push({
-      "@type": "Offer",
+      '@type': 'Offer',
       price: amount?.value,
       priceCurrency: amount?.currency,
       availability: inStock
-        ? "http://schema.org/InStock"
-        : "http://schema.org/OutOfStock",
+        ? 'http://schema.org/InStock'
+        : 'http://schema.org/OutOfStock',
     });
   }
 
-  setJsonLd(ldJson, "product");
+  setJsonLd(ldJson, 'product');
 }
 
 function createMetaTag(property, content, type) {
@@ -670,15 +666,15 @@ function createMetaTag(property, content, type) {
       return;
     }
     meta.setAttribute(type, property);
-    meta.setAttribute("content", content);
+    meta.setAttribute('content', content);
     return;
   }
   if (!content) {
     return;
   }
-  meta = document.createElement("meta");
+  meta = document.createElement('meta');
   meta.setAttribute(type, property);
-  meta.setAttribute("content", content);
+  meta.setAttribute('content', content);
   document.head.appendChild(meta);
 }
 
@@ -687,25 +683,22 @@ function setMetaTags(product) {
     return;
   }
 
-  const price =
-    product.prices.final.minimumAmount ?? product.prices.final.amount;
+  const price = product.prices.final.minimumAmount ?? product.prices.final.amount;
 
-  createMetaTag("title", product.metaTitle || product.name, "name");
-  createMetaTag("description", product.metaDescription, "name");
-  createMetaTag("keywords", product.metaKeyword, "name");
+  createMetaTag('title', product.metaTitle || product.name, 'name');
+  createMetaTag('description', product.metaDescription, 'name');
+  createMetaTag('keywords', product.metaKeyword, 'name');
 
-  createMetaTag("og:type", "product", "property");
-  createMetaTag("og:description", product.shortDescription, "property");
-  createMetaTag("og:title", product.metaTitle || product.name, "property");
-  createMetaTag("og:url", window.location.href, "property");
-  const mainImage = product?.images?.filter((image) =>
-    image.roles.includes("thumbnail"),
-  )[0];
+  createMetaTag('og:type', 'product', 'property');
+  createMetaTag('og:description', product.shortDescription, 'property');
+  createMetaTag('og:title', product.metaTitle || product.name, 'property');
+  createMetaTag('og:url', window.location.href, 'property');
+  const mainImage = product?.images?.filter((image) => image.roles.includes('thumbnail'))[0];
   const metaImage = mainImage?.url || product?.images[0]?.url;
-  createMetaTag("og:image", metaImage, "property");
-  createMetaTag("og:image:secure_url", metaImage, "property");
-  createMetaTag("product:price:amount", price.value, "property");
-  createMetaTag("product:price:currency", price.currency, "property");
+  createMetaTag('og:image', metaImage, 'property');
+  createMetaTag('og:image:secure_url', metaImage, 'property');
+  createMetaTag('product:price:amount', price.value, 'property');
+  createMetaTag('product:price:currency', price.currency, 'property');
 }
 
 /**

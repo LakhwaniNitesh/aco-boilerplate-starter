@@ -1,20 +1,20 @@
-import { render as provider } from "@dropins/storefront-cart/render.js";
-import MiniCart from "@dropins/storefront-cart/containers/MiniCart.js";
+import { render as provider } from '@dropins/storefront-cart/render.js';
+import MiniCart from '@dropins/storefront-cart/containers/MiniCart.js';
 
 // Initializers
-import "../../scripts/initializers/cart.js";
+import '../../scripts/initializers/cart.js';
 
-import { readBlockConfig } from "../../scripts/aem.js";
-import { rootLink } from "../../scripts/scripts.js";
+import { readBlockConfig } from '../../scripts/aem.js';
+import { rootLink } from '../../scripts/scripts.js';
 
 export default async function decorate(block) {
   const {
-    "start-shopping-url": startShoppingURL = "",
-    "cart-url": cartURL = "",
-    "checkout-url": checkoutURL = "",
+    'start-shopping-url': startShoppingURL = '',
+    'cart-url': cartURL = '',
+    'checkout-url': checkoutURL = '',
   } = readBlockConfig(block);
 
-  block.innerHTML = "";
+  block.innerHTML = '';
 
   return provider.render(MiniCart, {
     routeEmptyCartCTA: startShoppingURL
@@ -22,7 +22,6 @@ export default async function decorate(block) {
       : undefined,
     routeCart: cartURL ? () => rootLink(cartURL) : undefined,
     routeCheckout: checkoutURL ? () => rootLink(checkoutURL) : undefined,
-    routeProduct: (product) =>
-      rootLink(`/products/${product.url.urlKey}/${product.topLevelSku}`),
+    routeProduct: (product) => rootLink(`/products/${product.url.urlKey}/${product.topLevelSku}`),
   })(block);
 }
