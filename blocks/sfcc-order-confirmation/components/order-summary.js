@@ -11,7 +11,7 @@
  */
 
 import { formatCurrency } from '../../../scripts/salesforce/utils.js';
-import { VisaIcon } from '../icons/visa.js';
+import VisaIcon from '../icons/visa.js';
 
 /**
  * Format address for display
@@ -27,7 +27,7 @@ function formatAddress(address) {
   return parts.join('<br>');
 }
 
-export function OrderSummary(order) {
+export default function OrderSummary(order) {
   const component = document.createElement('div');
   component.className = 'order-summary';
 

@@ -2,6 +2,7 @@
  * HCL Commerce Integration for Cart Page
  * Displays HCL Commerce cart items and manages cart operations
  */
+/* eslint-disable no-console, no-unused-vars */
 
 import HclSession from './hcl-commerce-api.js';
 

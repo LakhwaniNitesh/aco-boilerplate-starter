@@ -42,4 +42,4 @@ async function registerCustomer(config, token, customer, password) {
   return data;
 }
 
-export { registerCustomer };
+export default registerCustomer;

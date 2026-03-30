@@ -12,7 +12,7 @@
 
 import { formatDate } from '../../../scripts/salesforce/utils.js';
 
-export function OrderDetails(order) {
+export default function OrderDetails(order) {
   const component = document.createElement('div');
   component.className = 'order-details-header';
 

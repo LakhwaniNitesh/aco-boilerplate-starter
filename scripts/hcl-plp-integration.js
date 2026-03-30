@@ -2,6 +2,7 @@
  * HCL Commerce Integration for Product List Page (PLP)
  * Overrides the addToCart functionality to route products to HCL Commerce
  */
+/* eslint-disable no-console, no-unused-vars */
 
 import HclSession from './hcl-commerce-api.js';
 

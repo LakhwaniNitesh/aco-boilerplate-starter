@@ -11,9 +11,9 @@
  */
 
 import { getOrder } from '../../scripts/salesforce/api.js';
-import { OrderDetails } from './components/order-details.js';
-import { OrderList } from './components/order-list.js';
-import { OrderSummary } from './components/order-summary.js';
+import OrderDetails from './components/order-details.js';
+import OrderList from './components/order-list.js';
+import OrderSummary from './components/order-summary.js';
 
 function getOrderNumberFromUrl() {
   const params = new URLSearchParams(window.location.search);

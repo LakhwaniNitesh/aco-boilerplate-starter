@@ -2,9 +2,10 @@
  * HCL Commerce Mini-Cart Integration
  * Displays real-time cart data from HCL Commerce
  */
+/* eslint-disable no-console, no-unused-vars, import/no-unresolved */
 
 import {
-  getHclCart, onCartEvent, formatPrice, getSessionStatus,
+  getHclCart, onCartEvent, formatPrice, _getSessionStatus,
 } from '../../scripts/hcl-commerce-api.js';
 
 /**

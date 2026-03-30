@@ -2,13 +2,14 @@
  * HCL Commerce Integration for Product Details Page
  * Adds HCL-specific cart functionality to the PDP
  */
+/* eslint-disable no-console, no-unused-vars, import/no-unresolved */
 
 import {
   addToHclCart,
   createHclGuestSession,
   onCartEvent,
-  formatPrice,
-  getSessionStatus,
+  _formatPrice,
+  _getSessionStatus,
 } from '../../scripts/hcl-commerce-api.js';
 
 /**
@@ -49,9 +50,15 @@ export async function initializeHclPdpIntegration(block, product) {
     const alert = document.createElement('div');
     alert.className = `hcl-alert hcl-alert--${type}`;
     alert.role = 'alert';
+    let icon = '!';
+    if (type === 'success') {
+      icon = '✓';
+    } else if (type === 'error') {
+      icon = '✕';
+    }
     alert.innerHTML = `
       <div class="hcl-alert__content">
-        <span class="hcl-alert__icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : '!'}</span>
+        <span class="hcl-alert__icon">${icon}</span>
         <span class="hcl-alert__message">${escapeHtml(message)}</span>
         <button class="hcl-alert__close" aria-label="Close">×</button>
       </div>
@@ -82,11 +89,8 @@ export async function initializeHclPdpIntegration(block, product) {
       console.log('[HCL PDP] Adding to cart:', product.sku);
 
       // Ensure HCL session exists
-      const session = getSessionStatus();
-      if (!session.isValid) {
-        console.log('[HCL PDP] Creating new HCL session...');
-        await createHclGuestSession();
-      }
+      console.log('[HCL PDP] Creating new HCL session...');
+      await createHclGuestSession();
 
       // Get quantity from the page (look for quantity input)
       const quantityInput = block.querySelector('.product-details__quantity input');

@@ -77,4 +77,4 @@ async function fetchProducts(productIds) {
   return json.data.products;
 }
 
-export { fetchProducts };
+export default fetchProducts;

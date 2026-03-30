@@ -55,7 +55,7 @@ async function handleSubmit(event) {
   }
 }
 
-export async function LoginForm() {
+export default async function LoginForm() {
   const component = document.createElement('div');
   component.className = 'sfcc-login-component';
   component.innerHTML = `

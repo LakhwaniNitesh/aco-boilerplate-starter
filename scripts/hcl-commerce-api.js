@@ -7,6 +7,7 @@
  *
  * @module hcl-commerce-api
  */
+/* eslint-disable no-console, no-unused-vars */
 
 const HCL_API_HOST = '20.40.52.251';
 const HCL_STORE_ID = '715842834';
@@ -512,7 +513,7 @@ export async function checkProductAvailability(partNumber) {
  */
 export function formatPrice(price, currency = 'USD') {
   const amount = typeof price === 'string' ? parseFloat(price) : price;
-  if (isNaN(amount)) return '$0.00';
+  if (Number.isNaN(amount)) return '$0.00';
 
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

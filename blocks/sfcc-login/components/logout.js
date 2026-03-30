@@ -29,7 +29,7 @@ async function handleSignOut(event) {
   }
 }
 
-export async function Logout() {
+export default async function Logout() {
   const component = document.createElement('div');
   component.className = 'sfcc-login-component';
   component.innerHTML = `

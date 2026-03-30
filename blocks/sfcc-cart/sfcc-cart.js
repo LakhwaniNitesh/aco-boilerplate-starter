@@ -64,16 +64,23 @@ async function normalizeHclCartInfo(hclCartResponse) {
       const query = `query Products { products(skus: ["${String(sku).replace(/"/g, '\\"')}"]) { sku id url description images { label roles url } name shortDescription } }`;
       const { data } = await pdpApi.fetchGraphQl(query, { method: 'POST' });
       // GraphQL returns { data: { products: [...] } }
-      nproduct = (data && (data.products || data.data?.products)) ? (data.products && data.products[0]) || (data.data?.products && data.data.products[0]) : null;
+      const pdpProducts = data?.products || data?.data?.products;
+      if (pdpProducts && Array.isArray(pdpProducts)) {
+        [nproduct] = pdpProducts;
+      }
       // If fetchGraphQl returns wrapped differently, try direct properties
-      if (!nproduct && data && data.products && data.products.length) nproduct = data.products[0];
+      if (!nproduct && data?.products?.length) {
+        [nproduct] = data.products;
+      }
     } catch (e) {
       nproduct = null;
     }
 
-    // Prefer storefront PDP image, then HCL item image, then productContext, then passed-in product, then previous cart entry, then item.image
+    // Prefer PDP image, then HCL item, then productContext, then product,
+    // then previous cart entry, then item.image
     let imageUrl = nproduct?.images?.[0]?.url || nproduct?.image?.url || null;
-    if (!imageUrl && nproduct?.productContext && Array.isArray(nproduct.productContext) && nproduct.productContext[0]) {
+    if (!imageUrl && nproduct?.productContext
+      && Array.isArray(nproduct.productContext) && nproduct.productContext[0]) {
       imageUrl = nproduct.productContext[0]?.images?.[0]?.url || null;
     }
     if (!imageUrl) imageUrl = item?.image || null;

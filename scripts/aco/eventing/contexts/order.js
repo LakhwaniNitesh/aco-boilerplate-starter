@@ -38,4 +38,4 @@ function getOrderContext(order) {
   return orderSchema;
 }
 
-export { getOrderContext };
+export default getOrderContext;

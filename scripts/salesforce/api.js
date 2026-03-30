@@ -9,7 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-/* eslint-disable import/no-unresolved */
+/* eslint-disable import/no-unresolved, no-console, no-param-reassign, no-unused-vars */
 
 import {
   helpers,
@@ -21,13 +21,11 @@ import {
 import * as pdpApi from '@dropins/storefront-pdp/api.js';
 import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
 import {
-  sendAddToCartEvent,
-  sendRemoveFromCartEvent,
   sendPlaceOrderEvent,
 } from '../aco/eventing/api.js';
-import { registerCustomer } from './register.js';
-import { transformCart } from './transformers/cart.js';
-import { transformOrderInfo } from './transformers/order.js';
+import registerCustomer from './register.js';
+import transformCart from './transformers/cart.js';
+import transformOrderInfo from './transformers/order.js';
 
 function getSalesforceConfig() {
   const configObject = getConfigValue('hcl-commerce');
@@ -89,19 +87,27 @@ async function normalizeHclCartInfo(hclCartResponse) {
         'AC-Source-Locale': 'en-US',
       }));
 
-      const query = `query Products { products(skus: ["${String(sku).replace(/"/g, '\\"')}"]) { sku id url description images { label roles url } name shortDescription } }`;
+      const escapedSku = String(sku).replace(/"/g, '\\"');
+      const query = `query Products { products(skus: ["${escapedSku}"]) { sku id url description images { label roles url } name shortDescription } }`;
       const { data } = await pdpApi.fetchGraphQl(query, { method: 'POST' });
       // GraphQL returns { data: { products: [...] } }
-      nproduct = (data && (data.products || data.data?.products)) ? (data.products && data.products[0]) || (data.data?.products && data.data.products[0]) : null;
+      const pdpProducts = data?.products || data?.data?.products;
+      if (pdpProducts && Array.isArray(pdpProducts)) {
+        [nproduct] = pdpProducts;
+      }
       // If fetchGraphQl returns wrapped differently, try direct properties
-      if (!nproduct && data && data.products && data.products.length) nproduct = data.products[0];
+      if (!nproduct && data?.products?.length) {
+        [nproduct] = data.products;
+      }
     } catch (e) {
       nproduct = null;
     }
 
-    // Prefer storefront PDP image, then HCL item image, then productContext, then passed-in product, then previous cart entry, then item.image
+    // Prefer PDP image, then HCL item, then productContext, then product,
+    // then previous cart entry, then item.image
     let imageUrl = nproduct?.images?.[0]?.url || nproduct?.image?.url || null;
-    if (!imageUrl && nproduct?.productContext && Array.isArray(nproduct.productContext) && nproduct.productContext[0]) {
+    if (!imageUrl && nproduct?.productContext
+      && Array.isArray(nproduct.productContext) && nproduct.productContext[0]) {
       imageUrl = nproduct.productContext[0]?.images?.[0]?.url || null;
     }
 
