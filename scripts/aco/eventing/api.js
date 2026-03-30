@@ -11,7 +11,7 @@
  */
 
 import { getCartContext, getChangedProductsContext } from './contexts/cart.js';
-import getOrderContext from './contexts/order.js';
+import { getOrderContext } from './contexts/order.js';
 import { getProductContext } from './contexts/product.js';
 
 const contexts = {

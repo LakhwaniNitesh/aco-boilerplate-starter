@@ -9,16 +9,15 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-/* eslint-disable import/no-unresolved */
 
 import { events } from '@dropins/tools/event-bus.js';
 import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
 import * as pdpApi from '@dropins/storefront-pdp/api.js';
 import { sendCartViewEvent } from '../../scripts/aco/eventing/api.js';
 import { getOrCreateCart } from '../../scripts/salesforce/api.js';
-import EmptyCart from './components/empty-cart.js';
-import CartList from './components/cart-list.js';
-import CartSummary from './components/cart-summary.js';
+import { EmptyCart } from './components/empty-cart.js';
+import { CartList } from './components/cart-list.js';
+import { CartSummary } from './components/cart-summary.js';
 
 function getHclConfig() {
   const configObject = getConfigValue('hcl-commerce');
@@ -64,23 +63,16 @@ async function normalizeHclCartInfo(hclCartResponse) {
       const query = `query Products { products(skus: ["${String(sku).replace(/"/g, '\\"')}"]) { sku id url description images { label roles url } name shortDescription } }`;
       const { data } = await pdpApi.fetchGraphQl(query, { method: 'POST' });
       // GraphQL returns { data: { products: [...] } }
-      const pdpProducts = data?.products || data?.data?.products;
-      if (pdpProducts && Array.isArray(pdpProducts)) {
-        [nproduct] = pdpProducts;
-      }
+      nproduct = (data && (data.products || data.data?.products)) ? (data.products && data.products[0]) || (data.data?.products && data.data.products[0]) : null;
       // If fetchGraphQl returns wrapped differently, try direct properties
-      if (!nproduct && data?.products?.length) {
-        [nproduct] = data.products;
-      }
+      if (!nproduct && data && data.products && data.products.length) nproduct = data.products[0];
     } catch (e) {
       nproduct = null;
     }
 
-    // Prefer PDP image, then HCL item, then productContext, then product,
-    // then previous cart entry, then item.image
+    // Prefer storefront PDP image, then HCL item image, then productContext, then passed-in product, then previous cart entry, then item.image
     let imageUrl = nproduct?.images?.[0]?.url || nproduct?.image?.url || null;
-    if (!imageUrl && nproduct?.productContext
-      && Array.isArray(nproduct.productContext) && nproduct.productContext[0]) {
+    if (!imageUrl && nproduct?.productContext && Array.isArray(nproduct.productContext) && nproduct.productContext[0]) {
       imageUrl = nproduct.productContext[0]?.images?.[0]?.url || null;
     }
     if (!imageUrl) imageUrl = item?.image || null;
@@ -177,9 +169,8 @@ function setCartStore(cart) {
   // localStorage.setItem('shopper_cart', JSON.stringify(cart));
 }
 try {
-  // eslint-disable-next-line no-shadow
-  const { events: eventsApi } = await import('@dropins/tools/event-bus.js');
-  eventsApi.emit('cart/data', normalizedCart);
+  const { events } = await import('@dropins/tools/event-bus.js');
+  events.emit('cart/data', normalizedCart);
 } catch (e) {
   console.warn('Could not emit cart event', e);
 }
@@ -188,7 +179,7 @@ async function renderCart(container) {
   // added code
   let cart = null;
   const hclCartData = localStorage.getItem('shopper_cart');
-  // eslint-disable-next-line no-console
+  console.log(JSON.parse(localStorage.getItem('shopper_cart')));
   if (hclCartData) {
     try {
       cart = JSON.parse(hclCartData);

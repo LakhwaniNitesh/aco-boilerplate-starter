@@ -40,7 +40,7 @@ function getStatusSteps(currentStatus) {
   }));
 }
 
-export default function OrderItem(item, shippingAddress, orderDate, orderStatus) {
+export function OrderItem(item, shippingAddress, orderDate, orderStatus) {
   const imageUrl = item.images.find((img) => img.roles?.includes('thumbnail'))?.url || item.images[0]?.url || '';
   const priceAmount = item.price?.final?.amount?.value || 0;
   const steps = getStatusSteps(orderStatus);

@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { rootLink } from '../../../scripts/scripts.js';
+import { rootLink } from '../../../scripts/commerce.js';
 import { clearHclTokens } from '../../../scripts/salesforce/hcl-auth.js';
 
 async function handleSignOut(event) {
@@ -29,7 +29,7 @@ async function handleSignOut(event) {
   }
 }
 
-export default async function Logout() {
+export async function Logout() {
   const component = document.createElement('div');
   component.className = 'sfcc-login-component';
   component.innerHTML = `

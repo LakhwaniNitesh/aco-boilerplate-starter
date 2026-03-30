@@ -10,9 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import OrderItem from './order-item.js';
+import { OrderItem } from './order-item.js';
 
-export default function OrderList(order) {
+export function OrderList(order) {
   const component = document.createElement('div');
   component.className = 'order-list';
 

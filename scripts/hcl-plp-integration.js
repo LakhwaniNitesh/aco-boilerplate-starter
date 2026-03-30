@@ -1,176 +1,132 @@
 /**
- * HCL Commerce Integration for Product List Page (PLP)
- * Overrides the addToCart functionality to route products to HCL Commerce
+ * HCL Commerce PLP Integration
+ * Integrates HCL add-to-cart functionality with product listing pages (PLP)
  */
-/* eslint-disable no-console, no-unused-vars */
 
-import HclSession from './hcl-commerce-api.js';
+import {
+  addToHclCart,
+  createHclGuestSession,
+  emitCartEvent,
+} from './hcl-commerce-api.js';
 
 /**
- * Creates HCL-aware addToCart function for PLP
- * This function will be called by the PLP widget when "Add to Cart" is clicked
- *
- * @returns {Function} addToCart handler function
+ * Initialize HCL PLP integration
+ * Sets up add-to-cart for all products on the PLP
  */
-export function createHclAddToCartHandler() {
-  return async (sku, options = {}, quantity = 1) => {
-    try {
-      console.log(`[HCL PLP] Adding to cart: SKU=${sku}, Qty=${quantity}`, options);
-
-      // Ensure HCL session exists
-      const session = new HclSession();
-      if (!session.isValid()) {
-        console.log('[HCL PLP] Session invalid, creating new session...');
-        await session.createSession();
-      }
-
-      // Add product to HCL cart
-      const result = await session.addToCart(sku, quantity);
-
-      if (result.success) {
-        console.log('[HCL PLP] Successfully added to HCL cart', result);
-
-        // Emit custom event for other components to listen
-        window.dispatchEvent(new CustomEvent('hcl:product-added-to-cart', {
-          detail: { sku, quantity, product: result.product },
-        }));
-
-        // Show success message
-        showAddToCartNotification(true, 'Product added to cart!');
-
-        return result;
-      }
-      console.error('[HCL PLP] Failed to add to cart:', result);
-      showAddToCartNotification(false, result.error || 'Failed to add product to cart');
-      throw new Error(result.error || 'Failed to add to cart');
-    } catch (error) {
-      console.error('[HCL PLP] Error adding to cart:', error);
-      showAddToCartNotification(false, error.message || 'Error adding to cart');
-      throw error;
-    }
-  };
-}
-
-/**
- * Show success/error notification
- * Creates a temporary alert message in the PLP
- *
- * @param {boolean} isSuccess - Whether the operation was successful
- * @param {string} message - Message to display
- */
-function showAddToCartNotification(isSuccess, message) {
-  // Remove any existing notifications
-  const existing = document.querySelector('.hcl-plp-notification');
-  if (existing) {
-    existing.remove();
-  }
-
-  // Create notification element
-  const notification = document.createElement('div');
-  notification.className = `hcl-plp-notification ${isSuccess ? 'success' : 'error'}`;
-  notification.textContent = message;
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 16px 20px;
-    border-radius: 4px;
-    font-size: 14px;
-    z-index: 10000;
-    animation: slideIn 0.3s ease-out;
-    ${isSuccess ? 'background-color: #4caf50; color: white;' : 'background-color: #f44336; color: white;'}
-  `;
-
-  document.body.appendChild(notification);
-
-  // Auto-remove after 4 seconds
-  setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease-out';
-    setTimeout(() => notification.remove(), 300);
-  }, 4000);
-}
-
-/**
- * Inject CSS for notifications
- * Called during PLP initialization
- */
-export function injectHclPlpStyles() {
-  const styleId = 'hcl-plp-styles';
-
-  // Check if styles already exist
-  if (document.getElementById(styleId)) {
+export async function initializeHclPlpIntegration(plpBlock) {
+  if (!plpBlock) {
+    console.log('[HCL PLP] No PLP block provided');
     return;
   }
 
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    @keyframes slideIn {
-      from {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
+  console.log('[HCL PLP] Initializing HCL PLP integration');
 
-    @keyframes slideOut {
-      from {
-        transform: translateX(0);
-        opacity: 1;
-      }
-      to {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-    }
-
-    .hcl-plp-notification {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      font-weight: 500;
-    }
-
-    .hcl-plp-notification.success {
-      border-left: 4px solid #45a049;
-    }
-
-    .hcl-plp-notification.error {
-      border-left: 4px solid #da192c;
-    }
-  `;
-
-  document.head.appendChild(style);
+  // Wait for drop-ins to initialize
+  setTimeout(() => {
+    setupPlpAddToCartButtons(plpBlock);
+  }, 500);
 }
 
 /**
- * Initialize HCL integration for PLP
- * Called by the product-list-page block during decoration
- *
- * @param {Object} storeConfig - The store configuration object from PLP
- * @returns {Function} The addToCart handler
+ * Find and override add-to-cart buttons for all products
  */
-export async function initializeHclPlpIntegration(storeConfig) {
+function setupPlpAddToCartButtons(plpBlock) {
+  // Find all product cards/items
+  const productCards = plpBlock.querySelectorAll('[class*="product"], [class*="item"], [data-product]');
+
+  console.log(`[HCL PLP] Found ${productCards.length} product cards`);
+
+  productCards.forEach((card, index) => {
+    const addToCartBtn = card.querySelector(
+      'button[class*="add"], button[class*="cart"], [data-test="add-to-cart"]'
+    );
+
+    if (addToCartBtn) {
+      // Extract product info from card
+      const partNumber = card.getAttribute('data-sku')
+        || card.getAttribute('data-part-number')
+        || card.querySelector('[data-sku]')?.textContent;
+
+      const productName = card.getAttribute('data-product-name')
+        || card.querySelector('[class*="name"], [class*="title"]')?.textContent
+        || 'Product';
+
+      if (partNumber) {
+        // Override click handler
+        addToCartBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          await handlePlpAddToCart(
+            addToCartBtn,
+            partNumber.trim(),
+            productName.trim()
+          );
+        });
+
+        console.log(`[HCL PLP] Setup button for product: ${productName}`);
+      }
+    }
+  });
+}
+
+/**
+ * Handle add-to-cart for PLP products
+ */
+async function handlePlpAddToCart(button, partNumber, productName) {
   try {
-    console.log('[HCL PLP] Initializing HCL integration for PLP...');
+    button.disabled = true;
+    const originalText = button.textContent;
+    button.textContent = 'Adding...';
 
-    // Inject styles
-    injectHclPlpStyles();
+    // Ensure session exists
+    if (!sessionStorage.getItem('hcl_wctoken')) {
+      await createHclGuestSession();
+    }
 
-    // Create HCL-aware addToCart function
-    const hclAddToCart = createHclAddToCartHandler();
+    // Add to cart
+    const result = await addToHclCart(partNumber, 1);
 
-    // Return the handler so it can be used in the config
-    return hclAddToCart;
+    if (result.success) {
+      button.textContent = '✓ Added';
+      button.classList.add('hcl-plp__success');
+
+      emitCartEvent('itemAdded', {
+        partNumber,
+        name: productName,
+        quantity: 1,
+        source: 'plp',
+      });
+
+      // Reset after 2 seconds
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.classList.remove('hcl-plp__success');
+        button.disabled = false;
+      }, 2000);
+    } else {
+      throw new Error('Failed to add to cart');
+    }
   } catch (error) {
-    console.error('[HCL PLP] Error during initialization:', error);
-    throw error;
+    console.error('[HCL PLP] Error adding to cart:', error);
+    button.textContent = '✗ Error';
+    button.classList.add('hcl-plp__error');
+
+    emitCartEvent('error', {
+      action: 'plpAddToCart',
+      product: partNumber,
+      error: error.message,
+    });
+
+    // Reset after 3 seconds
+    setTimeout(() => {
+      button.disabled = false;
+      button.textContent = 'Add to Cart';
+      button.classList.remove('hcl-plp__error');
+    }, 3000);
   }
 }
 
 export default {
   initializeHclPlpIntegration,
-  createHclAddToCartHandler,
-  injectHclPlpStyles,
+  setupPlpAddToCartButtons,
 };

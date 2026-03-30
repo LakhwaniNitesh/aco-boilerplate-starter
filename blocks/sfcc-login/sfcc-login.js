@@ -11,8 +11,8 @@
  */
 
 import { isHclSignedIn } from '../../scripts/salesforce/hcl-auth.js';
-import LoginForm from './components/login-form.js';
-import Logout from './components/logout.js';
+import { LoginForm } from './components/login-form.js';
+import { Logout } from './components/logout.js';
 
 export default async function decorate(block) {
   const container = document.createElement('div');

@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { rootLink } from '../../../scripts/scripts.js';
+import { rootLink } from '../../../scripts/commerce.js';
 import { hclSignIn } from '../../../scripts/salesforce/hcl-auth.js';
 
 function showError(form, message) {
@@ -55,7 +55,7 @@ async function handleSubmit(event) {
   }
 }
 
-export default async function LoginForm() {
+export async function LoginForm() {
   const component = document.createElement('div');
   component.className = 'sfcc-login-component';
   component.innerHTML = `

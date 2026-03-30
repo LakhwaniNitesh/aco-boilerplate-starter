@@ -1,297 +1,382 @@
 /**
  * HCL Commerce API - Direct Call Wrapper
- * Handles CORS, self-signed certificates, WCToken management
+ * Handles guest & authenticated sessions, tokens, API calls, and event management
+ * POC Implementation: Direct browser calls to HCL (CORS handling required)
  *
- * This module provides an interface to interact with HCL Commerce APIs directly
- * from the storefront for POC purposes.
- *
- * @module hcl-commerce-api
+ * This module provides:
+ * - Session management (guest & authenticated users)
+ * - Token caching (sessionStorage for POC)
+ * - Add to cart, get cart, remove items
+ * - Custom event system for cart updates
+ * - Error handling & retry logic
  */
-/* eslint-disable no-console, no-unused-vars */
 
 const HCL_API_HOST = '20.40.52.251';
 const HCL_STORE_ID = '715842834';
 const HCL_LANG_ID = '1';
 const HCL_PROTOCOL = 'https';
 
+// Session storage keys
+const SESSION_KEYS = {
+  WC_TOKEN: 'hcl_wctoken',
+  WC_TRUSTED_TOKEN: 'hcl_wctrustedtoken',
+  ORDER_ID: 'hcl_orderid',
+  USER_TYPE: 'hcl_usertype', // 'guest' or 'authenticated'
+  USER_ID: 'hcl_userid',
+};
+
 /**
- * HCL Session Management
- * Stores authentication tokens for the current session
+ * HCL Session Manager
+ * Handles token storage and retrieval for both guest and authenticated users
  */
-class HclSession {
+export class HclSession {
+  /**
+   * Check if user is currently logged in
+   */
+  static isLoggedIn() {
+    return sessionStorage.getItem(SESSION_KEYS.USER_TYPE) === 'authenticated';
+  }
+
+  /**
+   * Check if user is guest
+   */
+  static isGuest() {
+    return sessionStorage.getItem(SESSION_KEYS.USER_TYPE) === 'guest';
+  }
+
+  /**
+   * Check if valid session exists
+   */
+  static hasValidSession() {
+    return !!(
+      sessionStorage.getItem(SESSION_KEYS.WC_TOKEN) &&
+      sessionStorage.getItem(SESSION_KEYS.WC_TRUSTED_TOKEN)
+    );
+  }
+
+  /**
+   * Get stored token
+   */
   static getToken() {
-    return sessionStorage.getItem('hcl_wctoken');
+    return sessionStorage.getItem(SESSION_KEYS.WC_TOKEN);
   }
 
-  static setToken(wcToken, wcTrustedToken) {
-    sessionStorage.setItem('hcl_wctoken', wcToken);
-    sessionStorage.setItem('hcl_wctrustedtoken', wcTrustedToken);
-  }
-
+  /**
+   * Get trusted token
+   */
   static getTrustedToken() {
-    return sessionStorage.getItem('hcl_wctrustedtoken');
+    return sessionStorage.getItem(SESSION_KEYS.WC_TRUSTED_TOKEN);
   }
 
+  /**
+   * Set tokens (from login or guest session creation)
+   */
+  static setToken(wcToken, wcTrustedToken, userType = 'guest', userId = null) {
+    sessionStorage.setItem(SESSION_KEYS.WC_TOKEN, wcToken);
+    sessionStorage.setItem(SESSION_KEYS.WC_TRUSTED_TOKEN, wcTrustedToken);
+    sessionStorage.setItem(SESSION_KEYS.USER_TYPE, userType);
+    if (userId) {
+      sessionStorage.setItem(SESSION_KEYS.USER_ID, userId);
+    }
+  }
+
+  /**
+   * Get order ID from session
+   */
   static getOrderId() {
-    return sessionStorage.getItem('hcl_order_id');
+    return sessionStorage.getItem(SESSION_KEYS.ORDER_ID);
   }
 
+  /**
+   * Set order ID
+   */
   static setOrderId(orderId) {
-    sessionStorage.setItem('hcl_order_id', orderId);
+    sessionStorage.setItem(SESSION_KEYS.ORDER_ID, orderId);
   }
 
+  /**
+   * Clear all session data
+   */
   static clear() {
-    sessionStorage.removeItem('hcl_wctoken');
-    sessionStorage.removeItem('hcl_wctrustedtoken');
-    sessionStorage.removeItem('hcl_order_id');
-  }
-
-  static isValid() {
-    return !!(this.getToken() && this.getTrustedToken());
-  }
-}
-
-/**
- * Make an authenticated request to HCL Commerce API
- * @private
- * @param {string} endpoint - API endpoint path
- * @param {object} options - Fetch options
- * @returns {Promise<Response>} Fetch response
- */
-async function makeHclRequest(endpoint, options = {}) {
-  const wcToken = HclSession.getToken();
-  const wcTrustedToken = HclSession.getTrustedToken();
-
-  const defaultHeaders = {
-    'Content-Type': 'application/json',
-  };
-
-  if (wcToken) {
-    defaultHeaders.WCToken = wcToken;
-  }
-
-  if (wcTrustedToken) {
-    defaultHeaders.WCTrustedToken = wcTrustedToken;
-  }
-
-  const url = `${HCL_PROTOCOL}://${HCL_API_HOST}${endpoint}`;
-
-  console.log(`[HCL API] ${options.method || 'GET'} ${endpoint}`);
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-      credentials: 'include',
+    Object.values(SESSION_KEYS).forEach((key) => {
+      sessionStorage.removeItem(key);
     });
+  }
 
-    return response;
-  } catch (error) {
-    console.error(`[HCL API] Request error: ${error.message}`);
-    throw error;
+  /**
+   * Get user ID if authenticated
+   */
+  static getUserId() {
+    return sessionStorage.getItem(SESSION_KEYS.USER_ID);
   }
 }
 
 /**
  * Create a guest session in HCL Commerce
- * Must be called before making any cart operations
+ * Returns WCToken and WCTrustedToken needed for subsequent API calls
  *
- * @returns {Promise<Object>} Session data with WCToken and WCTrustedToken
- * @throws {Error} If session creation fails
+ * @returns {Promise<Object>} { wcToken, wcTrustedToken }
+ * @throws {Error} If guest session creation fails
  */
 export async function createHclGuestSession() {
   try {
-    const endpoint = `/wcs/resources/store/${HCL_STORE_ID}/guestidentity?langId=${HCL_LANG_ID}`;
-    const response = await makeHclRequest(endpoint, {
+    const url = `${HCL_PROTOCOL}://${HCL_API_HOST}/wcs/resources/store/${HCL_STORE_ID}/guestidentity?langId=${HCL_LANG_ID}`;
+
+    const response = await fetch(url, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Include cookies if any
     });
 
-    if (response.status === 403 || response.status === 401) {
-      throw new Error('Failed to authenticate with HCL Commerce');
-    }
-
     if (!response.ok) {
-      const errorText = await response.text();
       throw new Error(
-        `Failed to create HCL guest session: ${response.status} ${response.statusText}`,
+        `Guest session creation failed: ${response.status} ${response.statusText}`
       );
     }
 
     const data = await response.json();
 
-    if (data.WCToken && data.WCTrustedToken) {
-      HclSession.setToken(data.WCToken, data.WCTrustedToken);
-      if (data.orderId) {
-        HclSession.setOrderId(data.orderId);
-      }
-      console.log('[HCL API] Guest session created successfully');
-      emitEvent('sessionCreated', { orderId: data.orderId });
-      return data;
+    if (!data.WCToken || !data.WCTrustedToken) {
+      throw new Error('Failed to retrieve tokens from HCL guest session response');
     }
-    throw new Error('Failed to get tokens from HCL response');
+
+    // Store tokens in session
+    HclSession.setToken(data.WCToken, data.WCTrustedToken, 'guest');
+
+    console.log('[HCL] Guest session created successfully');
+    return {
+      wcToken: data.WCToken,
+      wcTrustedToken: data.WCTrustedToken,
+    };
   } catch (error) {
-    console.error('[HCL API] Error creating guest session:', error);
-    emitEvent('sessionError', { error: error.message });
+    console.error('[HCL] Error creating guest session:', error);
     throw error;
   }
+}
+
+/**
+ * Use existing authenticated user session
+ * Call this when user is already logged in via Adobe Commerce
+ *
+ * @param {string} wcToken - Token from authentication
+ * @param {string} wcTrustedToken - Trusted token from authentication
+ * @param {string} userId - Authenticated user ID
+ * @returns {void}
+ */
+export function setAuthenticatedSession(wcToken, wcTrustedToken, userId) {
+  HclSession.setToken(wcToken, wcTrustedToken, 'authenticated', userId);
+  console.log('[HCL] Authenticated session set for user:', userId);
 }
 
 /**
  * Add product to HCL cart using part number
+ * Supports both guest and authenticated users
  *
  * @param {string} partNumber - Product part number (e.g., "CLA022_220601")
  * @param {number} quantity - Quantity to add (default: 1)
- * @returns {Promise<Object>} Response with orderId and orderItemId
+ * @param {Object} options - Additional options
+ * @param {boolean} options.validateInventory - Check inventory (default: true)
+ * @param {boolean} options.calculateOrder - Calculate order totals (default: false)
+ * @returns {Promise<Object>} { success, orderId, orderItemId, data }
  * @throws {Error} If add to cart fails
  */
-export async function addToHclCart(partNumber, quantity = 1) {
+export async function addToHclCart(partNumber, quantity = 1, options = {}) {
+  const {
+    validateInventory = true,
+    calculateOrder = false,
+  } = options;
+
   try {
     // Ensure session exists
-    if (!HclSession.isValid()) {
+    if (!HclSession.hasValidSession()) {
+      console.log('[HCL] No valid session, creating guest session...');
       await createHclGuestSession();
     }
 
-    const endpoint = `/wcs/resources/store/${HCL_STORE_ID}/cart?langId=${HCL_LANG_ID}`;
-    const body = {
+    const wcToken = HclSession.getToken();
+    const wcTrustedToken = HclSession.getTrustedToken();
+
+    const url = `${HCL_PROTOCOL}://${HCL_API_HOST}/wcs/resources/store/${HCL_STORE_ID}/cart?langId=${HCL_LANG_ID}`;
+
+    const requestBody = {
       orderId: '.',
-      x_calculateOrder: '0',
+      x_calculateOrder: calculateOrder ? '1' : '0',
       orderItem: [
         {
           quantity: String(quantity),
-          partNumber,
+          partNumber: partNumber,
         },
       ],
-      x_inventoryValidation: true,
+      x_inventoryValidation: validateInventory,
     };
 
-    const response = await makeHclRequest(endpoint, {
+    const response = await fetch(url, {
       method: 'POST',
-      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+        WCToken: wcToken,
+        WCTrustedToken: wcTrustedToken,
+      },
+      credentials: 'include',
+      body: JSON.stringify(requestBody),
     });
 
-    // Handle 403 - session might have expired
+    // Handle session expiration (403)
     if (response.status === 403) {
-      console.warn('[HCL API] Session expired, creating new session...');
+      console.warn('[HCL] Session expired (403), refreshing session...');
       HclSession.clear();
+
+      if (HclSession.isLoggedIn()) {
+        throw new Error('Authenticated session expired. Please log in again.');
+      }
+
+      // Retry with new guest session
       await createHclGuestSession();
-      // Retry the request
-      return addToHclCart(partNumber, quantity);
+      return addToHclCart(partNumber, quantity, options);
     }
 
     if (!response.ok) {
-      const errorText = await response.text();
       throw new Error(
-        `Failed to add to cart: ${response.status} ${response.statusText}`,
+        `Failed to add to cart: ${response.status} ${response.statusText}`
       );
     }
 
-    const data = await response.json();
+    const cartData = await response.json();
 
-    if (data.orderId) {
-      HclSession.setOrderId(data.orderId);
+    // Store order ID for later use
+    if (cartData.orderId) {
+      HclSession.setOrderId(cartData.orderId);
     }
 
-    const result = {
-      success: true,
-      orderId: data.orderId,
-      orderItemId: data.orderItem?.[0]?.orderItemId,
+    console.log('[HCL] Product added to cart:', {
+      orderId: cartData.orderId,
+      orderItemId: cartData.orderItem[0]?.orderItemId,
+      partNumber,
+    });
+
+    emitCartEvent('itemAdded', {
       partNumber,
       quantity,
-      raw: data,
+      orderItemId: cartData.orderItem[0]?.orderItemId,
+      orderId: cartData.orderId,
+    });
+
+    return {
+      success: true,
+      orderId: cartData.orderId,
+      orderItemId: cartData.orderItem[0]?.orderItemId,
+      data: cartData,
     };
-
-    console.log('[HCL API] Product added to cart:', result);
-    emitEvent('itemAdded', { partNumber, quantity, orderId: data.orderId });
-
-    return result;
   } catch (error) {
-    console.error('[HCL API] Error adding to cart:', error);
-    emitEvent('cartError', { error: error.message, partNumber });
+    console.error('[HCL] Error adding to cart:', error);
+    emitCartEvent('error', {
+      action: 'addToCart',
+      error: error.message,
+    });
     throw error;
   }
 }
 
 /**
- * Add product to HCL cart using product ID
+ * Add product to cart using product ID instead of part number
+ * Some products may only have product ID available
  *
- * @param {string} productId - HCL Product ID
- * @param {number} quantity - Quantity to add (default: 1)
- * @returns {Promise<Object>} Response with orderId and orderItemId
+ * @param {string} productId - HCL product ID
+ * @param {number} quantity - Quantity to add
+ * @param {Object} options - Additional options
+ * @returns {Promise<Object>} { success, orderId, orderItemId, data }
  */
-export async function addToHclCartByProductId(productId, quantity = 1) {
+export async function addToHclCartByProductId(productId, quantity = 1, options = {}) {
   try {
-    if (!HclSession.isValid()) {
+    // Ensure session exists
+    if (!HclSession.hasValidSession()) {
       await createHclGuestSession();
     }
 
-    const endpoint = `/wcs/resources/store/${HCL_STORE_ID}/cart?langId=${HCL_LANG_ID}`;
-    const body = {
+    const wcToken = HclSession.getToken();
+    const wcTrustedToken = HclSession.getTrustedToken();
+
+    const url = `${HCL_PROTOCOL}://${HCL_API_HOST}/wcs/resources/store/${HCL_STORE_ID}/cart?langId=${HCL_LANG_ID}`;
+
+    const requestBody = {
       orderId: '.',
       x_calculateOrder: '0',
       orderItem: [
         {
           quantity: String(quantity),
-          productId,
+          productId: productId,
         },
       ],
       x_inventoryValidation: true,
     };
 
-    const response = await makeHclRequest(endpoint, {
+    const response = await fetch(url, {
       method: 'POST',
-      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+        WCToken: wcToken,
+        WCTrustedToken: wcTrustedToken,
+      },
+      credentials: 'include',
+      body: JSON.stringify(requestBody),
     });
 
     if (response.status === 403) {
       HclSession.clear();
+      if (HclSession.isLoggedIn()) {
+        throw new Error('Authenticated session expired. Please log in again.');
+      }
       await createHclGuestSession();
-      return addToHclCartByProductId(productId, quantity);
+      return addToHclCartByProductId(productId, quantity, options);
     }
 
     if (!response.ok) {
       throw new Error(`Failed to add to cart: ${response.status}`);
     }
 
-    const data = await response.json();
+    const cartData = await response.json();
 
-    if (data.orderId) {
-      HclSession.setOrderId(data.orderId);
+    if (cartData.orderId) {
+      HclSession.setOrderId(cartData.orderId);
     }
 
-    const result = {
-      success: true,
-      orderId: data.orderId,
-      orderItemId: data.orderItem?.[0]?.orderItemId,
+    emitCartEvent('itemAdded', {
       productId,
       quantity,
-      raw: data,
+      orderItemId: cartData.orderItem[0]?.orderItemId,
+      orderId: cartData.orderId,
+    });
+
+    return {
+      success: true,
+      orderId: cartData.orderId,
+      orderItemId: cartData.orderItem[0]?.orderItemId,
+      data: cartData,
     };
-
-    console.log('[HCL API] Product added to cart:', result);
-    emitEvent('itemAdded', { productId, quantity, orderId: data.orderId });
-
-    return result;
   } catch (error) {
-    console.error('[HCL API] Error adding to cart by product ID:', error);
+    console.error('[HCL] Error adding to cart by product ID:', error);
+    emitCartEvent('error', {
+      action: 'addToCart',
+      error: error.message,
+    });
     throw error;
   }
 }
 
 /**
- * Get current HCL cart
+ * Get current HCL cart for authenticated user or guest
+ * Returns full cart data including items, totals, payment info, etc.
  *
- * @returns {Promise<Object>} Full cart data with items and totals
+ * @returns {Promise<Object>} Transformed cart data or empty cart
  */
 export async function getHclCart() {
   try {
     // If no session, return empty cart
-    if (!HclSession.isValid()) {
+    if (!HclSession.hasValidSession()) {
       return {
         success: true,
-        orderId: null,
         items: [],
         cartTotals: {
           itemCount: 0,
@@ -304,23 +389,31 @@ export async function getHclCart() {
       };
     }
 
-    const endpoint = `/wcs/resources/store/${HCL_STORE_ID}/cart/@self?langId=${HCL_LANG_ID}`;
-    const response = await makeHclRequest(endpoint, {
+    const wcToken = HclSession.getToken();
+    const wcTrustedToken = HclSession.getTrustedToken();
+
+    const url = `${HCL_PROTOCOL}://${HCL_API_HOST}/wcs/resources/store/${HCL_STORE_ID}/cart/@self?langId=${HCL_LANG_ID}`;
+
+    const response = await fetch(url, {
       method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        WCToken: wcToken,
+        WCTrustedToken: wcTrustedToken,
+      },
+      credentials: 'include',
     });
 
+    // Handle session expiration
     if (response.status === 403) {
-      console.warn('[HCL API] Session expired, clearing...');
+      console.warn('[HCL] Session expired when fetching cart');
       HclSession.clear();
       return {
         success: true,
-        orderId: null,
         items: [],
         cartTotals: {
           itemCount: 0,
           subtotal: '0.00',
-          shippingCharge: '0.00',
-          salesTax: '0.00',
           grandTotal: '0.00',
           currency: 'USD',
         },
@@ -333,26 +426,24 @@ export async function getHclCart() {
 
     const cartData = await response.json();
 
-    // Update order ID in session
-    if (cartData.orderId) {
-      HclSession.setOrderId(cartData.orderId);
-    }
-
-    // Transform HCL response to our standardized format
-    const transformedCart = {
+    // Transform HCL response to standardized format
+    return {
       success: true,
       orderId: cartData.orderId,
+      buyerId: cartData.buyerId,
       items: (cartData.orderItem || []).map((item) => ({
         orderItemId: item.orderItemId,
-        partNumber: item.partNumber || '',
-        productId: item.productId || '',
-        productName: item.productName || item.partNumber || `Product ${item.productId}`,
-        quantity: parseFloat(item.quantity || 0),
-        unitPrice: item.unitPrice || '0.00',
-        orderItemPrice: item.orderItemPrice || '0.00',
-        orderItemInventoryStatus: item.orderItemInventoryStatus || 'Unknown',
+        partNumber: item.partNumber,
+        productId: item.productId,
+        productName:
+          item.description || item.partNumber || `Product ${item.productId}`,
+        quantity: parseFloat(item.quantity),
+        unitPrice: item.unitPrice,
+        orderItemPrice: item.orderItemPrice,
+        orderItemInventoryStatus: item.orderItemInventoryStatus,
+        shippingCharge: item.shippingCharge || '0.00',
+        salesTax: item.salesTax || '0.00',
         currency: item.currency || 'USD',
-        shipModeCode: item.shipModeCode || '',
       })),
       cartTotals: {
         itemCount: cartData.orderItem ? cartData.orderItem.length : 0,
@@ -362,25 +453,21 @@ export async function getHclCart() {
         grandTotal: cartData.grandTotal || '0.00',
         currency: cartData.totalProductPriceCurrency || 'USD',
       },
-      raw: cartData,
+      rawData: cartData, // Include raw response for debugging
     };
-
-    console.log('[HCL API] Cart retrieved:', transformedCart);
-    return transformedCart;
   } catch (error) {
-    console.error('[HCL API] Error fetching cart:', error);
-    emitEvent('cartError', { error: error.message });
-    // Return empty cart on error to prevent UI breaking
+    console.error('[HCL] Error fetching cart:', error);
+    emitCartEvent('error', {
+      action: 'getCart',
+      error: error.message,
+    });
     return {
       success: false,
       error: error.message,
-      orderId: null,
       items: [],
       cartTotals: {
         itemCount: 0,
         subtotal: '0.00',
-        shippingCharge: '0.00',
-        salesTax: '0.00',
         grandTotal: '0.00',
         currency: 'USD',
       },
@@ -389,217 +476,192 @@ export async function getHclCart() {
 }
 
 /**
- * Update order item (used for checkout transitions)
- *
- * @param {string} orderItemId - Order item ID to update
- * @returns {Promise<Object>} Updated order item data
- */
-export async function updateHclOrderItem(orderItemId) {
-  try {
-    if (!HclSession.isValid()) {
-      throw new Error('No active HCL session');
-    }
-
-    const endpoint = `/wcs/resources/store/${HCL_STORE_ID}/cart/@self/update_order_item?langId=${HCL_LANG_ID}`;
-    const body = {
-      x_remerge: '***',
-      x_check: '*n',
-      x_allocate: '***',
-      x_backorder: '***',
-      x_calculationUsage: '-1,-2,-3,-4,-5,-6,-7',
-      x_calculateOrder: '1',
-      orderId: '.',
-      x_isCheckout: 'true',
-      orderItem: [
-        {
-          orderItemId,
-        },
-      ],
-    };
-
-    const response = await makeHclRequest(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to update order item: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('[HCL API] Order item updated:', data);
-    emitEvent('orderItemUpdated', { orderItemId });
-
-    return {
-      success: true,
-      orderId: data.orderId,
-      orderItemId: data.orderItem?.[0]?.orderItemId,
-      raw: data,
-    };
-  } catch (error) {
-    console.error('[HCL API] Error updating order item:', error);
-    throw error;
-  }
-}
-
-/**
- * Remove item from cart
+ * Remove item from HCL cart
  *
  * @param {string} orderItemId - Order item ID to remove
  * @returns {Promise<Object>} Updated cart data
  */
 export async function removeFromHclCart(orderItemId) {
   try {
-    if (!HclSession.isValid()) {
-      throw new Error('No active HCL session');
+    if (!HclSession.hasValidSession()) {
+      throw new Error('No active session');
     }
 
-    const endpoint = `/wcs/resources/store/${HCL_STORE_ID}/cart/@self/orderitem/${orderItemId}?langId=${HCL_LANG_ID}`;
-    const response = await makeHclRequest(endpoint, {
+    const wcToken = HclSession.getToken();
+    const wcTrustedToken = HclSession.getTrustedToken();
+
+    const url = `${HCL_PROTOCOL}://${HCL_API_HOST}/wcs/resources/store/${HCL_STORE_ID}/cart/@self/orderitem/${orderItemId}?langId=${HCL_LANG_ID}`;
+
+    const response = await fetch(url, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        WCToken: wcToken,
+        WCTrustedToken: wcTrustedToken,
+      },
+      credentials: 'include',
     });
+
+    if (response.status === 403) {
+      HclSession.clear();
+      throw new Error('Session expired');
+    }
 
     if (!response.ok) {
       throw new Error(`Failed to remove item: ${response.status}`);
     }
 
-    console.log('[HCL API] Item removed from cart:', orderItemId);
-    emitEvent('itemRemoved', { orderItemId });
+    console.log('[HCL] Item removed from cart:', orderItemId);
+    emitCartEvent('itemRemoved', { orderItemId });
 
-    // Return updated cart
+    // Get updated cart
     return getHclCart();
   } catch (error) {
-    console.error('[HCL API] Error removing from cart:', error);
+    console.error('[HCL] Error removing from cart:', error);
+    emitCartEvent('error', {
+      action: 'removeFromCart',
+      error: error.message,
+    });
     throw error;
   }
 }
 
 /**
- * Validate product availability
- * Checks if product exists and is in stock
+ * Update order item quantity
  *
- * @param {string} partNumber - Product part number
- * @returns {Promise<Object>} Availability data
+ * @param {string} orderItemId - Order item ID to update
+ * @param {number} quantity - New quantity
+ * @returns {Promise<Object>} Updated cart data
  */
-export async function checkProductAvailability(partNumber) {
+export async function updateHclCartItemQuantity(orderItemId, quantity) {
   try {
-    // This would typically call a product details/availability API
-    // For now, we'll rely on the inventory validation in addToHclCart
-    // But you could implement a dedicated endpoint here
+    if (!HclSession.hasValidSession()) {
+      throw new Error('No active session');
+    }
 
-    console.log('[HCL API] Checking availability for:', partNumber);
-    // Placeholder - implement based on HCL product availability API
-    return {
-      success: true,
-      available: true,
-      partNumber,
+    const wcToken = HclSession.getToken();
+    const wcTrustedToken = HclSession.getTrustedToken();
+
+    const url = `${HCL_PROTOCOL}://${HCL_API_HOST}/wcs/resources/store/${HCL_STORE_ID}/cart/@self/orderitem/${orderItemId}?langId=${HCL_LANG_ID}`;
+
+    const requestBody = {
+      quantity: String(quantity),
     };
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        WCToken: wcToken,
+        WCTrustedToken: wcTrustedToken,
+      },
+      credentials: 'include',
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.status === 403) {
+      HclSession.clear();
+      throw new Error('Session expired');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to update item quantity: ${response.status}`);
+    }
+
+    console.log('[HCL] Item quantity updated:', { orderItemId, quantity });
+    emitCartEvent('itemUpdated', { orderItemId, quantity });
+
+    return getHclCart();
   } catch (error) {
-    console.error('[HCL API] Error checking availability:', error);
-    return {
-      success: false,
-      available: false,
+    console.error('[HCL] Error updating item quantity:', error);
+    emitCartEvent('error', {
+      action: 'updateQuantity',
       error: error.message,
-    };
+    });
+    throw error;
   }
 }
 
 /**
  * Format price for display
- *
- * @param {string|number} price - Price value
- * @param {string} currency - Currency code (default: USD)
- * @returns {string} Formatted price string
+ * @param {string|number} price - Price to format
+ * @returns {string} Formatted price (e.g., "$45.00")
  */
-export function formatPrice(price, currency = 'USD') {
+export function formatPrice(price) {
   const amount = typeof price === 'string' ? parseFloat(price) : price;
-  if (Number.isNaN(amount)) return '$0.00';
-
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency,
+    currency: 'USD',
   }).format(amount);
 }
 
 /**
- * Emit custom event for cart updates
- * @private
+ * Custom event system for cart updates
+ * Allows components to listen for cart changes
  *
- * @param {string} eventName - Event name
- * @param {object} detail - Event detail data
+ * Supported events:
+ * - hcl:itemAdded
+ * - hcl:itemRemoved
+ * - hcl:itemUpdated
+ * - hcl:cartUpdated
+ * - hcl:error
  */
-function emitEvent(eventName, detail) {
-  const event = new CustomEvent(`hcl:${eventName}`, { detail });
+
+/**
+ * Emit HCL-specific event
+ * @param {string} eventName - Event name (without 'hcl:' prefix)
+ * @param {Object} detail - Event detail data
+ */
+export function emitCartEvent(eventName, detail) {
+  const event = new CustomEvent(`hcl:${eventName}`, {
+    detail,
+    bubbles: true,
+    cancelable: true,
+  });
   document.dispatchEvent(event);
   console.log(`[HCL Event] ${eventName}:`, detail);
 }
 
 /**
  * Listen for HCL cart events
- *
- * @param {string} eventName - Event name to listen for
- * @param {Function} callback - Callback function
- * @returns {Function} Unsubscribe function
+ * @param {string} eventName - Event name (without 'hcl:' prefix)
+ * @param {Function} callback - Callback function(detail)
+ * @returns {Function} Cleanup function to remove listener
  */
 export function onCartEvent(eventName, callback) {
   const listener = (event) => {
-    try {
-      callback(event.detail);
-    } catch (error) {
-      console.error(`[HCL Event] Error in listener for ${eventName}:`, error);
-    }
+    callback(event.detail);
   };
-
   document.addEventListener(`hcl:${eventName}`, listener);
 
-  // Return unsubscribe function
+  // Return cleanup function
   return () => {
     document.removeEventListener(`hcl:${eventName}`, listener);
   };
 }
 
 /**
- * Get current session status
- *
- * @returns {Object} Session status information
+ * Convenience: Listen for any HCL event (for debugging)
+ * @param {Function} callback - Callback for all events
+ * @returns {Function} Cleanup function
  */
-export function getSessionStatus() {
-  return {
-    isValid: HclSession.isValid(),
-    orderId: HclSession.getOrderId(),
-    hasToken: !!HclSession.getToken(),
-    hasTrustedToken: !!HclSession.getTrustedToken(),
-  };
-}
-
-/**
- * Clear HCL session
- */
-export function clearHclSession() {
-  HclSession.clear();
-  console.log('[HCL API] Session cleared');
-  emitEvent('sessionCleared', {});
-}
-
-/**
- * Initialize HCL Commerce integration
- * Call this once when the storefront loads
- */
-export async function initializeHclCommerce() {
-  try {
-    console.log('[HCL API] Initializing HCL Commerce integration...');
-
-    // Check if we already have a valid session
-    if (HclSession.isValid()) {
-      console.log('[HCL API] Valid session found, skipping initialization');
-      return;
+export function onAnyCartEvent(callback) {
+  const listener = (event) => {
+    if (event.type.startsWith('hcl:')) {
+      callback(event.type.replace('hcl:', ''), event.detail);
     }
+  };
+  document.addEventListener('hcl:itemAdded', listener);
+  document.addEventListener('hcl:itemRemoved', listener);
+  document.addEventListener('hcl:itemUpdated', listener);
+  document.addEventListener('hcl:cartUpdated', listener);
+  document.addEventListener('hcl:error', listener);
 
-    // Create a guest session
-    await createHclGuestSession();
-    console.log('[HCL API] HCL Commerce initialization complete');
-  } catch (error) {
-    console.warn('[HCL API] Failed to initialize HCL Commerce:', error.message);
-    // Don't throw - initialization failure shouldn't break the page
-  }
+  return () => {
+    document.removeEventListener('hcl:itemAdded', listener);
+    document.removeEventListener('hcl:itemRemoved', listener);
+    document.removeEventListener('hcl:itemUpdated', listener);
+    document.removeEventListener('hcl:cartUpdated', listener);
+    document.removeEventListener('hcl:error', listener);
+  };
 }

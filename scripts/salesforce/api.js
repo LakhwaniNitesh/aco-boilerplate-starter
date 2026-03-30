@@ -9,7 +9,6 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-/* eslint-disable import/no-unresolved, no-console, no-param-reassign, no-unused-vars */
 
 import {
   helpers,
@@ -17,26 +16,28 @@ import {
   ShopperCustomers,
   ShopperLogin,
   ShopperOrders,
-} from 'commerce-sdk-isomorphic';
-import * as pdpApi from '@dropins/storefront-pdp/api.js';
-import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
+} from "commerce-sdk-isomorphic";
+import * as pdpApi from "@dropins/storefront-pdp/api.js";
+import { getConfigValue } from "@dropins/tools/lib/aem/configs.js";
 import {
+  sendAddToCartEvent,
+  sendRemoveFromCartEvent,
   sendPlaceOrderEvent,
-} from '../aco/eventing/api.js';
-import registerCustomer from './register.js';
-import transformCart from './transformers/cart.js';
-import transformOrderInfo from './transformers/order.js';
+} from "../aco/eventing/api.js";
+import { registerCustomer } from "./register.js";
+import { transformCart } from "./transformers/cart.js";
+import { transformOrderInfo } from "./transformers/order.js";
 
 function getSalesforceConfig() {
-  const configObject = getConfigValue('hcl-commerce');
+  const configObject = getConfigValue("hcl-commerce");
   const config = {
-    proxy: configObject['api-url'],
-    redirectUri: configObject['auth-redirect-uri'],
+    proxy: configObject["api-url"],
+    redirectUri: configObject["auth-redirect-uri"],
     parameters: {
-      clientId: configObject['client-id'],
-      organizationId: configObject['organization-id'],
-      shortCode: configObject['short-code'],
-      siteId: configObject['site-id'],
+      clientId: configObject["client-id"],
+      organizationId: configObject["organization-id"],
+      shortCode: configObject["short-code"],
+      siteId: configObject["site-id"],
       locale: configObject.locale,
     },
   };
@@ -45,13 +46,13 @@ function getSalesforceConfig() {
 
 // added function for HCL config
 function getHclConfig() {
-  const configObject = getConfigValue('hcl-commerce');
+  const configObject = getConfigValue("hcl-commerce");
   return {
-    apiUrl: configObject['api-url'],
-    WCToken: sessionStorage.getItem('hcl-wctoken'),
-    WCTrustedToken: sessionStorage.getItem('hcl-wctrustedtoken'),
+    apiUrl: configObject["api-url"],
+    WCToken: sessionStorage.getItem("hcl-wctoken"),
+    WCTrustedToken: sessionStorage.getItem("hcl-wctrustedtoken"),
     userId: configObject.userId,
-    storeId: configObject['store-id'],
+    storeId: configObject["store-id"],
     locale: configObject.locale,
     Cookie: configObject.Cookie,
   };
@@ -59,11 +60,11 @@ function getHclConfig() {
 
 // Ensure a URL is https and idempotent. Returns original value when falsy.
 function ensureHttps(url) {
-  if (!url || typeof url !== 'string') return url;
+  if (!url || typeof url !== "string") return url;
   const s = url.trim();
-  if (s.startsWith('https://')) return s;
-  if (s.startsWith('//')) return `https:${s}`;
-  if (/^http:\/\//i.test(s)) return s.replace(/^http:\/\//i, 'https://');
+  if (s.startsWith("https://")) return s;
+  if (s.startsWith("//")) return `https:${s}`;
+  if (/^http:\/\//i.test(s)) return s.replace(/^http:\/\//i, "https://");
   // No scheme, assume https
   if (!/^[a-z0-9+.-]+:\/\//i.test(s)) return `https://${s}`;
   return s;
@@ -73,82 +74,89 @@ function ensureHttps(url) {
 async function normalizeHclCartInfo(hclCartResponse) {
   if (!hclCartResponse) return null;
 
-  const items = await Promise.all((hclCartResponse.orderItem || []).map(async (item, idx) => {
-    const sku = item.partNumber || item.productId || `itm-${idx}`;
-    let nproduct = null;
-    try {
-      // Use storefront GraphQL endpoint to fetch product details by SKU
-      // Set the required headers for the storefront GraphQL call
-      pdpApi.setFetchGraphQlHeaders((prev) => ({
-        ...prev,
-        'AC-Environment-Id': 'QLAfBfzromvPvMhhu1D5vN',
-        'AC-View-Id': '8b16cfa2-dd8d-4eda-9e70-64ba7dc2bdce',
-        'AC-Price-Book-ID': 'west_coast_inc',
-        'AC-Source-Locale': 'en-US',
-      }));
+  const items = await Promise.all(
+    (hclCartResponse.orderItem || []).map(async (item, idx) => {
+      const sku = item.partNumber || item.productId || `itm-${idx}`;
+      let nproduct = null;
+      try {
+        // Use storefront GraphQL endpoint to fetch product details by SKU
+        // Set the required headers for the storefront GraphQL call
+        pdpApi.setFetchGraphQlHeaders((prev) => ({
+          ...prev,
+          "AC-Environment-Id": "QLAfBfzromvPvMhhu1D5vN",
+          "AC-View-Id": "8b16cfa2-dd8d-4eda-9e70-64ba7dc2bdce",
+          "AC-Price-Book-ID": "west_coast_inc",
+          "AC-Source-Locale": "en-US",
+        }));
 
-      const escapedSku = String(sku).replace(/"/g, '\\"');
-      const query = `query Products { products(skus: ["${escapedSku}"]) { sku id url description images { label roles url } name shortDescription } }`;
-      const { data } = await pdpApi.fetchGraphQl(query, { method: 'POST' });
-      // GraphQL returns { data: { products: [...] } }
-      const pdpProducts = data?.products || data?.data?.products;
-      if (pdpProducts && Array.isArray(pdpProducts)) {
-        [nproduct] = pdpProducts;
+        const query = `query Products { products(skus: ["${String(sku).replace(/"/g, '\\"')}"]) { sku id url description images { label roles url } name shortDescription } }`;
+        const { data } = await pdpApi.fetchGraphQl(query, { method: "POST" });
+        // GraphQL returns { data: { products: [...] } }
+        nproduct =
+          data && (data.products || data.data?.products)
+            ? (data.products && data.products[0]) ||
+              (data.data?.products && data.data.products[0])
+            : null;
+        // If fetchGraphQl returns wrapped differently, try direct properties
+        if (!nproduct && data && data.products && data.products.length)
+          nproduct = data.products[0];
+      } catch (e) {
+        nproduct = null;
       }
-      // If fetchGraphQl returns wrapped differently, try direct properties
-      if (!nproduct && data?.products?.length) {
-        [nproduct] = data.products;
+
+      // Prefer storefront PDP image, then HCL item image, then productContext, then passed-in product, then previous cart entry, then item.image
+      let imageUrl = nproduct?.images?.[0]?.url || nproduct?.image?.url || null;
+      if (
+        !imageUrl &&
+        nproduct?.productContext &&
+        Array.isArray(nproduct.productContext) &&
+        nproduct.productContext[0]
+      ) {
+        imageUrl = nproduct.productContext[0]?.images?.[0]?.url || null;
       }
-    } catch (e) {
-      nproduct = null;
-    }
 
-    // Prefer PDP image, then HCL item, then productContext, then product,
-    // then previous cart entry, then item.image
-    let imageUrl = nproduct?.images?.[0]?.url || nproduct?.image?.url || null;
-    if (!imageUrl && nproduct?.productContext
-      && Array.isArray(nproduct.productContext) && nproduct.productContext[0]) {
-      imageUrl = nproduct.productContext[0]?.images?.[0]?.url || null;
-    }
+      if (!imageUrl) imageUrl = item?.image || null;
+      imageUrl = ensureHttps(imageUrl);
+      const images = imageUrl ? [{ url: imageUrl, roles: ["thumbnail"] }] : [];
 
-    if (!imageUrl) imageUrl = item?.image || null;
-    imageUrl = ensureHttps(imageUrl);
-    const images = imageUrl ? [{ url: imageUrl, roles: ['thumbnail'] }] : [];
+      // Name fallback: PDP -> passed product -> previous cart -> HCL
+      let name = nproduct?.name || null;
+      if (!name) name = item.productName || item.partNumber || "Product";
 
-    // Name fallback: PDP -> passed product -> previous cart -> HCL
-    let name = nproduct?.name || null;
-    if (!name) name = item.productName || item.partNumber || 'Product';
+      return {
+        itemId:
+          item.orderItemId ||
+          item.itemId ||
+          `${item.partNumber || "itm"}-${idx}`,
+        sku,
+        name,
+        quantity: Number(item.quantity) || 1,
+        inStock: item.orderItemInventoryStatus === "Available",
 
-    return {
-      itemId: item.orderItemId || item.itemId || `${item.partNumber || 'itm'}-${idx}`,
-      sku,
-      name,
-      quantity: Number(item.quantity) || 1,
-      inStock: item.orderItemInventoryStatus === 'Available',
-
-      // Price shape expected by CartItem component
-      price: {
-        final: {
-          amount: {
-            value: Number(item.unitPrice || item.orderItemPrice || 0),
+        // Price shape expected by CartItem component
+        price: {
+          final: {
+            amount: {
+              value: Number(item.unitPrice || item.orderItemPrice || 0),
+            },
           },
         },
-      },
 
-      // Add placeholders for brand/model, you can map real ones later
-      attributes: [
-        { name: 'brand', value: item.brand || '' },
-        { name: 'model', value: item.model || '' },
-      ],
+        // Add placeholders for brand/model, you can map real ones later
+        attributes: [
+          { name: "brand", value: item.brand || "" },
+          { name: "model", value: item.model || "" },
+        ],
 
-      // Provide images as an array of objects so UI .find works
-      images,
+        // Provide images as an array of objects so UI .find works
+        images,
 
-      // Fallbacks
-      productUrl: item.productUrl || '',
-      raw: item,
-    };
-  }));
+        // Fallbacks
+        productUrl: item.productUrl || "",
+        raw: item,
+      };
+    }),
+  );
 
   const normalizedCart = {
     id: hclCartResponse.orderId || `HCL_CART_${Date.now()}`,
@@ -159,7 +167,7 @@ async function normalizeHclCartInfo(hclCartResponse) {
       shippingTotal: Number(hclCartResponse.totalShippingCharge || 0),
       taxTotal: Number(hclCartResponse.totalSalesTax || 0),
       grandTotal: Number(hclCartResponse.grandTotal || 0),
-      currency: hclCartResponse.grandTotalCurrency || 'USD',
+      currency: hclCartResponse.grandTotalCurrency || "USD",
     },
     raw: hclCartResponse,
   };
@@ -174,8 +182,8 @@ async function addToCart(sku, quantity) {
   const config = getHclConfig();
   // HCL Commerce expects orderItem array in the body
   const body = {
-    orderId: '.',
-    x_calculateOrder: '0',
+    orderId: ".",
+    x_calculateOrder: "0",
     orderItem: [
       {
         quantity,
@@ -186,9 +194,9 @@ async function addToCart(sku, quantity) {
   };
 
   const response = await fetch(config.apiUrl, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       WCToken: config.WCToken,
       WCTrustedToken: config.WCTrustedToken,
       Cookie: config.Cookie,
@@ -197,15 +205,16 @@ async function addToCart(sku, quantity) {
   });
 
   if (!response.ok) {
-    throw new Error('Could not add item to cart.');
+    throw new Error("Could not add item to cart.");
   }
 
   // code for cart info
-  const cartInfoUrl = 'https://20.40.52.251/wcs/resources/store/715842834/cart/@self';
+  const cartInfoUrl =
+    "https://20.40.52.251/wcs/resources/store/715842834/cart/@self";
   const cartResponse = await fetch(cartInfoUrl, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       WCToken: config.WCToken,
       WCTrustedToken: config.WCTrustedToken,
       Cookie: config.Cookie,
@@ -213,7 +222,9 @@ async function addToCart(sku, quantity) {
   });
   if (!cartResponse.ok) {
     const txt = await cartResponse.text();
-    throw new Error(`Failed to fetch cart info: ${cartResponse.status} – ${txt}`);
+    throw new Error(
+      `Failed to fetch cart info: ${cartResponse.status} – ${txt}`,
+    );
   }
   const hclCart = await cartResponse.json();
   const normalizedCart = await normalizeHclCartInfo(hclCart);
@@ -222,20 +233,20 @@ async function addToCart(sku, quantity) {
     setCartId(normalizedCart.id);
     setCartStore(normalizedCart);
   } catch (e) {
-    console.warn('Could not persist normalized cart', e);
+    console.warn("Could not persist normalized cart", e);
   }
 
   try {
-    const { events } = await import('@dropins/tools/event-bus.js');
-    events.emit('cart/data', normalizedCart);
+    const { events } = await import("@dropins/tools/event-bus.js");
+    events.emit("cart/data", normalizedCart);
   } catch (e) {
-    console.warn('Could not emit cart event', e);
+    console.warn("Could not emit cart event", e);
   }
 
-  console.log(JSON.parse(localStorage.getItem('shopper_cart')));
+  console.log(JSON.parse(localStorage.getItem("shopper_cart")));
 
-  if (typeof window !== 'undefined') {
-    window.location.href = '/cart';
+  if (typeof window !== "undefined") {
+    window.location.href = "/cart";
   }
 
   return hclCart;
@@ -254,20 +265,20 @@ async function getApiConfig() {
 }
 
 function getCartId() {
-  return localStorage.getItem('shopper_cart_id') || '';
+  return localStorage.getItem("shopper_cart_id") || "";
 }
 
 function setCartId(cartId) {
-  localStorage.setItem('shopper_cart_id', cartId);
+  localStorage.setItem("shopper_cart_id", cartId);
 }
 
 function clearCartId() {
-  localStorage.removeItem('shopper_cart_id');
+  localStorage.removeItem("shopper_cart_id");
 }
 
 function getCartStore() {
   try {
-    const v = localStorage.getItem('shopper_cart');
+    const v = localStorage.getItem("shopper_cart");
     return v ? JSON.parse(v) : null;
   } catch (e) {
     return null;
@@ -277,7 +288,7 @@ function getCartStore() {
 
 function setCartStore(cart) {
   try {
-    localStorage.setItem('shopper_cart', JSON.stringify(cart));
+    localStorage.setItem("shopper_cart", JSON.stringify(cart));
   } catch (e) {
     /* ignore storage errors */
   }
@@ -285,7 +296,7 @@ function setCartStore(cart) {
 }
 
 function clearCartStore() {
-  localStorage.removeItem('shopper_cart');
+  localStorage.removeItem("shopper_cart");
 }
 
 function clearCart() {
@@ -294,20 +305,20 @@ function clearCart() {
 }
 
 async function emitCartDataEvent(cart) {
-  const { events } = await import('@dropins/tools/event-bus.js');
-  events.emit('cart/data', cart);
+  const { events } = await import("@dropins/tools/event-bus.js");
+  events.emit("cart/data", cart);
 }
 
 function getTokenInfoFromStorage() {
   try {
-    return JSON.parse(localStorage.getItem('shopper_token_info') || '{}');
+    return JSON.parse(localStorage.getItem("shopper_token_info") || "{}");
   } catch {
     return {};
   }
 }
 
 function clearTokenInfo() {
-  localStorage.removeItem('shopper_token_info');
+  localStorage.removeItem("shopper_token_info");
 }
 
 function getExpiresAt(expiresIn) {
@@ -315,8 +326,8 @@ function getExpiresAt(expiresIn) {
 }
 
 function setTokenInfo(tokenInfo) {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('shopper_token_info', JSON.stringify(tokenInfo));
+  if (typeof window !== "undefined") {
+    localStorage.setItem("shopper_token_info", JSON.stringify(tokenInfo));
   }
 }
 
@@ -344,7 +355,7 @@ async function getOrRefreshTokenInfo() {
         refreshToken: guestToken.refreshToken,
         refreshTokenExpiresAt: guestToken.refreshTokenExpiresAt,
         customerId: guestToken.customerId,
-        type: 'guest',
+        type: "guest",
       };
     } else if (isExpired && !isRefreshTokenExpired) {
       const {
@@ -355,7 +366,7 @@ async function getOrRefreshTokenInfo() {
         customer_id: customerId,
       } = await helpers.refreshAccessToken({
         slasClient: new ShopperLogin(config),
-        parameters: { refreshToken: tokenInfo.refreshToken || '' },
+        parameters: { refreshToken: tokenInfo.refreshToken || "" },
       });
       // TODO Check if refresh token worked
       tokenInfo = {
@@ -364,13 +375,13 @@ async function getOrRefreshTokenInfo() {
         refreshToken,
         refreshTokenExpiresAt: getExpiresAt(refreshTokenExpiresIn),
         customerId,
-        type: 'registered',
+        type: "registered",
       };
     }
     setTokenInfo(tokenInfo);
     return tokenInfo;
   } catch (error) {
-    const message = 'Could not get auth token from Salesforce.';
+    const message = "Could not get auth token from Salesforce.";
     throw new Error(message, { cause: error });
   }
 }
@@ -396,11 +407,11 @@ async function getGuestToken() {
       refreshToken,
       refreshTokenExpiresAt,
       customerId,
-      type: 'guest',
+      type: "guest",
     };
     return tokenInfo;
   } catch (error) {
-    const message = 'Could not obtain new guest shopper token.';
+    const message = "Could not obtain new guest shopper token.";
     throw new Error(message, { cause: error });
   }
 }
@@ -427,11 +438,11 @@ async function getShopperToken(username, password) {
       customerId,
       expiresAt,
       refreshTokenExpiresAt,
-      type: 'registered',
+      type: "registered",
     };
     return tokenInfo;
   } catch (error) {
-    const message = 'Could not obtain new shopper token.';
+    const message = "Could not obtain new shopper token.";
     throw new Error(message, { cause: error });
   }
 }
@@ -440,16 +451,21 @@ async function registerNewCustomer(firstName, lastName, email, password) {
   try {
     const config = getSalesforceConfig();
     const guestToken = await getGuestToken();
-    await registerCustomer(config, guestToken.token, { firstName, lastName, email }, password);
+    await registerCustomer(
+      config,
+      guestToken.token,
+      { firstName, lastName, email },
+      password,
+    );
     await signIn(email, password);
   } catch (error) {
-    const message = 'Could not register new shopper.';
+    const message = "Could not register new shopper.";
     throw new Error(message, { cause: error });
   }
 }
 
 function isSignedIn() {
-  return getTokenInfoFromStorage().type === 'registered';
+  return getTokenInfoFromStorage().type === "registered";
 }
 
 async function signInAsGuest() {
@@ -466,13 +482,13 @@ async function signIn(username, password) {
       refreshToken: shopperToken.refreshToken,
       refreshTokenExpiresAt: shopperToken.refreshTokenExpiresAt,
       customerId: shopperToken.customerId,
-      type: 'registered',
+      type: "registered",
     };
     setTokenInfo(tokenInfo);
     // TODO: Merge cart from guest to logged in user
     clearCart();
   } catch (error) {
-    const message = 'Could not sign in shopper.';
+    const message = "Could not sign in shopper.";
     throw new Error(message, { cause: error });
   }
 }
@@ -489,7 +505,7 @@ async function signOut() {
       },
     });
   } catch (error) {
-    const message = 'Could not revoke tokens. User logged out locally.';
+    const message = "Could not revoke tokens. User logged out locally.";
     throw new Error(message, { cause: error });
   } finally {
     clearTokenInfo();
@@ -503,12 +519,12 @@ async function createCart() {
     const newCart = await client.createBasket({
       body: {},
     });
-    setCartId(newCart.basketId || '');
+    setCartId(newCart.basketId || "");
     const cart = await transformCart(newCart);
     setCartStore(cart);
     return cart;
   } catch (error) {
-    const message = 'Could not create new cart.';
+    const message = "Could not create new cart.";
     throw new Error(message, { cause: error });
   }
 }
@@ -554,7 +570,7 @@ async function getCustomerCart() {
     setCartStore(cart);
     return cart;
   } catch (error) {
-    const message = 'Could not get customer cart.';
+    const message = "Could not get customer cart.";
     throw new Error(message, { cause: error });
   }
 }
@@ -562,12 +578,12 @@ async function getCustomerCart() {
 async function getOrCreateCart() {
   try {
     const cartId = getCartId();
-    console.log('cartId', cartId);
+    console.log("cartId", cartId);
     let cart;
     // Cart ID is set, get the cart from Salesforce
-    if (cartId && cartId !== '') {
+    if (cartId && cartId !== "") {
       cart = await getCartById(cartId);
-      console.log('cartId', cart);
+      console.log("cartId", cart);
       if (!cart) {
         clearCartId();
       }
@@ -582,13 +598,13 @@ async function getOrCreateCart() {
     }
     // If no cart is found, throw an error
     if (!cart || !cart.id) {
-      throw new Error('Failed to get or create cart');
+      throw new Error("Failed to get or create cart");
     }
     setCartId(cart.id);
     setCartStore(cart);
     return cart;
   } catch (error) {
-    const message = 'Could not get or create new cart.';
+    const message = "Could not get or create new cart.";
     throw new Error(message, { cause: error });
   }
 }
@@ -629,22 +645,23 @@ async function removeFromCart(itemId, existingCart, updateCart = true) {
   // console.log("cart in update quantity",cart);
   // const product = cart.items.find((item) => item.itemId === itemId);
   const config = getHclConfig();
-  const removeUrl = 'https://20.40.52.251/wcs/resources/store/715842834/cart/@self/delete_order_item';
+  const removeUrl =
+    "https://20.40.52.251/wcs/resources/store/715842834/cart/@self/delete_order_item";
 
   const body = {
-    calculateOrder: '1',
-    calculationUsage: '-1,-2,-5,-6,-7',
-    catalogId: '3074457345616692369',
-    check: '*n',
-    langId: '-1',
-    orderId: '.',
+    calculateOrder: "1",
+    calculationUsage: "-1,-2,-5,-6,-7",
+    catalogId: "3074457345616692369",
+    check: "*n",
+    langId: "-1",
+    orderId: ".",
     orderItemId: itemId,
-    storeId: '715842834',
+    storeId: "715842834",
   };
   const response = await fetch(removeUrl, {
-    method: 'PUT', // HCL usually expects PUT for update_order_item
+    method: "PUT", // HCL usually expects PUT for update_order_item
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       WCToken: config.WCToken,
       WCTrustedToken: config.WCTrustedToken,
       Cookie: config.Cookie,
@@ -654,16 +671,19 @@ async function removeFromCart(itemId, existingCart, updateCart = true) {
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`HCL update_cart_quantity failed: ${response.status} – ${text}`);
+    throw new Error(
+      `HCL update_cart_quantity failed: ${response.status} – ${text}`,
+    );
   }
 
   // const hclCart = await response.json();
 
-  const cartInfoUrl = 'https://20.40.52.251/wcs/resources/store/715842834/cart/@self';
+  const cartInfoUrl =
+    "https://20.40.52.251/wcs/resources/store/715842834/cart/@self";
   const cartResponse = await fetch(cartInfoUrl, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       WCToken: config.WCToken,
       WCTrustedToken: config.WCTrustedToken,
       Cookie: config.Cookie,
@@ -671,7 +691,9 @@ async function removeFromCart(itemId, existingCart, updateCart = true) {
   });
   if (!cartResponse.ok) {
     const txt = await cartResponse.text();
-    throw new Error(`Failed to fetch cart info: ${cartResponse.status} – ${txt}`);
+    throw new Error(
+      `Failed to fetch cart info: ${cartResponse.status} – ${txt}`,
+    );
   }
   const hclCart = await cartResponse.json();
   const normalizedCart = await normalizeHclCartInfo(hclCart);
@@ -680,14 +702,14 @@ async function removeFromCart(itemId, existingCart, updateCart = true) {
     setCartId(normalizedCart.id);
     setCartStore(normalizedCart);
   } catch (e) {
-    console.warn('Could not persist normalized cart', e);
+    console.warn("Could not persist normalized cart", e);
   }
 
   try {
-    const { events } = await import('@dropins/tools/event-bus.js');
-    events.emit('cart/data', normalizedCart);
+    const { events } = await import("@dropins/tools/event-bus.js");
+    events.emit("cart/data", normalizedCart);
   } catch (e) {
-    console.warn('Could not emit cart event', e);
+    console.warn("Could not emit cart event", e);
   }
 
   // console.log(JSON.parse(localStorage.getItem('shopper_cart')));
@@ -725,17 +747,18 @@ async function updateCartQuantity(itemId, quantity, existingCart) {
   // const product = cart.items.find((item) => item.itemId === itemId);
   // const productName = product ? product.name : 'Product';
   const config = getHclConfig();
-  const updateUrl = 'https://20.40.52.251/wcs/resources/store/715842834/cart/@self/update_order_item';
+  const updateUrl =
+    "https://20.40.52.251/wcs/resources/store/715842834/cart/@self/update_order_item";
 
   const body = {
-    x_remerge: '***',
-    x_check: '*n',
-    x_allocate: '***',
-    x_backorder: '***',
-    x_calculationUsage: '-1,-2,-3,-4,-5,-6,-7',
-    x_calculateOrder: '1',
-    orderId: '.',
-    x_isCheckout: 'true',
+    x_remerge: "***",
+    x_check: "*n",
+    x_allocate: "***",
+    x_backorder: "***",
+    x_calculationUsage: "-1,-2,-3,-4,-5,-6,-7",
+    x_calculateOrder: "1",
+    orderId: ".",
+    x_isCheckout: "true",
     orderItem: [
       {
         orderItemId: String(itemId),
@@ -745,9 +768,9 @@ async function updateCartQuantity(itemId, quantity, existingCart) {
   };
 
   const response = await fetch(updateUrl, {
-    method: 'PUT', // HCL usually expects PUT for update_order_item
+    method: "PUT", // HCL usually expects PUT for update_order_item
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       WCToken: config.WCToken,
       WCTrustedToken: config.WCTrustedToken,
       Cookie: config.Cookie,
@@ -757,16 +780,19 @@ async function updateCartQuantity(itemId, quantity, existingCart) {
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`HCL update_cart_quantity failed: ${response.status} – ${text}`);
+    throw new Error(
+      `HCL update_cart_quantity failed: ${response.status} – ${text}`,
+    );
   }
 
   // const hclCart = await response.json();
 
-  const cartInfoUrl = 'https://20.40.52.251/wcs/resources/store/715842834/cart/@self';
+  const cartInfoUrl =
+    "https://20.40.52.251/wcs/resources/store/715842834/cart/@self";
   const cartResponse = await fetch(cartInfoUrl, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       WCToken: config.WCToken,
       WCTrustedToken: config.WCTrustedToken,
       Cookie: config.Cookie,
@@ -774,7 +800,9 @@ async function updateCartQuantity(itemId, quantity, existingCart) {
   });
   if (!cartResponse.ok) {
     const txt = await cartResponse.text();
-    throw new Error(`Failed to fetch cart info: ${cartResponse.status} – ${txt}`);
+    throw new Error(
+      `Failed to fetch cart info: ${cartResponse.status} – ${txt}`,
+    );
   }
   const hclCart = await cartResponse.json();
   const normalizedCart = await normalizeHclCartInfo(hclCart);
@@ -783,14 +811,14 @@ async function updateCartQuantity(itemId, quantity, existingCart) {
     setCartId(normalizedCart.id);
     setCartStore(normalizedCart);
   } catch (e) {
-    console.warn('Could not persist normalized cart', e);
+    console.warn("Could not persist normalized cart", e);
   }
 
   try {
-    const { events } = await import('@dropins/tools/event-bus.js');
-    events.emit('cart/data', normalizedCart);
+    const { events } = await import("@dropins/tools/event-bus.js");
+    events.emit("cart/data", normalizedCart);
   } catch (e) {
-    console.warn('Could not emit cart event', e);
+    console.warn("Could not emit cart event", e);
   }
 
   // console.log(JSON.parse(localStorage.getItem('shopper_cart')));
@@ -844,7 +872,7 @@ async function addShippingAddress(address, existingCart, updateCart = true) {
     const salesforceCart = await client.updateShippingAddressForShipment({
       parameters: {
         basketId: cart.id,
-        shipmentId: 'me', // Current user's shipment
+        shipmentId: "me", // Current user's shipment
       },
       body: {
         firstName: address.firstName,
@@ -865,7 +893,7 @@ async function addShippingAddress(address, existingCart, updateCart = true) {
     }
     return cart;
   } catch (error) {
-    const message = 'Could not add shipping address to Salesforce order.';
+    const message = "Could not add shipping address to Salesforce order.";
     throw new Error(message, { cause: error });
   }
 }
@@ -897,12 +925,16 @@ async function addBillingAddress(address, existingCart, updateCart = true) {
     }
     return cart;
   } catch (error) {
-    const message = 'Could not add billing address to order.';
+    const message = "Could not add billing address to order.";
     throw new Error(message, { cause: error });
   }
 }
 
-async function addPaymentMethod(paymentMethod, existingCart, updateCart = true) {
+async function addPaymentMethod(
+  paymentMethod,
+  existingCart,
+  updateCart = true,
+) {
   try {
     const cart = existingCart ?? (await getOrCreateCart());
     const client = new ShopperBasketsV2(await getApiConfig());
@@ -922,7 +954,7 @@ async function addPaymentMethod(paymentMethod, existingCart, updateCart = true) 
     }
     return cart;
   } catch (error) {
-    const message = 'Could not add payment method to order.';
+    const message = "Could not add payment method to order.";
     throw new Error(message, { cause: error });
   }
 }
@@ -931,22 +963,25 @@ async function getShippingMethods(existingCart) {
   try {
     const cart = existingCart ?? (await getOrCreateCart());
     const client = new ShopperBasketsV2(await getApiConfig());
-    const salesforceShippingMethods = await client.getShippingMethodsForShipment({
-      parameters: {
-        basketId: cart.id,
-        shipmentId: 'me', // Current user's shipment
-      },
-    });
-    const shippingMethods = salesforceShippingMethods?.applicableShippingMethods?.map((method) => ({
-      id: method.id,
-      name: method.name,
-      description: method.description,
-      price: method.price,
-      isDefault: salesforceShippingMethods.defaultShippingMethodId === method.id,
-    }));
+    const salesforceShippingMethods =
+      await client.getShippingMethodsForShipment({
+        parameters: {
+          basketId: cart.id,
+          shipmentId: "me", // Current user's shipment
+        },
+      });
+    const shippingMethods =
+      salesforceShippingMethods?.applicableShippingMethods?.map((method) => ({
+        id: method.id,
+        name: method.name,
+        description: method.description,
+        price: method.price,
+        isDefault:
+          salesforceShippingMethods.defaultShippingMethodId === method.id,
+      }));
     return shippingMethods ?? [];
   } catch (error) {
-    const message = 'Could not get shipping methods for order.';
+    const message = "Could not get shipping methods for order.";
     throw new Error(message, { cause: error });
   }
 }
@@ -958,7 +993,7 @@ async function updateShippingMethod(shippingMethodId, existingCart) {
     const salesforceCart = await client.updateShippingMethodForShipment({
       parameters: {
         basketId: cart.id,
-        shipmentId: 'me', // Current user's shipment
+        shipmentId: "me", // Current user's shipment
       },
       body: {
         id: shippingMethodId,
@@ -968,7 +1003,7 @@ async function updateShippingMethod(shippingMethodId, existingCart) {
     setCartStore(updatedCart);
     return updatedCart;
   } catch (error) {
-    const message = 'Could not update shipping method for order.';
+    const message = "Could not update shipping method for order.";
     throw new Error(message, { cause: error });
   }
 }
@@ -983,14 +1018,14 @@ async function placeOrder(existingCart) {
       },
     });
     if (!salesforceOrder.orderNo) {
-      throw new Error('Order creation failed: No order number returned');
+      throw new Error("Order creation failed: No order number returned");
     }
     clearCart();
     const order = await transformOrderInfo(salesforceOrder);
     await sendPlaceOrderEvent(cart, order);
     return order;
   } catch (error) {
-    const message = 'Could not place order.';
+    const message = "Could not place order.";
     throw new Error(message, { cause: error });
   }
 }
@@ -1004,11 +1039,11 @@ async function getOrder(orderNumber) {
       },
     });
     if (!salesforceOrder.orderNo) {
-      throw new Error('Order not found');
+      throw new Error("Order not found");
     }
     return await transformOrderInfo(salesforceOrder);
   } catch (error) {
-    const message = 'Could not get order information.';
+    const message = "Could not get order information.";
     throw new Error(message, { cause: error });
   }
 }

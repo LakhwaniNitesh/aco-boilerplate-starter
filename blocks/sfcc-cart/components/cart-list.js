@@ -10,9 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import CartItem from './cart-item.js';
+import { CartItem } from './cart-item.js';
 
-export default function CartList(cartData) {
+export function CartList(cartData) {
   const component = document.createElement('div');
   component.className = 'cart-items';
 

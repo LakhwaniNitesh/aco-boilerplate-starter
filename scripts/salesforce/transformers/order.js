@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import fetchProducts from '../../aco/api/products.js';
+import { fetchProducts } from '../../aco/api/products.js';
 
 function getOrderStatus(salesforceOrderStatus, salesforceShippingStatus) {
   switch (salesforceShippingStatus) {
@@ -144,4 +144,4 @@ async function transformOrderInfo(salesforceOrder) {
   };
 }
 
-export default transformOrderInfo;
+export { transformOrderInfo };

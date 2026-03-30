@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { rootLink } from '../../scripts/scripts.js';
+import { rootLink } from '../../scripts/commerce.js';
 import { registerNewCustomer } from '../../scripts/salesforce/api.js';
 
 const ALLOWED_SPECIAL_CHARACTERS = '!@#$%^&*(),.?":{}|<>';

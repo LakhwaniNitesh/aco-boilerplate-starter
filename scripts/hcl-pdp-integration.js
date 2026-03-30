@@ -1,271 +1,260 @@
 /**
- * HCL Commerce Integration for Product Details Page
- * Adds HCL-specific cart functionality to the PDP
+ * HCL Commerce PDP Integration
+ * Integrates HCL add-to-cart functionality with the Adobe Commerce product details page (PDP)
+ *
+ * This module:
+ * - Intercepts the PDP add-to-cart button clicks
+ * - Calls HCL Commerce APIs instead of Adobe Commerce
+ * - Displays appropriate loading/success/error states
+ * - Emits events for mini-cart and other components to listen to
  */
-/* eslint-disable no-console, no-unused-vars, import/no-unresolved */
 
-import {
-  addToHclCart,
-  createHclGuestSession,
-  onCartEvent,
-  _formatPrice,
-  _getSessionStatus,
-} from '../../scripts/hcl-commerce-api.js';
+import { addToHclCart, createHclGuestSession, emitCartEvent, onCartEvent } from './hcl-commerce-api.js';
 
 /**
- * Initialize HCL Commerce integration on the PDP
- * Attach event listeners and set up cart functionality
- *
- * @param {HTMLElement} block - The block element
- * @param {Object} product - Product data from storefront
- * @returns {Promise<void>}
+ * Initialize HCL PDP integration
+ * Call this function after the PDP block has been decorated
+ * @param {Element} pdpBlock - The PDP block element
  */
-export async function initializeHclPdpIntegration(block, product) {
-  if (!product || !product.sku) {
-    console.warn('[HCL PDP] Product data missing, skipping HCL integration');
+export async function initializeHclPdpIntegration(pdpBlock) {
+  if (!pdpBlock) {
+    console.warn('[HCL PDP] No PDP block provided');
     return;
   }
 
-  console.log('[HCL PDP] Initializing integration for:', product.sku);
+  // Wait a small amount of time for drop-ins to be rendered
+  setTimeout(() => {
+    setupAddToCartOverride(pdpBlock);
+  }, 100);
+}
 
-  // Find the add to cart button
-  const addToCartButton = block.querySelector('.product-details__buttons__add-to-cart button');
+/**
+ * Set up the add-to-cart button override
+ * Finds the add-to-cart button and replaces its click handler
+ */
+function setupAddToCartOverride(pdpBlock) {
+  // Try to find add-to-cart button (varies by drop-in version)
+  const addToCartButton = pdpBlock.querySelector(
+    'button[class*="add-to-cart"], button[class*="AddToCart"], [data-test="add-to-cart"]'
+  );
+
   if (!addToCartButton) {
-    console.warn('[HCL PDP] Add to cart button not found');
+    console.warn('[HCL PDP] Could not find add-to-cart button in PDP');
     return;
   }
 
-  // Create alert container for HCL-specific messages
-  const alertContainer = document.createElement('div');
-  alertContainer.className = 'hcl-pdp-alert';
-  block.insertBefore(alertContainer, block.firstChild);
+  console.log('[HCL PDP] Found add-to-cart button, setting up override');
 
-  /**
-   * Show alert message to user
-   * @param {string} type - 'success' | 'error' | 'warning'
-   * @param {string} message - Alert message
-   * @param {number} duration - Duration to show (ms), 0 = persistent
-   */
-  const showAlert = (type, message, duration = 5000) => {
-    const alert = document.createElement('div');
-    alert.className = `hcl-alert hcl-alert--${type}`;
-    alert.role = 'alert';
-    let icon = '!';
-    if (type === 'success') {
-      icon = '✓';
-    } else if (type === 'error') {
-      icon = '✕';
+  // Store original click handler
+  const originalHandler = addToCartButton.onclick;
+
+  // Replace with HCL handler
+  addToCartButton.onclick = null;
+  addToCartButton.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleHclAddToCart(pdpBlock, addToCartButton);
+  });
+}
+
+/**
+ * Handle add-to-cart click for HCL
+ * Gets product details from the page and adds to HCL cart
+ */
+async function handleHclAddToCart(pdpBlock, button) {
+  try {
+    // Disable button and show loading state
+    button.disabled = true;
+    const originalText = button.textContent;
+    button.textContent = 'Adding to Cart...';
+
+    // Extract product information from PDP
+    const productInfo = extractProductInfo(pdpBlock);
+
+    if (!productInfo || !productInfo.partNumber) {
+      throw new Error('Could not extract product information. Please try again.');
     }
-    alert.innerHTML = `
-      <div class="hcl-alert__content">
-        <span class="hcl-alert__icon">${icon}</span>
-        <span class="hcl-alert__message">${escapeHtml(message)}</span>
-        <button class="hcl-alert__close" aria-label="Close">×</button>
-      </div>
-    `;
 
-    alert.querySelector('.hcl-alert__close').addEventListener('click', () => {
-      alert.remove();
+    // Get quantity from input
+    const quantity = getSelectedQuantity(pdpBlock) || 1;
+
+    console.log('[HCL PDP] Adding to cart:', {
+      partNumber: productInfo.partNumber,
+      name: productInfo.name,
+      quantity,
     });
 
-    alertContainer.appendChild(alert);
-
-    if (duration > 0) {
-      setTimeout(() => alert.remove(), duration);
-    }
-  };
-
-  /**
-   * Handle add to cart for HCL
-   * This function wraps the original add to cart and adds HCL logic
-   */
-  const handleHclAddToCart = async () => {
-    try {
-      // Show loading state
-      addToCartButton.disabled = true;
-      const originalText = addToCartButton.textContent;
-      addToCartButton.textContent = 'Adding to HCL Cart...';
-
-      console.log('[HCL PDP] Adding to cart:', product.sku);
-
-      // Ensure HCL session exists
-      console.log('[HCL PDP] Creating new HCL session...');
+    // Ensure HCL session exists
+    if (!sessionStorage.getItem('hcl_wctoken')) {
       await createHclGuestSession();
-
-      // Get quantity from the page (look for quantity input)
-      const quantityInput = block.querySelector('.product-details__quantity input');
-      const quantity = quantityInput ? parseInt(quantityInput.value, 10) : 1;
-
-      // Add to HCL cart using SKU as part number
-      const response = await addToHclCart(product.sku, quantity);
-
-      if (response.success) {
-        showAlert(
-          'success',
-          `${product.name} added to cart! (Order: ${response.orderId})`,
-          5000,
-        );
-
-        // Emit custom event for other components to listen
-        const event = new CustomEvent('hcl:product-added-to-cart', {
-          detail: {
-            sku: product.sku,
-            name: product.name,
-            quantity,
-            orderId: response.orderId,
-            orderItemId: response.orderItemId,
-          },
-        });
-        document.dispatchEvent(event);
-
-        console.log('[HCL PDP] Product added successfully:', response);
-      } else {
-        showAlert('error', 'Failed to add product to cart. Please try again.');
-      }
-    } catch (error) {
-      console.error('[HCL PDP] Error adding to cart:', error);
-      showAlert('error', `Error: ${error.message || 'Failed to add to cart'}`);
-    } finally {
-      // Restore button state
-      addToCartButton.disabled = false;
-      addToCartButton.textContent = 'Add to Cart';
-    }
-  };
-
-  // Store the original click handler
-  const originalOnClick = addToCartButton.onclick;
-
-  // Replace or wrap the click handler
-  addToCartButton.addEventListener('click', async (e) => {
-    // Prevent default behavior from the original button
-    if (originalOnClick) {
-      e.preventDefault();
     }
 
-    // Call HCL integration
-    await handleHclAddToCart();
+    // Add to HCL cart
+    const result = await addToHclCart(productInfo.partNumber, quantity);
 
-    // Then call the original handler if it exists
-    if (originalOnClick && typeof originalOnClick === 'function') {
-      try {
-        await originalOnClick.call(addToCartButton, e);
-      } catch (err) {
-        console.warn('[HCL PDP] Original onclick handler error:', err);
-      }
+    if (result.success) {
+      showSuccess(button, originalText, productInfo.name);
+      emitCartEvent('hcl:pdpAddedToCart', {
+        partNumber: productInfo.partNumber,
+        name: productInfo.name,
+        quantity,
+        orderId: result.orderId,
+      });
+    } else {
+      throw new Error('Failed to add product to cart');
     }
-  });
-
-  // Listen for HCL cart events and update UI
-  const unsubscribe = onCartEvent('itemAdded', (detail) => {
-    console.log('[HCL PDP] Cart event received:', detail);
-    // UI will show the alert from handleHclAddToCart
-  });
-
-  // Cleanup listener when block is removed
-  const observer = new MutationObserver(() => {
-    if (!document.contains(block)) {
-      unsubscribe();
-      observer.disconnect();
-    }
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
-
-  console.log('[HCL PDP] Integration initialized successfully');
+  } catch (error) {
+    console.error('[HCL PDP] Error adding to cart:', error);
+    showError(button, error.message);
+    emitCartEvent('error', {
+      action: 'pdpAddToCart',
+      error: error.message,
+    });
+  } finally {
+    // Re-enable button after 2 seconds
+    setTimeout(() => {
+      button.disabled = false;
+    }, 2000);
+  }
 }
 
 /**
- * Utility: Escape HTML to prevent XSS
+ * Extract product information from PDP block
+ * Looks for data attributes, text content, and common PDP element patterns
  */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+function extractProductInfo(pdpBlock) {
+  try {
+    // Try to get from data attributes
+    const partNumber =
+      pdpBlock.getAttribute('data-part-number') ||
+      pdpBlock.getAttribute('data-sku') ||
+      pdpBlock.querySelector('[data-part-number]')?.textContent ||
+      pdpBlock.querySelector('[data-sku]')?.textContent;
+
+    const name =
+      pdpBlock.getAttribute('data-product-name') ||
+      pdpBlock.querySelector('h1')?.textContent ||
+      pdpBlock.querySelector('[data-product-name]')?.textContent;
+
+    const productId =
+      pdpBlock.getAttribute('data-product-id') ||
+      pdpBlock.querySelector('[data-product-id]')?.textContent;
+
+    if (!partNumber) {
+      console.warn('[HCL PDP] Part number not found in PDP');
+      return null;
+    }
+
+    return {
+      partNumber: partNumber.trim(),
+      name: name ? name.trim() : 'Product',
+      productId: productId ? productId.trim() : null,
+    };
+  } catch (error) {
+    console.error('[HCL PDP] Error extracting product info:', error);
+    return null;
+  }
 }
 
 /**
- * Add HCL Commerce styling to the page
+ * Get selected quantity from quantity input
  */
-export function injectHclStyles() {
-  const styles = `
-    /* HCL Commerce Alert Styles */
-    .hcl-pdp-alert {
-      margin-bottom: 1.5rem;
+function getSelectedQuantity(pdpBlock) {
+  try {
+    const quantityInput =
+      pdpBlock.querySelector('input[name="quantity"]') ||
+      pdpBlock.querySelector('input[type="number"]') ||
+      pdpBlock.querySelector('[class*="quantity"] input');
+
+    if (quantityInput) {
+      const qty = parseInt(quantityInput.value, 10);
+      return qty > 0 ? qty : 1;
     }
 
-    .hcl-alert {
-      padding: 1rem;
-      margin-bottom: 0.75rem;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      animation: slideIn 0.3s ease-out;
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .hcl-alert--success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-
-    .hcl-alert--error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-
-    .hcl-alert--warning {
-      background-color: #fff3cd;
-      color: #856404;
-      border: 1px solid #ffeeba;
-    }
-
-    .hcl-alert__content {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      gap: 0.75rem;
-    }
-
-    .hcl-alert__icon {
-      font-weight: bold;
-      font-size: 1.2rem;
-      flex-shrink: 0;
-    }
-
-    .hcl-alert__message {
-      flex: 1;
-    }
-
-    .hcl-alert__close {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: inherit;
-      opacity: 0.7;
-      padding: 0;
-      margin-left: auto;
-      flex-shrink: 0;
-    }
-
-    .hcl-alert__close:hover {
-      opacity: 1;
-    }
-  `;
-
-  const styleElement = document.createElement('style');
-  styleElement.textContent = styles;
-  document.head.appendChild(styleElement);
+    return 1;
+  } catch (error) {
+    console.error('[HCL PDP] Error getting quantity:', error);
+    return 1;
+  }
 }
+
+/**
+ * Show success state
+ */
+function showSuccess(button, originalText, productName) {
+  button.textContent = '✓ Added to Cart';
+  button.classList.add('hcl-pdp__success');
+
+  // Show toast/notification if available
+  if (typeof window !== 'undefined' && window.showNotification) {
+    window.showNotification(`${productName} added to cart!`, 'success');
+  }
+
+  // Reset button after 3 seconds
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.classList.remove('hcl-pdp__success');
+  }, 3000);
+}
+
+/**
+ * Show error state
+ */
+function showError(button, errorMessage) {
+  button.textContent = '✗ Failed';
+  button.classList.add('hcl-pdp__error');
+  button.title = errorMessage;
+
+  console.error('[HCL PDP] Error:', errorMessage);
+}
+
+/**
+ * Alternative: Override drop-in AddToCart container behavior
+ * For more advanced integration with drop-ins architecture
+ */
+export function overrideDropinAddToCart(pdpBlock) {
+  // This is an alternative approach using drop-in events
+  // Subscribe to drop-in add-to-cart events
+  if (window.__ADOBE_COMMERCE__ && window.__ADOBE_COMMERCE__.addToCartEvent) {
+    window.__ADOBE_COMMERCE__.addToCartEvent.subscribe((cartData) => {
+      handleDropinAddToCart(cartData, pdpBlock);
+    });
+  }
+}
+
+/**
+ * Handle add-to-cart from drop-in event
+ */
+async function handleDropinAddToCart(cartData, pdpBlock) {
+  try {
+    const partNumber = cartData.sku || cartData.partNumber;
+    const quantity = cartData.quantity || 1;
+
+    if (!partNumber) {
+      throw new Error('No SKU/part number in cart data');
+    }
+
+    // Add to HCL instead of default behavior
+    const result = await addToHclCart(partNumber, quantity);
+    console.log('[HCL PDP] Added via drop-in event:', result);
+
+    emitCartEvent('itemAdded', {
+      partNumber,
+      quantity,
+      source: 'dropin',
+    });
+  } catch (error) {
+    console.error('[HCL PDP] Error in dropin handler:', error);
+    emitCartEvent('error', {
+      action: 'dropinAddToCart',
+      error: error.message,
+    });
+  }
+}
+
+export default {
+  initializeHclPdpIntegration,
+  setupAddToCartOverride,
+  handleHclAddToCart,
+  overrideDropinAddToCart,
+};

@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable-next-line import/no-unresolved */
 import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
 import { events } from '@dropins/tools/event-bus.js';
 

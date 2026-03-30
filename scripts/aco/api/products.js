@@ -9,7 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-/* eslint-disable-next-line import/no-unresolved */
+
 import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
 
 import {
@@ -77,4 +77,4 @@ async function fetchProducts(productIds) {
   return json.data.products;
 }
 
-export default fetchProducts;
+export { fetchProducts };

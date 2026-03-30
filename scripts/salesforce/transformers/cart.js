@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import fetchProducts from '../../aco/api/products.js';
+import { fetchProducts } from '../../aco/api/products.js';
 
 async function transformCart(salesforceCart) {
   const salesforceCartId = salesforceCart.basketId || salesforceCart.id;
@@ -91,4 +91,4 @@ function transformCartItem(product, salesforceCartItem) {
   };
 }
 
-export default transformCart;
+export { transformCart };

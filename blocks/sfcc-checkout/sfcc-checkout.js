@@ -16,7 +16,7 @@ import {
   getShippingMethods,
   updateShippingMethod,
 } from '../../scripts/salesforce/api.js';
-import CheckoutForm from './components/checkout-form.js';
+import { CheckoutForm } from './components/checkout-form.js';
 
 export default async function decorate(block) {
   let cart = await getOrCreateCart();

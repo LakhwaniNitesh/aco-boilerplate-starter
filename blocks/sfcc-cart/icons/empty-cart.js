@@ -1,4 +1,4 @@
-export default function EmptyCartIcon() {
+export function EmptyCartIcon() {
   return `
     <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="dropin-icon dropin-icon--shape-stroke-2 cart-empty-cart__icon dropin-illustrated-message__icon">
       <g clip-path="url(#clip0_102_196)">

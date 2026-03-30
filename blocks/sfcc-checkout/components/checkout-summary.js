@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import CheckoutSummaryItem from './checkout-summary-item.js';
+import { CheckoutSummaryItem } from './checkout-summary-item.js';
 import { formatCurrency } from '../../../scripts/salesforce/utils.js';
 
 export function renderSummaryDetails(cartData) {

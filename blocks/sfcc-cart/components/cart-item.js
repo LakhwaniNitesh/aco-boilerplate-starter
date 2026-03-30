@@ -12,22 +12,21 @@
 
 import { removeFromCart, updateCartQuantity } from '../../../scripts/salesforce/api.js';
 import { debounce, formatCurrency, getAttribute } from '../../../scripts/salesforce/utils.js';
-import TrashIcon from '../icons/trash.js';
-import CheckmarkIcon from '../icons/checkmark.js';
+import { TrashIcon } from '../icons/trash.js';
+import { CheckmarkIcon } from '../icons/checkmark.js';
 
 const debouncedUpdateQuantity = debounce(async (itemId, quantity) => {
   await updateCartQuantity(itemId, quantity);
 }, 500);
 
-export default function CartItem(item) {
+export function CartItem(item) {
   // Defensive: ensure `images` is treated as an array. Some upstream flows may set
   // `item.images` to a string or object; coerce into an array so `.find` works.
-  let imgs = [];
-  if (Array.isArray(item.images)) {
-    imgs = item.images;
-  } else if (item.images) {
-    imgs = typeof item.images === 'string' ? [{ url: item.images }] : [item.images];
-  }
+  const imgs = Array.isArray(item.images)
+    ? item.images
+    : item.images
+      ? (typeof item.images === 'string' ? [{ url: item.images }] : [item.images])
+      : [];
 
   // Helpful debug when images are missing
   // if (process && process.env && process.env.NODE_ENV !== 'production') {
@@ -43,6 +42,7 @@ export default function CartItem(item) {
   component.className = 'cart-item';
   component.dataset.itemId = item.itemId;
 
+  console.log('hi', item);
   component.innerHTML = `
     <div class="cart-item-image">
       <img src="${imageUrl}" alt="${item.name}" />

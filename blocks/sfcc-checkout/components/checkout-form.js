@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { rootLink } from '../../../scripts/scripts.js';
+import { rootLink } from '../../../scripts/commerce.js';
 import {
   updateShippingMethod,
   addShippingAddress,
@@ -160,7 +160,7 @@ async function handleSubmit(event, cart) {
   }
 }
 
-export default async function CheckoutForm(cart, shippingMethods = []) {
+export async function CheckoutForm(cart, shippingMethods = []) {
   const form = document.createElement('form');
   form.className = 'checkout-form';
 
