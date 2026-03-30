@@ -80,9 +80,7 @@ export default async function decorate(block) {
     provider.render(CartSummaryList, {
       hideHeading: hideHeading === 'true',
       routeProduct: (product) => rootLink(`/products/${product.url.urlKey}/${product.topLevelSku}`),
-      routeEmptyCartCTA: startShoppingURL
-        ? () => rootLink(startShoppingURL)
-        : undefined,
+      routeEmptyCartCTA: startShoppingURL ? () => rootLink(startShoppingURL) : undefined,
       maxItems: parseInt(maxItems, 10) || undefined,
       attributesToHide: hideAttributes
         .split(',')
