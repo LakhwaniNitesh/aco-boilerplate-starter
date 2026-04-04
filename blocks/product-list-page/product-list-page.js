@@ -300,11 +300,19 @@ function Sort(props) {
 class ProductListPage extends Component {
   constructor(props) {
     const {
-      type = 'category',
+      type,
       category,
       urlpath,
     } = props;
     super();
+
+    // Detect if this is a search page or category page
+    let pageType = type;
+    if (!pageType) {
+      // If type is not provided, infer from URL
+      const searchParams = new URLSearchParams(window.location.search);
+      pageType = searchParams.has('q') ? 'search' : 'category';
+    }
 
     this.facetMenuRef = createRef();
     this.sortMenuRef = createRef();
@@ -315,14 +323,14 @@ class ProductListPage extends Component {
     let headline = 'Search Results';
     let sort = 'relevance';
     let sortDirection = 'desc';
-    if (type === 'category') {
+    if (pageType === 'category') {
       // Get from H1
       headline = document.querySelector('.default-content-wrapper > h1')?.innerText;
       sort = 'position';
       sortDirection = 'asc';
     }
 
-    if (type === 'search') {
+    if (pageType === 'search') {
       sampleRUM('search', { source: '.search-input', target: queryParams.searchTerm });
     }
 
@@ -332,7 +340,7 @@ class ProductListPage extends Component {
       currentPage: DEFAULT_PARAMS.page,
       basePageSize: DEFAULT_PARAMS.basePageSize,
       currentPageSize: DEFAULT_PARAMS.pageSize,
-      type,
+      type: pageType,
       category: {
         name: headline,
         id: category || null,
@@ -532,7 +540,7 @@ class ProductListPage extends Component {
   }
 
   render(props, state) {
-    const { type = 'category' } = props;
+    const pageType = state.type;
 
     return html`<${Fragment}>
     <${FacetList}
@@ -549,7 +557,7 @@ class ProductListPage extends Component {
           disabled=${state.loading}
           currentSort=${state.sort}
           sortDirection=${state.sortDirection}
-          type=${type}
+          type=${pageType}
           onSort=${this.handleSortChange.bind(this)}
           sortMenuRef=${this.sortMenuRef} />
       </div>
