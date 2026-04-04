@@ -67,10 +67,8 @@ export const productSearchQuery = (addCategory = false) => `query ProductSearch(
           }
       }
       items {
-          product {
-            id
-          }
           productView {
+              id
               name
               sku
               urlKey
@@ -174,7 +172,7 @@ async function loadCategory(state) {
       pages: Math.max(response.productSearch.page_info.total_pages, 1),
       products: {
         items: response.productSearch.items
-          .map((product) => ({ ...product.productView, ...product.product }))
+          .map((item) => item.productView)
           .filter((product) => product !== null),
         total: response.productSearch.total_count,
       },
