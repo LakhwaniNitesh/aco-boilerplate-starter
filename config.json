@@ -1,0 +1,32 @@
+{
+  "public": {
+    "default": {
+      "commerce-endpoint": "https://na1-sandbox.api.commerce.adobe.com/QLAfBfzromvPvMhhu1D5vN/graphql",
+      "headers": {
+        "cs": {
+          "AC-View-ID": "bbfbd98d-9b34-4857-9619-89d14c426ec9",
+          "AC-Price-Book-ID": "west_coast_inc"
+        }
+      },
+      "commerce-b2b-enabled": false,
+      "commerce-companies-enabled": false,
+      "commerce-assets-enabled": true,
+      "adobe-commerce-optimizer": true,
+      "analytics": {
+        "base-currency-code": "USD",
+        "environment": "Testing",
+        "environment-id": "QLAfBfzromvPvMhhu1D5vN",
+        "locale": "en-US",
+        "store-url": "https://www.aemshop.net",
+        "store-view-currency-code": "USD",
+        "storefront-template": "{{TEMPLATE_TYPE}}",
+        "view-id": "bbfbd98d-9b34-4857-9619-89d14c426ec9"
+      },
+      "plugins": {
+        "picker": {
+          "rootCategory": "2"
+        }
+      }
+    }
+  }
+}
