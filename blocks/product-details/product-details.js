@@ -28,8 +28,8 @@ import { IMAGES_SIZES } from '../../scripts/initializers/pdp.js';
 import '../../scripts/initializers/cart.js';
 import { rootLink } from '../../scripts/scripts.js';
 
-// Cart Manager for state management
-import { CartManager, ACTIONS } from '../../scripts/cart-manager.js';
+// Cart state management
+import { cartStore, ACTIONS } from '../../scripts/cart-manager.js';
 
 export default async function decorate(block) {
   try {
@@ -193,10 +193,9 @@ export default async function decorate(block) {
               block: 'center',
             });
 
-            // Update CartManager state to sync mini-cart
-            const cartManager = CartManager.getInstance();
+            // Update cart state to sync mini-cart
             if (result.cart) {
-              cartManager.dispatch({
+              cartStore.dispatch({
                 type: ACTIONS.SET_CART,
                 payload: result.cart,
               });
