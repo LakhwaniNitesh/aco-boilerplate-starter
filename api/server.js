@@ -92,7 +92,6 @@ app.post('/api/hcl/cart/add', hclCartController.addToCart);
 app.get('/api/hcl/cart', hclCartController.getCart);
 app.delete('/api/hcl/cart/item/:orderId/:itemId', hclCartController.removeFromCart);
 app.delete('/api/hcl/cart/clear', hclCartController.clearCart);
-app.put('/api/hcl/cart/checkout', hclCartController.checkoutCart);
 
 // ============================================
 // 404 HANDLER
