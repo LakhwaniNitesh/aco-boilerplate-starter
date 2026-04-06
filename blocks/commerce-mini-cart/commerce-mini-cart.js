@@ -76,14 +76,35 @@ export default async function decorate(block) {
   summary.appendChild(totalLabel);
   summary.appendChild(totalPrice);
 
+  // Create actions container
+  const actions = document.createElement('div');
+  actions.className = 'hcl-mini-cart-actions';
+
   // Create view cart link
   const viewCart = document.createElement('a');
   viewCart.href = '/cart';
   viewCart.className = 'hcl-mini-cart-link';
   viewCart.textContent = 'View Cart';
 
+  // Create clear cart button (for testing)
+  const clearCart = document.createElement('button');
+  clearCart.className = 'hcl-mini-cart-clear';
+  clearCart.textContent = 'Clear Cart';
+  clearCart.addEventListener('click', (e) => {
+    e.preventDefault();
+    localStorage.removeItem('hcl-cart');
+    // Delete backend cart file
+    fetch('/api/hcl/cart/clear', { method: 'DELETE' }).catch(() => {});
+    updateCartState({ cartId: null, items: [], total: 0 });
+    updateDisplay();
+    console.log('[MINI-CART] Cart cleared');
+  });
+
+  actions.appendChild(viewCart);
+  actions.appendChild(clearCart);
+
   container.appendChild(summary);
-  container.appendChild(viewCart);
+  container.appendChild(actions);
 
   block.innerHTML = '';
   block.appendChild(container);

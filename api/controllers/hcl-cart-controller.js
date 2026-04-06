@@ -216,4 +216,37 @@ export const hclCartController = {
       message: 'Checkout functionality is planned for Phase 2',
     });
   },
+
+  /**
+   * DELETE /api/hcl/cart/clear
+   * Clear the localhost test cart (for development/testing only)
+   */
+  clearCart: async (req, res) => {
+    try {
+      const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
+      
+      if (!isLocalhost) {
+        return res.status(403).json({
+          error: 'Clear cart only available on localhost',
+        });
+      }
+
+      // Delete the cart file
+      if (fs.existsSync(CART_FILE)) {
+        fs.unlinkSync(CART_FILE);
+        console.log('[CART] ✓ Cart file cleared');
+      }
+
+      res.json({
+        success: true,
+        message: 'Cart cleared successfully',
+      });
+    } catch (error) {
+      console.error('[CART] Error clearing cart:', error.message);
+      res.status(500).json({
+        error: 'Failed to clear cart',
+        message: error.message,
+      });
+    }
+  },
 };

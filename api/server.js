@@ -5,10 +5,11 @@
  * Handles authentication, cart operations, and token management
  * 
  * Endpoints:
- *   POST /api/hcl/login          - Authenticate with HCL Commerce
- *   POST /api/hcl/cart/add       - Add product to cart
- *   GET  /api/hcl/cart           - Get current cart
- *   DELETE /api/hcl/cart/item/:id - Remove item from cart
+ *   POST /api/hcl/login            - Authenticate with HCL Commerce
+ *   POST /api/hcl/cart/add         - Add product to cart
+ *   GET  /api/hcl/cart             - Get current cart
+ *   DELETE /api/hcl/cart/item/:id  - Remove item from cart
+ *   DELETE /api/hcl/cart/clear     - Clear cart (localhost only)
  */
 
 import express from 'express';
@@ -90,6 +91,7 @@ app.post('/api/hcl/login', hclAuthController.login);
 app.post('/api/hcl/cart/add', hclCartController.addToCart);
 app.get('/api/hcl/cart', hclCartController.getCart);
 app.delete('/api/hcl/cart/item/:orderId/:itemId', hclCartController.removeFromCart);
+app.delete('/api/hcl/cart/clear', hclCartController.clearCart);
 app.put('/api/hcl/cart/checkout', hclCartController.checkoutCart);
 
 // ============================================
@@ -130,6 +132,7 @@ const server = app.listen(PORT, () => {
 ║  POST   /api/hcl/cart/add                              ║
 ║  GET    /api/hcl/cart                                  ║
 ║  DELETE /api/hcl/cart/item/:orderId/:itemId            ║
+║  DELETE /api/hcl/cart/clear                            ║
 ║  PUT    /api/hcl/cart/checkout                         ║
 ║                                                        ║
 ║  Docs: http://localhost:${PORT}/health                 ║

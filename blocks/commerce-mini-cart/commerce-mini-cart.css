@@ -275,8 +275,42 @@
   }
 }
 
+/* Actions Container */
+.hcl-mini-cart-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Clear Cart Button */
+.hcl-mini-cart-clear {
+  background-color: var(--clear-btn-bg, #f5f5f5);
+  color: var(--clear-btn-color, #666);
+  border: 1px solid var(--clear-btn-border, #ddd);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hcl-mini-cart-clear:hover {
+  background-color: var(--clear-btn-hover-bg, #e8e8e8);
+  border-color: var(--clear-btn-hover-border, #999);
+}
+
+.hcl-mini-cart-clear:active {
+  background-color: var(--clear-btn-active-bg, #ddd);
+}
+
 /* Accessibility */
 .hcl-mini-cart-link:focus-visible {
+  outline: 2px solid var(--focus-color, #0066cc);
+  outline-offset: 2px;
+}
+
+.hcl-mini-cart-clear:focus-visible {
   outline: 2px solid var(--focus-color, #0066cc);
   outline-offset: 2px;
 }
