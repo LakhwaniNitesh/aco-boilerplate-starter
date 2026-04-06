@@ -159,6 +159,16 @@ export default async function decorate(block) {
       // Update total (calculated from items)
       const calculatedTotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
       totalPrice.textContent = `$${calculatedTotal.toFixed(2)}`;
+      
+      // Update cart button badge in header
+      const cartButton = document.querySelector('.nav-cart-button');
+      if (cartButton) {
+        if (count > 0) {
+          cartButton.setAttribute('data-count', count);
+        } else {
+          cartButton.removeAttribute('data-count');
+        }
+      }
     };
 
   // Load cartStore if available
