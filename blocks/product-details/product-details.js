@@ -171,9 +171,15 @@ export default async function decorate(block) {
             }
 
             const result = await cartResponse.json();
+            console.log('[PDP] Raw API response:', result);
+            
             if (!result.success) {
               throw new Error(result.error || result.message || 'Failed to add product to cart');
             }
+
+            console.log('[PDP] API success, result object:', result);
+            console.log('[PDP] result.cart exists?', !!result.cart);
+            console.log('[PDP] result.cart value:', result.cart);
 
             // Success! Show success message and update mini-cart
             inlineAlert?.remove();
@@ -195,7 +201,9 @@ export default async function decorate(block) {
             });
 
             // Update cart state to sync mini-cart
+            console.log('[PDP] About to check if result.cart exists');
             if (result.cart) {
+              console.log('[PDP] ✓ result.cart exists, proceeding with updates');
               console.log('[PDP] Dispatching SET_CART action with cart:', result.cart);
               cartStore.dispatch({
                 type: ACTIONS.SET_CART,
@@ -211,6 +219,9 @@ export default async function decorate(block) {
               window.dispatchEvent(new CustomEvent('hcl-cart-updated', {
                 detail: { cart: result.cart }
               }));
+            } else {
+              console.error('[PDP] ✗ result.cart does NOT exist! Cannot update cart state');
+              console.log('[PDP] Full result object:', JSON.stringify(result, null, 2));
             }
 
             // Also emit event for other subscribers
