@@ -1,11 +1,11 @@
 {
   "public": {
     "default": {
-      "commerce-endpoint": "http://localhost:3001/graphql",
+      "commerce-endpoint": "https://na1-sandbox.api.commerce.adobe.com/QLAfBfzromvPvMhhu1D5vN/graphql",
       "headers": {
         "cs": {
-          "AC-View-ID": "local-testing",
-          "AC-Price-Book-ID": "default"
+          "AC-View-ID": "bbfbd98d-9b34-4857-9619-89d14c426ec9",
+          "AC-Price-Book-ID": "west_coast_inc"
         }
       },
       "commerce-b2b-enabled": false,
@@ -15,12 +15,12 @@
       "analytics": {
         "base-currency-code": "USD",
         "environment": "Local",
-        "environment-id": "local",
+        "environment-id": "QLAfBfzromvPvMhhu1D5vN",
         "locale": "en-US",
         "store-url": "http://localhost:3000",
         "store-view-currency-code": "USD",
         "storefront-template": "test",
-        "view-id": "local-testing"
+        "view-id": "bbfbd98d-9b34-4857-9619-89d14c426ec9"
       },
       "plugins": {
         "picker": {

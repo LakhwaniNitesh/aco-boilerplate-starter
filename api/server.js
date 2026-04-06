@@ -80,55 +80,6 @@ app.get('/health', (req, res) => {
 });
 
 /**
- * GraphQL endpoint (for drop-in components)
- * Returns mock product data for local testing
- */
-app.post('/graphql', express.json(), (req, res) => {
-  const query = req.body.query || '';
-  
-  // Mock response for product queries
-  if (query.includes('productView') || query.includes('products')) {
-    return res.json({
-      data: {
-        productView: {
-          sku: 'ADOBEJ001',
-          name: 'Test Product',
-          description: 'This is a test product for local development',
-          price: {
-            roles: [],
-            regular: {
-              amount: {
-                currency: 'USD',
-                value: 99.99,
-              },
-            },
-            final: {
-              amount: {
-                currency: 'USD',
-                value: 79.99,
-              },
-            },
-          },
-          images: [
-            {
-              url: 'https://via.placeholder.com/500x500?text=Test+Product',
-              label: 'Product Image',
-            },
-          ],
-          __typename: 'ProductView',
-        },
-      },
-    });
-  }
-
-  // Default response
-  res.json({
-    data: null,
-    errors: [{ message: 'Query not supported in mock mode' }],
-  });
-});
-
-/**
  * API Routes - HCL Commerce
  */
 
