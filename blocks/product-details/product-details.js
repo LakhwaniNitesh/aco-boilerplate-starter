@@ -203,7 +203,9 @@ export default async function decorate(block) {
               });
               
               // Also update simple cart state for direct updates
+              console.log('[PDP] Calling updateCartState with:', result.cart);
               updateCartState(result.cart);
+              console.log('[PDP] updateCartState called successfully');
               
               // Also dispatch a custom event for extra reliability
               window.dispatchEvent(new CustomEvent('hcl-cart-updated', {

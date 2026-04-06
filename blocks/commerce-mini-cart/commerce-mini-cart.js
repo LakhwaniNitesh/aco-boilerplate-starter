@@ -2,9 +2,20 @@ export default async function decorate(block) {
   // Import CSS
   import('./commerce-mini-cart.css');
   
+  // Test localStorage availability
+  console.log('[MINI-CART] Testing localStorage availability');
+  try {
+    localStorage.setItem('__test__', 'test');
+    const test = localStorage.getItem('__test__');
+    localStorage.removeItem('__test__');
+    console.log('[MINI-CART] localStorage works: ', test === 'test');
+  } catch (e) {
+    console.error('[MINI-CART] localStorage not available:', e);
+  }
+  
   const { readBlockConfig } = await import('../../scripts/aem.js');
   const { events } = await import('@dropins/tools/event-bus.js');
-  const { subscribeToCart, getCartState } = await import('../../scripts/simple-cart-state.js');
+  const { subscribeToCart, getCartState, updateCartState } = await import('../../scripts/simple-cart-state.js');
   
   const config = readBlockConfig(block);
 
