@@ -75,6 +75,7 @@ export default async function decorate(block) {
   // Load and subscribe to cart updates
   try {
     const { cartStore, ACTIONS } = await import('../../scripts/cart-manager.js');
+    console.log('[MINI-CART] Initialized with cartStore:', cartStore);
 
     const updateDisplay = () => {
       const state = cartStore.getState();
