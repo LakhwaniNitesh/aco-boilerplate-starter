@@ -28,6 +28,9 @@ import { IMAGES_SIZES } from '../../scripts/initializers/pdp.js';
 import '../../scripts/initializers/cart.js';
 import { rootLink } from '../../scripts/scripts.js';
 
+// Cart Manager for state management
+import { CartManager, ACTIONS } from '../../scripts/cart-manager.js';
+
 export default async function decorate(block) {
   try {
     // eslint-disable-next-line no-underscore-dangle
@@ -190,7 +193,16 @@ export default async function decorate(block) {
               block: 'center',
             });
 
-            // Emit cart update event to trigger mini-cart refresh
+            // Update CartManager state to sync mini-cart
+            const cartManager = CartManager.getInstance();
+            if (result.cart) {
+              cartManager.dispatch({
+                type: ACTIONS.SET_CART,
+                payload: result.cart,
+              });
+            }
+
+            // Also emit event for other subscribers
             events.emit('cart/update', { cart: result.cart });
             
             // Wait a moment before resetting button
