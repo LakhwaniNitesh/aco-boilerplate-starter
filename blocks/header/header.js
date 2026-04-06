@@ -244,16 +244,15 @@ export default async function decorate(block) {
   loadFragment(miniCartPath).then((miniCartFragment) => {
     const miniCartElement = miniCartFragment.firstElementChild;
     console.log('[HEADER] Mini-cart fragment loaded:', miniCartElement);
-    console.log('[HEADER] Fragment HTML:', miniCartElement?.outerHTML?.substring(0, 200));
     minicartPanel.append(miniCartElement);
     
-    // Find block - check all possible locations
-    let block = miniCartElement.querySelector('div.hcl-mini-cart');
+    // Find block inside section - check multiple possible selectors
+    let block = miniCartElement.querySelector('div.commerce-mini-cart');
     if (!block) {
-      block = miniCartElement.querySelector('[class*="hcl-mini-cart"]');
+      block = miniCartElement.querySelector('div[class*="mini-cart"]');
     }
-    if (!block && miniCartElement.classList.contains('hcl-mini-cart')) {
-      block = miniCartElement;
+    if (!block) {
+      block = miniCartElement.querySelector('div.hcl-mini-cart');
     }
     
     if (block) {
@@ -261,10 +260,9 @@ export default async function decorate(block) {
       decorateBlock(block);
       loadBlock(block);
     } else {
-      console.log('[HEADER] Mini-cart block not found. Fragment structure:', {
-        class: miniCartElement?.className,
-        tag: miniCartElement?.tagName,
-        children: miniCartElement?.children?.length,
+      console.log('[HEADER] Mini-cart block not found. Available classes:', {
+        sectionClass: miniCartElement?.className,
+        childClasses: Array.from(miniCartElement?.querySelectorAll('div') || []).map(d => d.className).slice(0, 5),
       });
     }
   });
