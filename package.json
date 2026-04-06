@@ -1,5 +1,6 @@
 {
   "name": "@adobe/aem-boilerplate-commerce",
+  "type": "module",
   "private": true,
   "version": "1.0.0",
   "description": "Starter project for Adobe Commerce on Edge Delivery Services",
