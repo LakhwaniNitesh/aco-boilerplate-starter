@@ -154,6 +154,13 @@ export default async function decorate(block) {
           // add the product to the cart
           if (valid) {
             // Use HCL backend proxy instead of drop-in cart API
+            console.log('[PDP] Product data available:', { 
+              name: product?.name, 
+              priceRange: product?.priceRange,
+              price: product?.price,
+              allKeys: product ? Object.keys(product) : 'no product'
+            });
+            
             const cartResponse = await fetch('http://localhost:3001/api/hcl/cart/add', {
               method: 'POST',
               headers: {
@@ -164,7 +171,7 @@ export default async function decorate(block) {
                 sku: values?.sku,
                 quantity: values?.quantity || 1,
                 name: product?.name || values?.name || 'Product',
-                price: product?.price?.regularPrice || 0,
+                price: product?.priceRange?.minimum?.regularPrice || product?.price || 0,
               }),
             });
 
