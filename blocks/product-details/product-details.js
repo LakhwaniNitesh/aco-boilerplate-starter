@@ -200,6 +200,11 @@ export default async function decorate(block) {
                 type: ACTIONS.SET_CART,
                 payload: result.cart,
               });
+              
+              // Also dispatch a custom event for extra reliability
+              window.dispatchEvent(new CustomEvent('hcl-cart-updated', {
+                detail: { cart: result.cart }
+              }));
             }
 
             // Also emit event for other subscribers

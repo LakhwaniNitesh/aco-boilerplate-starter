@@ -158,6 +158,17 @@ export default async function decorate(block) {
       }
     });
 
+    // Listen to custom window events as extra fallback
+    window.addEventListener('hcl-cart-updated', (e) => {
+      console.log('[MINI-CART] Received hcl-cart-updated event:', e.detail);
+      if (e.detail?.cart) {
+        cartStore.dispatch({
+          type: ACTIONS.SET_CART,
+          payload: e.detail.cart,
+        });
+      }
+    });
+
     // Cleanup on block removal
     block.addEventListener('DOMNodeRemoved', () => {
       unsubscribe();
