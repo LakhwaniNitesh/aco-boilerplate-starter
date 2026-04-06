@@ -170,12 +170,40 @@ export default async function decorate(block) {
             if (!result.success) {
               throw new Error(result.error || result.message || 'Failed to add product to cart');
             }
+
+            // Success! Show success message and update mini-cart
+            inlineAlert?.remove();
+            inlineAlert = await UI.render(InLineAlert, {
+              heading: 'Success',
+              description: `${values?.name || 'Product'} added to cart!`,
+              icon: Icon({ source: 'CheckCircle' }),
+              'aria-live': 'polite',
+              role: 'status',
+              onDismiss: () => {
+                inlineAlert.remove();
+              },
+            })($alert);
+
+            // Scroll alert into view
+            $alert.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+
+            // Emit cart update event to trigger mini-cart refresh
+            events.emit('cart/update', { cart: result.cart });
+            
+            // Wait a moment before resetting button
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            return; // Exit early on success
           }
 
-          // reset any previous alerts if successful
-          inlineAlert?.remove();
+          // If not valid, throw error
+          throw new Error('Please select all required options before adding to cart');
         } catch (error) {
           // add alert message
+          inlineAlert?.remove();
           inlineAlert = await UI.render(InLineAlert, {
             heading: 'Error',
             description: error.message,
