@@ -21,7 +21,7 @@ import { readBlockConfig } from '../../scripts/aem.js';
 import { rootLink } from '../../scripts/scripts.js';
 
 // Import our cart system
-import { SimpleCartState } from '../../scripts/simple-cart-state.js';
+import { getCartState } from '../../scripts/simple-cart-state.js';
 
 export default async function decorate(block) {
   // Configuration
@@ -37,7 +37,7 @@ export default async function decorate(block) {
   } = readBlockConfig(block);
 
   // Get cart from our HCL system instead of drop-in cache
-  const hclCart = SimpleCartState.getState();
+  const hclCart = getCartState();
   console.log('[CART] Loading cart page with HCL cart:', hclCart);
 
   const isEmptyCart = !hclCart || !hclCart.items || hclCart.items.length === 0;
