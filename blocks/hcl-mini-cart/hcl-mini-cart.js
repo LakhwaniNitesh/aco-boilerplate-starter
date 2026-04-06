@@ -79,18 +79,23 @@ export default async function decorate(block) {
 
   // Setup subscription immediately
   const updateDisplay = () => {
-    const state = cartStore.getState();
-    let items = state.cart?.items || [];
+    // PRIMARY: Try simple cart state first (guaranteed to be updated)
+    let simpleState = getCartState();
+    let items = simpleState.items || [];
+    let total = simpleState.total || 0;
     
-    // Fallback to simple cart state if cartStore is empty
+    // FALLBACK: Try cartStore if simple state is empty
     if (items.length === 0) {
-      const simpleState = getCartState();
-      items = simpleState.items || [];
-      console.log('[MINI-CART] Using simple cart state:', simpleState);
+      const state = cartStore.getState();
+      items = state.cart?.items || [];
+      total = state.cart?.total || 0;
+      if (items.length > 0) {
+        console.log('[MINI-CART] Using cartStore state:', state);
+      }
     }
     
     const count = items.length;
-    console.log('[MINI-CART] Updating display with items:', items, 'count:', count);
+    console.log('[MINI-CART] Updating display - items:', items, 'count:', count, 'total:', total);
 
       // Update badge
       badge.textContent = count;
@@ -143,9 +148,9 @@ export default async function decorate(block) {
         }
       }
 
-      // Update total
-      const total = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
-      totalPrice.textContent = `$${total.toFixed(2)}`;
+      // Update total (calculated from items)
+      const calculatedTotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+      totalPrice.textContent = `$${calculatedTotal.toFixed(2)}`;
     };
 
     // Initial update
