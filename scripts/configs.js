@@ -12,7 +12,10 @@ let rootConfig = null;
  * @returns {URL} - The URL for the config file.
  */
 function buildConfigURL() {
-  return new URL(`${window.location.origin}/config.json`);
+  // Use config-local.json if running on localhost, otherwise use config.json
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const configFile = isLocalhost ? 'config-local.json' : 'config.json';
+  return new URL(`${window.location.origin}/${configFile}`);
 }
 
 /**

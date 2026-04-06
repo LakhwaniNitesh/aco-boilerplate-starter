@@ -1,0 +1,32 @@
+{
+  "public": {
+    "default": {
+      "commerce-endpoint": "http://localhost:3001/graphql",
+      "headers": {
+        "cs": {
+          "AC-View-ID": "local-testing",
+          "AC-Price-Book-ID": "default"
+        }
+      },
+      "commerce-b2b-enabled": false,
+      "commerce-companies-enabled": false,
+      "commerce-assets-enabled": true,
+      "adobe-commerce-optimizer": false,
+      "analytics": {
+        "base-currency-code": "USD",
+        "environment": "Local",
+        "environment-id": "local",
+        "locale": "en-US",
+        "store-url": "http://localhost:3000",
+        "store-view-currency-code": "USD",
+        "storefront-template": "test",
+        "view-id": "local-testing"
+      },
+      "plugins": {
+        "picker": {
+          "rootCategory": "2"
+        }
+      }
+    }
+  }
+}
