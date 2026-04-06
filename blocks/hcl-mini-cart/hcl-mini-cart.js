@@ -76,13 +76,12 @@ export default async function decorate(block) {
   const { cartStore, ACTIONS } = await import('../../scripts/cart-manager.js');
   console.log('[MINI-CART] Initialized with cartStore:', cartStore);
 
-  try {
-
-    const updateDisplay = () => {
-      const state = cartStore.getState();
-      const items = state.cart?.items || [];
-      const count = items.length;
-      console.log('[MINI-CART] Updating display with items:', items, 'count:', count);
+  // Setup subscription immediately
+  const updateDisplay = () => {
+    const state = cartStore.getState();
+    const items = state.cart?.items || [];
+    const count = items.length;
+    console.log('[MINI-CART] Updating display with items:', items, 'count:', count);
 
       // Update badge
       badge.textContent = count;
@@ -173,8 +172,4 @@ export default async function decorate(block) {
     block.addEventListener('DOMNodeRemoved', () => {
       unsubscribe();
     });
-  } catch (error) {
-    console.error('[MINI-CART] Failed to load cart manager:', error);
-    emptyState.textContent = 'Cart unavailable';
-  }
 }
