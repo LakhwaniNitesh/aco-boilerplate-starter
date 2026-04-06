@@ -38,8 +38,13 @@ export function updateCartState(newCart) {
   
   // Persist to localStorage for recovery on page reload
   try {
-    localStorage.setItem('hcl-cart', JSON.stringify(cartState));
-    console.log('[SIMPLE-CART-STATE] Cart persisted to localStorage');
+    const cartJson = JSON.stringify(cartState);
+    console.log('[SIMPLE-CART-STATE] Persisting to localStorage:', cartJson);
+    localStorage.setItem('hcl-cart', cartJson);
+    
+    // Verify it was actually saved
+    const verify = localStorage.getItem('hcl-cart');
+    console.log('[SIMPLE-CART-STATE] Verified in localStorage:', verify);
   } catch (err) {
     console.warn('[SIMPLE-CART-STATE] Could not persist cart to localStorage:', err);
   }

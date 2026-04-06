@@ -190,17 +190,21 @@ export default async function decorate(block) {
   // Restore cart from localStorage (persistent across page refreshes)
   const restoreCartFromStorage = () => {
     try {
+      console.log('[MINI-CART] Attempting to restore from localStorage');
       const storedCart = localStorage.getItem('hcl-cart');
+      console.log('[MINI-CART] Raw localStorage value:', storedCart);
+      
       if (storedCart) {
         const cart = JSON.parse(storedCart);
-        console.log('[MINI-CART] Restored cart from localStorage:', cart);
+        console.log('[MINI-CART] Parsed cart from localStorage:', cart);
         // Update simple cart state with stored cart
         updateCartState(cart);
+        console.log('[MINI-CART] Called updateCartState with restored cart');
       } else {
-        console.log('[MINI-CART] No cart found in localStorage');
+        console.log('[MINI-CART] No cart found in localStorage (empty or null)');
       }
     } catch (err) {
-      console.log('[MINI-CART] Could not restore cart from localStorage:', err);
+      console.error('[MINI-CART] Error restoring cart from localStorage:', err);
     }
   };
   
