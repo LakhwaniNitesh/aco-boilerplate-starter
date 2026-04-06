@@ -3,6 +3,7 @@ import { events } from '@dropins/tools/event-bus.js';
 import { subscribeToCart, getCartState } from '../../scripts/simple-cart-state.js';
 
 export default async function decorate(block) {
+  console.log('[MINI-CART] Block decorating started...');
   const config = readBlockConfig(block);
 
   const {
@@ -11,6 +12,7 @@ export default async function decorate(block) {
     'hide-empty': hideEmpty = 'false',
   } = config;
 
+  console.log('[MINI-CART] Block config:', config);
   block.classList.add('hcl-mini-cart');
 
   // Create container
@@ -79,6 +81,7 @@ export default async function decorate(block) {
 
   // Setup subscription immediately
   const updateDisplay = () => {
+    console.log('[MINI-CART] updateDisplay() called');
     // PRIMARY: Try simple cart state first (guaranteed to be updated)
     let simpleState = getCartState();
     let items = simpleState.items || [];
@@ -154,12 +157,15 @@ export default async function decorate(block) {
     };
 
     // Initial update
+    console.log('[MINI-CART] Calling initial updateDisplay()');
     updateDisplay();
 
     // Subscribe to cart changes
+    console.log('[MINI-CART] Subscribing to cartStore');
     const unsubscribe = cartStore.subscribe(updateDisplay);
     
     // Also subscribe to simple cart state for direct updates
+    console.log('[MINI-CART] Subscribing to simple cart state');
     const unsubscribeSimple = subscribeToCart((simpleState) => {
       console.log('[MINI-CART] Received simple cart state update:', simpleState);
       updateDisplay();
