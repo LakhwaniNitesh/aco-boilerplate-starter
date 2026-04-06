@@ -98,11 +98,27 @@ export const hclCartController = {
 
   /**
    * GET /api/hcl/cart
-   * Get current cart for authenticated user
+   * Get current cart for authenticated user or localhost test mode
    */
   getCart: async (req, res, next) => {
     try {
       const { accessToken } = req.query;
+      const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
+
+      // Localhost test mode - return persisted cart
+      if (isLocalhost && !accessToken) {
+        const cartId = 'test-cart-localhost';
+        const cart = cartStorage.get(cartId) || {
+          cartId,
+          items: [],
+          total: 0,
+        };
+        console.log(`[CART] Getting cart (localhost test mode): ${cart.items.length} items`);
+        return res.json({
+          success: true,
+          cart,
+        });
+      }
 
       if (!accessToken) {
         return res.status(400).json({

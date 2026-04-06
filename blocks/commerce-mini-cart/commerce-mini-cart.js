@@ -191,6 +191,27 @@ export default async function decorate(block) {
   console.log('[MINI-CART] Calling initial updateDisplay()');
   updateDisplay();
 
+  // Fetch persisted cart from backend (for localhost test mode)
+  const fetchPersistedCart = async () => {
+    try {
+      const response = await fetch('/api/hcl/cart');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.cart) {
+          console.log('[MINI-CART] Fetched persisted cart:', data.cart);
+          // Update simple cart state with persisted cart
+          const { updateCartState } = await import('../../scripts/simple-cart-state.js');
+          updateCartState(data.cart);
+        }
+      }
+    } catch (err) {
+      console.log('[MINI-CART] Could not fetch persisted cart:', err);
+    }
+  };
+  
+  // Fetch cart on page load
+  fetchPersistedCart();
+
   // Subscribe to simple cart state for direct updates
   console.log('[MINI-CART] Subscribing to simple cart state');
   const unsubscribeSimple = subscribeToCart((simpleState) => {
