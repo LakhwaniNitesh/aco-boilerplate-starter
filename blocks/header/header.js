@@ -252,8 +252,14 @@ export default async function decorate(block) {
     }
     
     if (block) {
+      console.log('[HEADER] Decorating mini-cart block...');
       decorateBlock(block);
-      loadBlock(block);
+      console.log('[HEADER] Calling loadBlock for mini-cart...');
+      loadBlock(block).then(() => {
+        console.log('[HEADER] Mini-cart block loaded successfully');
+      }).catch((err) => {
+        console.error('[HEADER] Error loading mini-cart block:', err);
+      });
     }
   });
 
