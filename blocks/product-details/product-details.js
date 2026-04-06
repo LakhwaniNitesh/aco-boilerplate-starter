@@ -161,6 +161,10 @@ export default async function decorate(block) {
               allKeys: product ? Object.keys(product) : 'no product'
             });
             
+            // Log full product structure for debugging
+            console.log('[PDP] Full product object:', product);
+            console.log('[PDP] Product keys:', product ? Object.keys(product) : 'N/A');
+            
             const cartResponse = await fetch('http://localhost:3001/api/hcl/cart/add', {
               method: 'POST',
               headers: {
