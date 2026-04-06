@@ -12,17 +12,50 @@ export const hclCartController = {
    */
   addToCart: async (req, res, next) => {
     try {
-      const { partNumber, quantity, accessToken } = req.body;
+      const { partNumber, sku, quantity, accessToken } = req.body;
+      
+      // For localhost testing without auth
+      const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
+      const productId = partNumber || sku;
 
-      if (!partNumber || !accessToken) {
+      if (!productId) {
         return res.status(400).json({
-          error: 'Missing required fields: partNumber, accessToken',
+          success: false,
+          error: 'Missing required field: partNumber or sku',
+        });
+      }
+
+      // Localhost test mode - return mock cart response
+      if (isLocalhost && !accessToken) {
+        console.log(`[CART] Adding to cart (localhost test mode): ${productId} x${quantity || 1}`);
+        return res.json({
+          success: true,
+          message: 'Product added to cart (test mode)',
+          cart: {
+            cartId: 'test-cart-' + Date.now(),
+            items: [{
+              partNumber: productId,
+              sku: productId,
+              quantity: quantity || 1,
+              price: 99.99,
+              name: 'Test Product',
+            }],
+            total: (quantity || 1) * 99.99,
+          },
+        });
+      }
+
+      // Production mode - requires auth
+      if (!accessToken) {
+        return res.status(401).json({
+          success: false,
+          error: 'Missing required field: accessToken',
         });
       }
 
       const cart = await hclClient.addToCart(
         accessToken,
-        partNumber,
+        productId,
         quantity || 1
       );
 

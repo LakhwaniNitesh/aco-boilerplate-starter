@@ -156,6 +156,7 @@ export default async function decorate(block) {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
+                partNumber: values?.sku,
                 sku: values?.sku,
                 quantity: values?.quantity || 1,
               }),
@@ -167,7 +168,7 @@ export default async function decorate(block) {
 
             const result = await cartResponse.json();
             if (!result.success) {
-              throw new Error(result.message || 'Failed to add product to cart');
+              throw new Error(result.error || result.message || 'Failed to add product to cart');
             }
           }
 
