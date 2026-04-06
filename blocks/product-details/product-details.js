@@ -29,68 +29,69 @@ import '../../scripts/initializers/cart.js';
 import { rootLink } from '../../scripts/scripts.js';
 
 export default async function decorate(block) {
-  // eslint-disable-next-line no-underscore-dangle
-  const product = events._lastEvent?.['pdp/data']?.payload ?? null;
-  const labels = await fetchPlaceholders();
+  try {
+    // eslint-disable-next-line no-underscore-dangle
+    const product = events._lastEvent?.['pdp/data']?.payload ?? null;
+    const labels = await fetchPlaceholders();
 
-  // Layout
-  const fragment = document.createRange().createContextualFragment(`
-    <div class="product-details__wrapper">
-      <div class="product-details__alert"></div>
-      <div class="product-details__left-column">
-        <div class="product-details__gallery"></div>
-      </div>
-      <div class="product-details__right-column">
-        <div class="product-details__header"></div>
-        <div class="product-details__price"></div>
-        <div class="product-details__gallery"></div>
-        <div class="product-details__short-description"></div>
-        <div class="product-details__configuration">
-          <div class="product-details__options"></div>
-          <div class="product-details__quantity"></div>
-          <div class="product-details__buttons">
-            <div class="product-details__buttons__add-to-cart"></div>
-            <div class="product-details__buttons__add-to-wishlist"></div>
-          </div>
+    // Layout
+    const fragment = document.createRange().createContextualFragment(`
+      <div class="product-details__wrapper">
+        <div class="product-details__alert"></div>
+        <div class="product-details__left-column">
+          <div class="product-details__gallery"></div>
         </div>
-        <div class="product-details__description"></div>
-        <div class="product-details__attributes"></div>
+        <div class="product-details__right-column">
+          <div class="product-details__header"></div>
+          <div class="product-details__price"></div>
+          <div class="product-details__gallery"></div>
+          <div class="product-details__short-description"></div>
+          <div class="product-details__configuration">
+            <div class="product-details__options"></div>
+            <div class="product-details__quantity"></div>
+            <div class="product-details__buttons">
+              <div class="product-details__buttons__add-to-cart"></div>
+              <div class="product-details__buttons__add-to-wishlist"></div>
+            </div>
+          </div>
+          <div class="product-details__description"></div>
+          <div class="product-details__attributes"></div>
+        </div>
       </div>
-    </div>
-  `);
+    `);
 
-  const $alert = fragment.querySelector('.product-details__alert');
-  const $gallery = fragment.querySelector('.product-details__gallery');
-  const $header = fragment.querySelector('.product-details__header');
-  const $price = fragment.querySelector('.product-details__price');
-  const $galleryMobile = fragment.querySelector('.product-details__right-column .product-details__gallery');
-  const $shortDescription = fragment.querySelector('.product-details__short-description');
-  const $options = fragment.querySelector('.product-details__options');
-  const $quantity = fragment.querySelector('.product-details__quantity');
-  const $addToCart = fragment.querySelector('.product-details__buttons__add-to-cart');
-  const $addToWishlist = fragment.querySelector('.product-details__buttons__add-to-wishlist');
-  const $description = fragment.querySelector('.product-details__description');
-  const $attributes = fragment.querySelector('.product-details__attributes');
+    const $alert = fragment.querySelector('.product-details__alert');
+    const $gallery = fragment.querySelector('.product-details__gallery');
+    const $header = fragment.querySelector('.product-details__header');
+    const $price = fragment.querySelector('.product-details__price');
+    const $galleryMobile = fragment.querySelector('.product-details__right-column .product-details__gallery');
+    const $shortDescription = fragment.querySelector('.product-details__short-description');
+    const $options = fragment.querySelector('.product-details__options');
+    const $quantity = fragment.querySelector('.product-details__quantity');
+    const $addToCart = fragment.querySelector('.product-details__buttons__add-to-cart');
+    const $addToWishlist = fragment.querySelector('.product-details__buttons__add-to-wishlist');
+    const $description = fragment.querySelector('.product-details__description');
+    const $attributes = fragment.querySelector('.product-details__attributes');
 
-  block.appendChild(fragment);
+    block.appendChild(fragment);
 
-  // Alert
-  let inlineAlert = null;
+    // Alert
+    let inlineAlert = null;
 
-  // Render Containers
-  const [
-    _galleryMobile,
-    _gallery,
-    _header,
-    _price,
-    _shortDescription,
-    _options,
-    _quantity,
-    addToCart,
-    addToWishlist,
-    _description,
-    _attributes,
-  ] = await Promise.all([
+    // Render Containers
+    const [
+      _galleryMobile,
+      _gallery,
+      _header,
+      _price,
+      _shortDescription,
+      _options,
+      _quantity,
+      addToCart,
+      addToWishlist,
+      _description,
+      _attributes,
+    ] = await Promise.all([
     // Gallery (Mobile)
     pdpRendered.render(ProductGallery, {
       controls: 'dots',
@@ -236,6 +237,20 @@ export default async function decorate(block) {
   }, { eager: true });
 
   return Promise.resolve();
+  } catch (error) {
+    console.error('Error rendering product details:', error);
+    // Show error message to user
+    const $alert = block.querySelector('.product-details__alert');
+    if ($alert) {
+      const errorFragment = document.createRange().createContextualFragment(`
+        <div class="product-details__error" style="padding: 1rem; background-color: #fff3cd; border: 1px solid #ffc107; color: #856404; border-radius: 0.25rem;">
+          <p><strong>Error loading product details:</strong></p>
+          <p>${error.message || 'Unable to load product information. Please try again later.'}</p>
+        </div>
+      `);
+      $alert.appendChild(errorFragment);
+    }
+  }
 }
 
 async function setJsonLdProduct(product) {

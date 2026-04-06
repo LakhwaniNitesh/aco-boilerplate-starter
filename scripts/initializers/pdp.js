@@ -25,30 +25,56 @@ export const IMAGES_SIZES = {
 };
 
 await initializeDropin(async () => {
-  // Set Fetch Endpoint (Service)
-  setEndpoint(await commerceEndpointWithQueryParams());
-
-  // Set Fetch Headers (Service)
-  setFetchGraphQlHeaders((prev) => ({ ...prev, ...getHeaders('cs') }));
-
-  const sku = getSkuFromUrl();
-  const optionsUIDs = getOptionsUIDsFromUrl();
-
-  let product;
-  let labels;
-
   try {
-    [product, labels] = await Promise.all([
+    // Set Fetch Endpoint (Service)
+    setEndpoint(await commerceEndpointWithQueryParams());
+
+    // Set Fetch Headers (Service)
+    setFetchGraphQlHeaders((prev) => ({ ...prev, ...getHeaders('cs') }));
+
+    const sku = getSkuFromUrl();
+    const optionsUIDs = getOptionsUIDsFromUrl();
+
+    const [product, labels] = await Promise.all([
       fetchProductData(sku, { optionsUIDs, skipTransform: true }).then(preloadImageMiddleware),
       fetchPlaceholders(),
     ]);
+
+    if (!product?.sku) {
+      return loadErrorPage();
+    }
+
+    const langDefinitions = {
+      default: {
+        ...labels,
+      },
+    };
+
+    const models = {
+      ProductDetails: {
+        initialData: { ...product },
+      },
+    };
+
+    // Initialize Dropins
+    return initializers.mountImmediately(initialize, {
+      sku,
+      optionsUIDs,
+      langDefinitions,
+      models,
+      acdl: true,
+      persistURLParams: true,
+    });
   } catch (error) {
     // Fallback for localhost/testing - load basic product info
-    console.warn('Failed to fetch product data, using fallback:', error);
-    labels = await fetchPlaceholders();
+    console.warn('PDP initialization failed, using fallback:', error);
+    
+    const sku = getSkuFromUrl();
+    const optionsUIDs = getOptionsUIDsFromUrl();
+    const labels = await fetchPlaceholders();
     
     // Create a minimal product object
-    product = {
+    const product = {
       sku: sku || 'TEST-SKU',
       name: 'Test Product',
       description: 'This is a test product for local development',
@@ -75,33 +101,29 @@ await initializeDropin(async () => {
       ],
       __typename: 'ProductView',
     };
+
+    const langDefinitions = {
+      default: {
+        ...labels,
+      },
+    };
+
+    const models = {
+      ProductDetails: {
+        initialData: { ...product },
+      },
+    };
+
+    // Initialize with fallback data
+    return initializers.mountImmediately(initialize, {
+      sku,
+      optionsUIDs,
+      langDefinitions,
+      models,
+      acdl: true,
+      persistURLParams: true,
+    });
   }
-
-  if (!product?.sku) {
-    return loadErrorPage();
-  }
-
-  const langDefinitions = {
-    default: {
-      ...labels,
-    },
-  };
-
-  const models = {
-    ProductDetails: {
-      initialData: { ...product },
-    },
-  };
-
-  // Initialize Dropins
-  return initializers.mountImmediately(initialize, {
-    sku,
-    optionsUIDs,
-    langDefinitions,
-    models,
-    acdl: true,
-    persistURLParams: true,
-  });
 })();
 
 async function preloadImageMiddleware(data) {
