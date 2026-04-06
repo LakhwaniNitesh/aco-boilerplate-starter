@@ -243,23 +243,35 @@ export default async function decorate(block) {
   const miniCartPath = miniCartMeta ? new URL(miniCartMeta, window.location).pathname : '/mini-cart';
   loadFragment(miniCartPath).then((miniCartFragment) => {
     const miniCartElement = miniCartFragment.firstElementChild;
+    console.log('[HEADER] Mini-cart fragment loaded, root element:', miniCartElement);
+    console.log('[HEADER] Fragment HTML:', miniCartElement.outerHTML.substring(0, 200));
     minicartPanel.append(miniCartElement);
     
     // Find block inside section - the fragment loads a section containing the block
     let block = miniCartElement.querySelector('div.commerce-mini-cart');
+    console.log('[HEADER] Looking for div.commerce-mini-cart:', block);
+    
     if (!block) {
       block = miniCartElement.querySelector('div[class*="mini-cart"]');
+      console.log('[HEADER] Fallback search for div[class*="mini-cart"]:', block);
     }
     
     if (block) {
+      console.log('[HEADER] Found block element:', block);
+      console.log('[HEADER] Block classes:', block.className);
+      console.log('[HEADER] Block data attributes:', block.dataset);
       console.log('[HEADER] Decorating mini-cart block...');
       decorateBlock(block);
+      console.log('[HEADER] Block data-block-name after decorateBlock:', block.dataset.blockName);
       console.log('[HEADER] Calling loadBlock for mini-cart...');
       loadBlock(block).then(() => {
         console.log('[HEADER] Mini-cart block loaded successfully');
+        console.log('[HEADER] Block data-block-status after loadBlock:', block.dataset.blockStatus);
       }).catch((err) => {
         console.error('[HEADER] Error loading mini-cart block:', err);
       });
+    } else {
+      console.log('[HEADER] ERROR: Mini-cart block not found in fragment');
     }
   });
 

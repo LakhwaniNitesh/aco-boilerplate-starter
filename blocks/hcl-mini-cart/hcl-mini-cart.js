@@ -4,6 +4,8 @@ import { subscribeToCart, getCartState } from '../../scripts/simple-cart-state.j
 
 export default async function decorate(block) {
   console.log('[MINI-CART] Block decorating started...');
+  console.log('[MINI-CART] Block element:', block);
+  console.log('[MINI-CART] Block classList:', block.classList);
   const config = readBlockConfig(block);
 
   const {
@@ -227,3 +229,4 @@ export default async function decorate(block) {
       unsubscribeSimple();
     });
   }
+}
