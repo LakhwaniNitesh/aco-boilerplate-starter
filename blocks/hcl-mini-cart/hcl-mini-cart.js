@@ -79,6 +79,7 @@ export default async function decorate(block) {
       const state = cartStore.getState();
       const items = state.cart?.items || [];
       const count = items.length;
+      console.log('[MINI-CART] Updating display with items:', items, 'count:', count);
 
       // Update badge
       badge.textContent = count;

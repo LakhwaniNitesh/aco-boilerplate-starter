@@ -195,6 +195,7 @@ export default async function decorate(block) {
 
             // Update cart state to sync mini-cart
             if (result.cart) {
+              console.log('[PDP] Dispatching SET_CART action with cart:', result.cart);
               cartStore.dispatch({
                 type: ACTIONS.SET_CART,
                 payload: result.cart,
