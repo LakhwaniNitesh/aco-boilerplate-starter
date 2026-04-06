@@ -1,5 +1,6 @@
 import { readBlockConfig } from '../../scripts/aem.js';
 import { events } from '@dropins/tools/event-bus.js';
+import { subscribeToCart, getCartState } from '../../scripts/simple-cart-state.js';
 
 export default async function decorate(block) {
   const config = readBlockConfig(block);
@@ -79,7 +80,15 @@ export default async function decorate(block) {
   // Setup subscription immediately
   const updateDisplay = () => {
     const state = cartStore.getState();
-    const items = state.cart?.items || [];
+    let items = state.cart?.items || [];
+    
+    // Fallback to simple cart state if cartStore is empty
+    if (items.length === 0) {
+      const simpleState = getCartState();
+      items = simpleState.items || [];
+      console.log('[MINI-CART] Using simple cart state:', simpleState);
+    }
+    
     const count = items.length;
     console.log('[MINI-CART] Updating display with items:', items, 'count:', count);
 
@@ -144,6 +153,12 @@ export default async function decorate(block) {
 
     // Subscribe to cart changes
     const unsubscribe = cartStore.subscribe(updateDisplay);
+    
+    // Also subscribe to simple cart state for direct updates
+    const unsubscribeSimple = subscribeToCart((simpleState) => {
+      console.log('[MINI-CART] Received simple cart state update:', simpleState);
+      updateDisplay();
+    });
 
     // Also listen to cart/update events from the event bus (fallback mechanism)
     events.on('cart/update', (data) => {
@@ -171,5 +186,6 @@ export default async function decorate(block) {
     // Cleanup on block removal
     block.addEventListener('DOMNodeRemoved', () => {
       unsubscribe();
+      unsubscribeSimple();
     });
 }

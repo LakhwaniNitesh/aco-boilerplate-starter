@@ -30,6 +30,7 @@ import { rootLink } from '../../scripts/scripts.js';
 
 // Cart state management
 import { cartStore, ACTIONS } from '../../scripts/cart-manager.js';
+import { updateCartState } from '../../scripts/simple-cart-state.js';
 
 export default async function decorate(block) {
   try {
@@ -200,6 +201,9 @@ export default async function decorate(block) {
                 type: ACTIONS.SET_CART,
                 payload: result.cart,
               });
+              
+              // Also update simple cart state for direct updates
+              updateCartState(result.cart);
               
               // Also dispatch a custom event for extra reliability
               window.dispatchEvent(new CustomEvent('hcl-cart-updated', {
