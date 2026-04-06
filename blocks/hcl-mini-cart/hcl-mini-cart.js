@@ -1,4 +1,5 @@
 import { readBlockConfig } from '../../scripts/aem.js';
+import { events } from '@dropins/tools/event-bus.js';
 
 export default async function decorate(block) {
   const config = readBlockConfig(block);
@@ -73,7 +74,7 @@ export default async function decorate(block) {
 
   // Load and subscribe to cart updates
   try {
-    const { cartStore } = await import('../../scripts/cart-manager.js');
+    const { cartStore, ACTIONS } = await import('../../scripts/cart-manager.js');
 
     const updateDisplay = () => {
       const state = cartStore.getState();
@@ -142,6 +143,18 @@ export default async function decorate(block) {
 
     // Subscribe to cart changes
     const unsubscribe = cartStore.subscribe(updateDisplay);
+
+    // Also listen to cart/update events from the event bus (fallback mechanism)
+    events.on('cart/update', (data) => {
+      console.log('[MINI-CART] Received cart/update event:', data);
+      if (data.cart) {
+        // Dispatch to cartStore to ensure state is updated
+        cartStore.dispatch({
+          type: ACTIONS.SET_CART,
+          payload: data.cart,
+        });
+      }
+    });
 
     // Cleanup on block removal
     block.addEventListener('DOMNodeRemoved', () => {
