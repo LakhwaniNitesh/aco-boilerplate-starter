@@ -73,12 +73,11 @@ export default async function decorate(block) {
 
   // Load and subscribe to cart updates
   try {
-    const { default: CartManager } = await import('../../scripts/cart-manager.js');
-    const cartStore = CartManager.getInstance();
+    const { cartStore } = await import('../../scripts/cart-manager.js');
 
     const updateDisplay = () => {
       const state = cartStore.getState();
-      const items = state.items || [];
+      const items = state.cart?.items || [];
       const count = items.length;
 
       // Update badge
