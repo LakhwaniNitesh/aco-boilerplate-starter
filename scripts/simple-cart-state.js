@@ -4,6 +4,7 @@
  */
 
 let cartState = {
+  cartId: null,
   items: [],
   total: 0,
 };
@@ -15,6 +16,7 @@ function initializeCartState() {
     if (storedCart) {
       const parsed = JSON.parse(storedCart);
       cartState = {
+        cartId: parsed.cartId || null,
         items: parsed.items || [],
         total: parsed.total || 0,
       };
@@ -32,6 +34,7 @@ const listeners = new Set();
 export function updateCartState(newCart) {
   console.log('[SIMPLE-CART-STATE] Updating cart state:', newCart);
   cartState = {
+    cartId: newCart.cartId || null,
     items: newCart.items || [],
     total: newCart.total || 0,
   };
@@ -44,7 +47,7 @@ export function updateCartState(newCart) {
     
     // Verify it was actually saved
     const verify = localStorage.getItem('hcl-cart');
-    console.log('[SIMPLE-CART-STATE] Verified in localStorage:', verify);
+    console.log('[SIMPLE-CART-STATE] ✓ Verified in localStorage:', verify);
   } catch (err) {
     console.warn('[SIMPLE-CART-STATE] Could not persist cart to localStorage:', err);
   }

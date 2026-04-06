@@ -3,10 +3,41 @@
  * Handles cart operations (add, get, update, remove)
  */
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { hclClient } from '../utils/hcl-client.js';
 
-// In-memory cart storage for localhost testing
-const cartStorage = new Map();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const CART_STORAGE_DIR = path.join(__dirname, '../.cart-storage');
+const CART_FILE = path.join(CART_STORAGE_DIR, 'test-cart-localhost.json');
+
+// Ensure storage directory exists
+if (!fs.existsSync(CART_STORAGE_DIR)) {
+  fs.mkdirSync(CART_STORAGE_DIR, { recursive: true });
+}
+
+// Helper functions for file-based cart storage
+function loadCart() {
+  try {
+    if (fs.existsSync(CART_FILE)) {
+      const data = fs.readFileSync(CART_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('[CART] Error loading cart from file:', error.message);
+  }
+  return null;
+}
+
+function saveCart(cart) {
+  try {
+    fs.writeFileSync(CART_FILE, JSON.stringify(cart, null, 2), 'utf8');
+    console.log('[CART] ✓ Cart persisted to file');
+  } catch (error) {
+    console.error('[CART] Error saving cart to file:', error.message);
+  }
+}
 
 export const hclCartController = {
   /**
@@ -31,21 +62,20 @@ export const hclCartController = {
       // Localhost test mode - return mock cart response with accumulation
       if (isLocalhost && !accessToken) {
         console.log(`[CART] Adding to cart (localhost test mode): ${productId} x${quantity || 1}`);
-        console.log(`[CART] cartStorage size before: ${cartStorage.size}`);
         
-        // Get or create cart
+        // Load or create cart from file
         const cartId = 'test-cart-localhost';
-        let cart = cartStorage.get(cartId);
+        let cart = loadCart();
         
         if (!cart) {
-          console.log(`[CART] Creating new cart with id: ${cartId}`);
+          console.log(`[CART] ✓ Creating new cart with id: ${cartId}`);
           cart = {
             cartId,
             items: [],
             total: 0,
           };
         } else {
-          console.log(`[CART] Retrieved existing cart with id: ${cartId}, items: ${cart.items.length}`);
+          console.log(`[CART] ✓ Loaded existing cart from file, current items: ${cart.items.length}`);
         }
 
         // Check if product already exists in cart
@@ -54,7 +84,7 @@ export const hclCartController = {
         if (existingItem) {
           // Update quantity if already in cart
           existingItem.quantity += (quantity || 1);
-          console.log(`[CART] Updated existing item quantity to ${existingItem.quantity}`);
+          console.log(`[CART] ✓ Updated item quantity → ${existingItem.quantity}`);
         } else {
           // Add new item
           cart.items.push({
@@ -64,17 +94,16 @@ export const hclCartController = {
             price: 99.99,
             name: 'Test Product',
           });
-          console.log(`[CART] Added new item to cart`);
+          console.log(`[CART] ✓ Added new item (total items in cart: ${cart.items.length})`);
         }
 
         // Recalculate total
         cart.total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        console.log(`[CART] Cart total: $${cart.total.toFixed(2)}`);
+        console.log(`[CART] ✓ Cart total: $${cart.total.toFixed(2)}`);
 
-        // Store cart
-        cartStorage.set(cartId, cart);
-        console.log(`[CART] cartStorage size after: ${cartStorage.size}`);
-        console.log(`[CART] Returning cart:`, cart);
+        // Persist to file
+        saveCart(cart);
+        console.log(`[CART] ✓ Returning cart with ${cart.items.length} items, total: $${cart.total.toFixed(2)}`);
 
         return res.json({
           success: true,
