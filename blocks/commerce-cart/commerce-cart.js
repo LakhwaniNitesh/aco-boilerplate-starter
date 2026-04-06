@@ -20,6 +20,9 @@ import '../../scripts/initializers/cart.js';
 import { readBlockConfig } from '../../scripts/aem.js';
 import { rootLink } from '../../scripts/scripts.js';
 
+// Import our cart system
+import { SimpleCartState } from '../../scripts/simple-cart-state.js';
+
 export default async function decorate(block) {
   // Configuration
   const {
@@ -33,9 +36,11 @@ export default async function decorate(block) {
     'checkout-url': checkoutURL = '',
   } = readBlockConfig(block);
 
-  const cart = Cart.getCartDataFromCache();
+  // Get cart from our HCL system instead of drop-in cache
+  const hclCart = SimpleCartState.getState();
+  console.log('[CART] Loading cart page with HCL cart:', hclCart);
 
-  const isEmptyCart = isCartEmpty(cart);
+  const isEmptyCart = !hclCart || !hclCart.items || hclCart.items.length === 0;
 
   // Layout
   const fragment = document.createRange().createContextualFragment(`
@@ -74,95 +79,69 @@ export default async function decorate(block) {
 
   toggleEmptyCart(isEmptyCart);
 
-  // Render Containers
-  await Promise.all([
-    // Cart List
-    provider.render(CartSummaryList, {
-      hideHeading: hideHeading === 'true',
-      routeProduct: (product) => rootLink(`/products/${product.url.urlKey}/${product.topLevelSku}`),
-      routeEmptyCartCTA: startShoppingURL ? () => rootLink(startShoppingURL) : undefined,
-      maxItems: parseInt(maxItems, 10) || undefined,
-      attributesToHide: hideAttributes
-        .split(',')
-        .map((attr) => attr.trim().toLowerCase()),
-      enableUpdateItemQuantity: enableUpdateItemQuantity === 'true',
-      enableRemoveItem: enableRemoveItem === 'true',
-      slots: {
-        Footer: (ctx) => {
-          const giftOptions = document.createElement('div');
-
-          provider.render(GiftOptions, {
-            item: ctx.item,
-            view: 'product',
-            dataSource: 'cart',
-            handleItemsLoading: ctx.handleItemsLoading,
-            handleItemsError: ctx.handleItemsError,
-            onItemUpdate: ctx.onItemUpdate,
-          })(giftOptions);
-
-          ctx.appendChild(giftOptions);
-        },
-      },
-    })($list),
-
-    // Order Summary
-    provider.render(OrderSummary, {
-      routeProduct: (product) => rootLink(`/products/${product.url.urlKey}/${product.topLevelSku}`),
-      routeCheckout: checkoutURL ? () => rootLink(checkoutURL) : undefined,
-      slots: {
-        EstimateShipping: async (ctx) => {
-          if (enableEstimateShipping === 'true') {
-            const wrapper = document.createElement('div');
-            await provider.render(EstimateShipping, {})(wrapper);
-            ctx.replaceWith(wrapper);
-          }
-        },
-        Coupons: (ctx) => {
-          const coupons = document.createElement('div');
-
-          provider.render(Coupons)(coupons);
-
-          ctx.appendChild(coupons);
-        },
-        GiftCards: (ctx) => {
-          const giftCards = document.createElement('div');
-
-          provider.render(GiftCards)(giftCards);
-
-          ctx.appendChild(giftCards);
-        },
-      },
-    })($summary),
-
-    // Empty Cart
-    provider.render(EmptyCart, {
-      routeCTA: startShoppingURL ? () => rootLink(startShoppingURL) : undefined,
-    })($emptyCart),
-
-    provider.render(GiftOptions, {
-      view: 'order',
-      dataSource: 'cart',
-    })($giftOptions),
-  ]);
-
-  let cartViewEventPublished = false;
-  // Events
-  events.on(
-    'cart/data',
-    (payload) => {
-      toggleEmptyCart(isCartEmpty(payload));
-
-      if (!cartViewEventPublished) {
-        cartViewEventPublished = true;
-        publishShoppingCartViewEvent();
-      }
-    },
-    { eager: true },
-  );
-
-  return Promise.resolve();
+  // If cart is not empty, render custom cart display
+  if (!isEmptyCart) {
+    renderHCLCart(block, hclCart, {
+      startShoppingURL,
+      checkoutURL,
+      hideHeading,
+    });
+  }
 }
 
-function isCartEmpty(cart) {
-  return cart ? cart.totalQuantity < 1 : true;
+/**
+ * Render custom HCL cart display
+ */
+function renderHCLCart(block, cart, options) {
+  const { hideHeading, startShoppingURL, checkoutURL } = options;
+
+  // Find the list and summary containers
+  const $list = block.querySelector('.cart__list');
+  const $summary = block.querySelector('.cart__order-summary');
+
+  if (!$list || !$summary) {
+    console.warn('[CART] Cart containers not found');
+    return;
+  }
+
+  // Render cart items
+  const itemsHTML = cart.items
+    .map((item) => `
+      <div class="cart-item" data-sku="${item.sku}">
+        <div class="cart-item__name">${item.name}</div>
+        <div class="cart-item__details">
+          <span class="cart-item__quantity">Qty: ${item.quantity}</span>
+          <span class="cart-item__price">$${(item.price * item.quantity).toFixed(2)}</span>
+        </div>
+      </div>
+    `)
+    .join('');
+
+  // Render order summary
+  const summaryHTML = `
+    <div class="order-summary">
+      <div class="order-summary__row">
+        <span>Subtotal:</span>
+        <span>$${cart.total.toFixed(2)}</span>
+      </div>
+      <div class="order-summary__row">
+        <span>Shipping:</span>
+        <span>$0.00</span>
+      </div>
+      <div class="order-summary__row order-summary__total">
+        <span>Total:</span>
+        <span>$${cart.total.toFixed(2)}</span>
+      </div>
+      ${
+        checkoutURL
+          ? `<a href="${checkoutURL}" class="button button-primary">Proceed to Checkout</a>`
+          : ''
+      }
+    </div>
+  `;
+
+  $list.innerHTML = itemsHTML;
+  $summary.innerHTML = summaryHTML;
+
+  console.log('[CART] Rendered HCL cart with', cart.items.length, 'items');
 }
