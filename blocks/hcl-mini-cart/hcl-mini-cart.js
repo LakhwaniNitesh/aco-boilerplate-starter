@@ -75,11 +75,7 @@ export default async function decorate(block) {
   block.innerHTML = '';
   block.appendChild(container);
 
-  // Load and subscribe to cart updates
-  const { cartStore, ACTIONS } = await import('../../scripts/cart-manager.js');
-  console.log('[MINI-CART] Initialized with cartStore:', cartStore);
-
-  // Setup subscription immediately
+  // Setup update display function (works with or without cartStore)
   const updateDisplay = () => {
     console.log('[MINI-CART] updateDisplay() called');
     // PRIMARY: Try simple cart state first (guaranteed to be updated)
@@ -88,13 +84,20 @@ export default async function decorate(block) {
     let total = simpleState.total || 0;
     
     // FALLBACK: Try cartStore if simple state is empty
-    if (items.length === 0) {
-      const state = cartStore.getState();
-      items = state.cart?.items || [];
-      total = state.cart?.total || 0;
-      if (items.length > 0) {
-        console.log('[MINI-CART] Using cartStore state:', state);
+    let cartStoreState = null;
+    try {
+      if (typeof window !== 'undefined' && window.__cartStore__) {
+        const state = window.__cartStore__.getState();
+        if (state && state.cart) {
+          cartStoreState = state;
+          if (items.length === 0) {
+            items = state.cart?.items || [];
+            total = state.cart?.total || 0;
+          }
+        }
       }
+    } catch (e) {
+      console.log('[MINI-CART] CartStore not available, using simple state');
     }
     
     const count = items.length;
@@ -156,25 +159,42 @@ export default async function decorate(block) {
       totalPrice.textContent = `$${calculatedTotal.toFixed(2)}`;
     };
 
-    // Initial update
-    console.log('[MINI-CART] Calling initial updateDisplay()');
-    updateDisplay();
+  // Load cartStore if available
+  let cartStore = null;
+  let ACTIONS = null;
+  console.log('[MINI-CART] About to import cart-manager...');
+  try {
+    const imported = await import('../../scripts/cart-manager.js');
+    cartStore = imported.cartStore;
+    ACTIONS = imported.ACTIONS;
+    // Store reference globally for easy access
+    window.__cartStore__ = cartStore;
+    console.log('[MINI-CART] Initialized with cartStore:', cartStore);
+  } catch (err) {
+    console.error('[MINI-CART] Error importing cart-manager:', err);
+    console.log('[MINI-CART] Will use simple-cart-state only');
+  }
 
-    // Subscribe to cart changes
+  // Initial update
+  console.log('[MINI-CART] Calling initial updateDisplay()');
+  updateDisplay();
+
+  // Subscribe to simple cart state for direct updates
+  console.log('[MINI-CART] Subscribing to simple cart state');
+  const unsubscribeSimple = subscribeToCart((simpleState) => {
+    console.log('[MINI-CART] Received simple cart state update:', simpleState);
+    updateDisplay();
+  });
+
+  // Subscribe to cartStore if available
+  if (cartStore) {
     console.log('[MINI-CART] Subscribing to cartStore');
     const unsubscribe = cartStore.subscribe(updateDisplay);
     
-    // Also subscribe to simple cart state for direct updates
-    console.log('[MINI-CART] Subscribing to simple cart state');
-    const unsubscribeSimple = subscribeToCart((simpleState) => {
-      console.log('[MINI-CART] Received simple cart state update:', simpleState);
-      updateDisplay();
-    });
-
     // Also listen to cart/update events from the event bus (fallback mechanism)
     events.on('cart/update', (data) => {
       console.log('[MINI-CART] Received cart/update event:', data);
-      if (data.cart) {
+      if (data.cart && cartStore) {
         // Dispatch to cartStore to ensure state is updated
         cartStore.dispatch({
           type: ACTIONS.SET_CART,
@@ -186,7 +206,7 @@ export default async function decorate(block) {
     // Listen to custom window events as extra fallback
     window.addEventListener('hcl-cart-updated', (e) => {
       console.log('[MINI-CART] Received hcl-cart-updated event:', e.detail);
-      if (e.detail?.cart) {
+      if (e.detail?.cart && cartStore) {
         cartStore.dispatch({
           type: ACTIONS.SET_CART,
           payload: e.detail.cart,
@@ -199,4 +219,11 @@ export default async function decorate(block) {
       unsubscribe();
       unsubscribeSimple();
     });
-}
+  } else {
+    console.log('[MINI-CART] CartStore not available, using simple state only');
+    
+    // Cleanup simple subscription on block removal
+    block.addEventListener('DOMNodeRemoved', () => {
+      unsubscribeSimple();
+    });
+  }
