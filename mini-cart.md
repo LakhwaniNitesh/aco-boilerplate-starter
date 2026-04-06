@@ -2,4 +2,8 @@
 
 ## hcl-mini-cart
 
-Block that displays real-time shopping cart summary in the header.
+| hcl-mini-cart |
+|---|
+| show-heading: true |
+| max-items: 3 |
+| hide-empty: false |
