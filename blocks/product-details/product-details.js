@@ -163,6 +163,8 @@ export default async function decorate(block) {
                 partNumber: values?.sku,
                 sku: values?.sku,
                 quantity: values?.quantity || 1,
+                name: product?.name || values?.name || 'Product',
+                price: product?.price?.regularPrice || 0,
               }),
             });
 

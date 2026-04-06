@@ -46,7 +46,7 @@ export const hclCartController = {
    */
   addToCart: async (req, res, next) => {
     try {
-      const { partNumber, sku, quantity, accessToken } = req.body;
+      const { partNumber, sku, quantity, accessToken, name, price } = req.body;
       
       // For localhost testing without auth
       const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
@@ -91,8 +91,8 @@ export const hclCartController = {
             partNumber: productId,
             sku: productId,
             quantity: quantity || 1,
-            price: 99.99,
-            name: 'Test Product',
+            price: price || 0,
+            name: name || 'Product',
           });
           console.log(`[CART] ✓ Added new item (total items in cart: ${cart.items.length})`);
         }
