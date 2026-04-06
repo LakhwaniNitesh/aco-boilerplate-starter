@@ -149,8 +149,26 @@ export default async function decorate(block) {
 
           // add the product to the cart
           if (valid) {
-            const { addProductsToCart } = await import('@dropins/storefront-cart/api.js');
-            await addProductsToCart([{ ...values }]);
+            // Use HCL backend proxy instead of drop-in cart API
+            const cartResponse = await fetch('http://localhost:3001/api/hcl/cart/add', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                sku: values?.sku,
+                quantity: values?.quantity || 1,
+              }),
+            });
+
+            if (!cartResponse.ok) {
+              throw new Error(`Failed to add product to cart: ${cartResponse.statusText}`);
+            }
+
+            const result = await cartResponse.json();
+            if (!result.success) {
+              throw new Error(result.message || 'Failed to add product to cart');
+            }
           }
 
           // reset any previous alerts if successful
