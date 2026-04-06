@@ -82,9 +82,11 @@ export const hclCartController = {
         const existingItem = cart.items.find(item => item.partNumber === productId);
         
         if (existingItem) {
-          // Update quantity if already in cart
+          // Update quantity AND product details (name, price may have changed)
           existingItem.quantity += (quantity || 1);
-          console.log(`[CART] ✓ Updated item quantity → ${existingItem.quantity}`);
+          existingItem.price = price || existingItem.price; // Update price if provided
+          existingItem.name = name || existingItem.name; // Update name if provided
+          console.log(`[CART] ✓ Updated item quantity → ${existingItem.quantity}, name: ${existingItem.name}, price: $${existingItem.price}`);
         } else {
           // Add new item
           cart.items.push({
