@@ -31,14 +31,22 @@ export const hclCartController = {
       // Localhost test mode - return mock cart response with accumulation
       if (isLocalhost && !accessToken) {
         console.log(`[CART] Adding to cart (localhost test mode): ${productId} x${quantity || 1}`);
+        console.log(`[CART] cartStorage size before: ${cartStorage.size}`);
         
         // Get or create cart
         const cartId = 'test-cart-localhost';
-        let cart = cartStorage.get(cartId) || {
-          cartId,
-          items: [],
-          total: 0,
-        };
+        let cart = cartStorage.get(cartId);
+        
+        if (!cart) {
+          console.log(`[CART] Creating new cart with id: ${cartId}`);
+          cart = {
+            cartId,
+            items: [],
+            total: 0,
+          };
+        } else {
+          console.log(`[CART] Retrieved existing cart with id: ${cartId}, items: ${cart.items.length}`);
+        }
 
         // Check if product already exists in cart
         const existingItem = cart.items.find(item => item.partNumber === productId);
@@ -65,6 +73,8 @@ export const hclCartController = {
 
         // Store cart
         cartStorage.set(cartId, cart);
+        console.log(`[CART] cartStorage size after: ${cartStorage.size}`);
+        console.log(`[CART] Returning cart:`, cart);
 
         return res.json({
           success: true,
