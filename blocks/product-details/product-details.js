@@ -154,13 +154,12 @@ export default async function decorate(block) {
           // add the product to the cart
           if (valid) {
             // Use HCL backend proxy instead of drop-in cart API
-            // Extract price from product.prices.regular.amount (in cents, divide by 100 for dollars)
+            // Extract price from product.prices.regular.amount (already in dollars)
             const priceAmount = product?.prices?.regular?.amount || 0;
-            const priceInDollars = priceAmount / 100;
             
             console.log('[PDP] Sending to cart:', { 
               name: product?.name,
-              price: priceInDollars,
+              price: priceAmount,
               quantity: values?.quantity || 1
             });
             
@@ -174,7 +173,7 @@ export default async function decorate(block) {
                 sku: values?.sku,
                 quantity: values?.quantity || 1,
                 name: product?.name || values?.name || 'Product',
-                price: priceInDollars,
+                price: priceAmount,
               }),
             });
 
