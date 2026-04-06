@@ -1,12 +1,11 @@
-import { readBlockConfig } from '../../scripts/aem.js';
-import { events } from '@dropins/tools/event-bus.js';
-import { subscribeToCart, getCartState } from '../../scripts/simple-cart-state.js';
-import './commerce-mini-cart.css';
-
 export default async function decorate(block) {
-  console.log('[MINI-CART] Block decorating started...');
-  console.log('[MINI-CART] Block element:', block);
-  console.log('[MINI-CART] Block classList:', block.classList);
+  // Import CSS
+  import('./commerce-mini-cart.css');
+  
+  const { readBlockConfig } = await import('../../scripts/aem.js');
+  const { events } = await import('@dropins/tools/event-bus.js');
+  const { subscribeToCart, getCartState } = await import('../../scripts/simple-cart-state.js');
+  
   const config = readBlockConfig(block);
 
   const {
