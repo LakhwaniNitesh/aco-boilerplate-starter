@@ -243,16 +243,29 @@ export default async function decorate(block) {
   const miniCartPath = miniCartMeta ? new URL(miniCartMeta, window.location).pathname : '/mini-cart';
   loadFragment(miniCartPath).then((miniCartFragment) => {
     const miniCartElement = miniCartFragment.firstElementChild;
+    console.log('[HEADER] Mini-cart fragment loaded:', miniCartElement);
+    console.log('[HEADER] Fragment HTML:', miniCartElement?.outerHTML?.substring(0, 200));
     minicartPanel.append(miniCartElement);
     
-    // Find and decorate the hcl-mini-cart block
-    const block = miniCartElement.querySelector('div.hcl-mini-cart') || miniCartElement.querySelector('[class*="hcl-mini-cart"]');
+    // Find block - check all possible locations
+    let block = miniCartElement.querySelector('div.hcl-mini-cart');
+    if (!block) {
+      block = miniCartElement.querySelector('[class*="hcl-mini-cart"]');
+    }
+    if (!block && miniCartElement.classList.contains('hcl-mini-cart')) {
+      block = miniCartElement;
+    }
+    
     if (block) {
-      console.log('[HEADER] Found mini-cart block, decorating...');
+      console.log('[HEADER] Found mini-cart block, decorating...', block);
       decorateBlock(block);
       loadBlock(block);
     } else {
-      console.log('[HEADER] Mini-cart block not found in fragment');
+      console.log('[HEADER] Mini-cart block not found. Fragment structure:', {
+        class: miniCartElement?.className,
+        tag: miniCartElement?.tagName,
+        children: miniCartElement?.children?.length,
+      });
     }
   });
 
