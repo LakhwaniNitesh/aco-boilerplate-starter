@@ -6,20 +6,10 @@ import '../../scripts/initializers/cart.js';
 
 import { readBlockConfig } from '../../scripts/aem.js';
 import { rootLink } from '../../scripts/scripts.js';
+import hclMiniCartDecorate from '../hcl-mini-cart/hcl-mini-cart.js';
 
 export default async function decorate(block) {
-  const {
-    'start-shopping-url': startShoppingURL = '',
-    'cart-url': cartURL = '',
-    'checkout-url': checkoutURL = '',
-  } = readBlockConfig(block);
-
-  block.innerHTML = '';
-
-  return provider.render(MiniCart, {
-    routeEmptyCartCTA: startShoppingURL ? () => rootLink(startShoppingURL) : undefined,
-    routeCart: cartURL ? () => rootLink(cartURL) : undefined,
-    routeCheckout: checkoutURL ? () => rootLink(checkoutURL) : undefined,
-    routeProduct: (product) => rootLink(`/products/${product.url.urlKey}/${product.topLevelSku}`),
-  })(block);
+  console.log('[COMMERCE-MINI-CART] Using HCL mini-cart decorator');
+  // Use our custom HCL mini-cart implementation
+  return hclMiniCartDecorate(block);
 }
