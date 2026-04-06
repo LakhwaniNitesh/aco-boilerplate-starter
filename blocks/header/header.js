@@ -8,6 +8,7 @@ import { publishShoppingCartViewEvent } from '@dropins/storefront-cart/api.js';
 
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
+import { decorateBlock, loadBlock } from '../../scripts/aem.js';
 
 import renderAuthCombine from './renderAuthCombine.js';
 import { renderAuthDropdown } from './renderAuthDropdown.js';
@@ -241,7 +242,18 @@ export default async function decorate(block) {
   const miniCartMeta = getMetadata('mini-cart');
   const miniCartPath = miniCartMeta ? new URL(miniCartMeta, window.location).pathname : '/mini-cart';
   loadFragment(miniCartPath).then((miniCartFragment) => {
-    minicartPanel.append(miniCartFragment.firstElementChild);
+    const miniCartElement = miniCartFragment.firstElementChild;
+    minicartPanel.append(miniCartElement);
+    
+    // Find and decorate the hcl-mini-cart block
+    const block = miniCartElement.querySelector('div.hcl-mini-cart') || miniCartElement.querySelector('[class*="hcl-mini-cart"]');
+    if (block) {
+      console.log('[HEADER] Found mini-cart block, decorating...');
+      decorateBlock(block);
+      loadBlock(block);
+    } else {
+      console.log('[HEADER] Mini-cart block not found in fragment');
+    }
   });
 
   async function toggleMiniCart(state) {
