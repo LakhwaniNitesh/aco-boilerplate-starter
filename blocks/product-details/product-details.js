@@ -154,19 +154,15 @@ export default async function decorate(block) {
           // add the product to the cart
           if (valid) {
             // Use HCL backend proxy instead of drop-in cart API
-            console.log('[PDP] Product data available:', { 
-              name: product?.name, 
-              priceRange: product?.priceRange,
-              price: product?.price,
-              allKeys: product ? Object.keys(product) : 'no product'
-            });
+            // Extract price from product.prices.regular.amount (in cents, divide by 100 for dollars)
+            const priceAmount = product?.prices?.regular?.amount || 0;
+            const priceInDollars = priceAmount / 100;
             
-            // Log full product structure for debugging
-            console.log('[PDP] Full product object:', product);
-            console.log('[PDP] Product keys:', product ? Object.keys(product) : 'N/A');
-            console.log('[PDP] Prices object:', product?.prices);
-            console.log('[PDP] Regular price:', product?.prices?.regular);
-            console.log('[PDP] Final price:', product?.prices?.final);
+            console.log('[PDP] Sending to cart:', { 
+              name: product?.name,
+              price: priceInDollars,
+              quantity: values?.quantity || 1
+            });
             
             const cartResponse = await fetch('http://localhost:3001/api/hcl/cart/add', {
               method: 'POST',
@@ -178,7 +174,7 @@ export default async function decorate(block) {
                 sku: values?.sku,
                 quantity: values?.quantity || 1,
                 name: product?.name || values?.name || 'Product',
-                price: product?.priceRange?.minimum?.regularPrice || product?.price || 0,
+                price: priceInDollars,
               }),
             });
 
