@@ -15,7 +15,7 @@ export default async function decorate(block) {
   
   const { readBlockConfig } = await import('../../scripts/aem.js');
   const { events } = await import('@dropins/tools/event-bus.js');
-  const { subscribeToCart, getCartState, updateCartState } = await import('../../scripts/simple-cart-state.js');
+  const { subscribeToCart, getCartState, updateCartState, fetchCartFromHCL } = await import('../../scripts/simple-cart-state.js');
   
   const config = readBlockConfig(block);
 
@@ -27,6 +27,28 @@ export default async function decorate(block) {
 
   console.log('[MINI-CART] Block config:', config);
   block.classList.add('hcl-mini-cart');
+
+  // Fetch cart from HCL Commerce on page load
+  const getAccessToken = () => {
+    try {
+      // Try to get from sessionStorage or auth context
+      return sessionStorage.getItem('hcl-access-token') || localStorage.getItem('hcl-access-token');
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const syncCartFromHCL = async () => {
+    try {
+      const token = getAccessToken();
+      if (token) {
+        console.log('[MINI-CART] Syncing cart from HCL...');
+        await fetchCartFromHCL(token);
+      }
+    } catch (error) {
+      console.warn('[MINI-CART] Could not sync with HCL, will use in-memory state:', error.message);
+    }
+  };
 
   // Create container
   const container = document.createElement('div');
@@ -90,14 +112,21 @@ export default async function decorate(block) {
   const clearCart = document.createElement('button');
   clearCart.className = 'hcl-mini-cart-clear';
   clearCart.textContent = 'Clear Cart';
-  clearCart.addEventListener('click', (e) => {
+  clearCart.addEventListener('click', async (e) => {
     e.preventDefault();
-    localStorage.removeItem('hcl-cart');
-    // Delete backend cart file
-    fetch('/api/hcl/cart/clear', { method: 'DELETE' }).catch(() => {});
-    updateCartState({ cartId: null, items: [], total: 0 });
-    updateDisplay();
-    console.log('[MINI-CART] Cart cleared');
+    try {
+      const token = getAccessToken();
+      const url = token 
+        ? `/api/hcl/cart/clear?accessToken=${encodeURIComponent(token)}`
+        : '/api/hcl/cart/clear';
+      
+      await fetch(url, { method: 'DELETE' });
+      updateCartState({ cartId: null, items: [], total: 0 });
+      updateDisplay();
+      console.log('[MINI-CART] Cart cleared via HCL');
+    } catch (error) {
+      console.error('[MINI-CART] Error clearing cart:', error);
+    }
   });
 
   actions.appendChild(viewCart);
@@ -219,38 +248,18 @@ export default async function decorate(block) {
     console.log('[MINI-CART] Will use simple-cart-state only');
   }
 
-  // Restore cart from localStorage (persistent across page refreshes)
-  const restoreCartFromStorage = () => {
-    try {
-      console.log('[MINI-CART] Attempting to restore from localStorage');
-      const storedCart = localStorage.getItem('hcl-cart');
-      console.log('[MINI-CART] Raw localStorage value:', storedCart);
-      
-      if (storedCart) {
-        const cart = JSON.parse(storedCart);
-        console.log('[MINI-CART] Parsed cart from localStorage:', cart);
-        // Update simple cart state with stored cart
-        updateCartState(cart);
-        console.log('[MINI-CART] Called updateCartState with restored cart');
-      } else {
-        console.log('[MINI-CART] No cart found in localStorage (empty or null)');
-      }
-    } catch (err) {
-      console.error('[MINI-CART] Error restoring cart from localStorage:', err);
-    }
-  };
-  
-  // Restore cart FIRST, before initial display
-  restoreCartFromStorage();
+  // Sync cart from HCL Commerce on page load
+  // This is the primary source of truth
+  await syncCartFromHCL();
 
-  // Initial update
+  // Initial display update
   console.log('[MINI-CART] Calling initial updateDisplay()');
   updateDisplay();
 
-  // Subscribe to simple cart state for direct updates
+  // Subscribe to cart state changes for real-time updates
   console.log('[MINI-CART] Subscribing to simple cart state');
   const unsubscribeSimple = subscribeToCart((simpleState) => {
-    console.log('[MINI-CART] Received simple cart state update:', simpleState);
+    console.log('[MINI-CART] Received cart state update:', simpleState);
     updateDisplay();
   });
 

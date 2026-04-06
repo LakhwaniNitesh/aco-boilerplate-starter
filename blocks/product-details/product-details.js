@@ -153,17 +153,23 @@ export default async function decorate(block) {
 
           // add the product to the cart
           if (valid) {
-            // Use HCL backend proxy instead of drop-in cart API
-            // Extract price from product.prices.regular.amount (already in dollars)
-            const priceAmount = product?.prices?.regular?.amount || 0;
+            // Get access token for HCL Commerce
+            const getAccessToken = () => {
+              try {
+                return sessionStorage.getItem('hcl-access-token') || localStorage.getItem('hcl-access-token');
+              } catch (e) {
+                return null;
+              }
+            };
+
+            const accessToken = getAccessToken();
+            if (!accessToken) {
+              throw new Error('Not authenticated. Please log in first.');
+            }
+
+            console.log('[PDP] Adding to HCL cart with accessToken');
             
-            console.log('[PDP] Sending to cart:', { 
-              name: product?.name,
-              price: priceAmount,
-              quantity: values?.quantity || 1
-            });
-            
-            const cartResponse = await fetch('http://localhost:3001/api/hcl/cart/add', {
+            const cartResponse = await fetch('/api/hcl/cart/add', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -172,8 +178,7 @@ export default async function decorate(block) {
                 partNumber: values?.sku,
                 sku: values?.sku,
                 quantity: values?.quantity || 1,
-                name: product?.name || values?.name || 'Product',
-                price: priceAmount,
+                accessToken,
               }),
             });
 
@@ -182,15 +187,11 @@ export default async function decorate(block) {
             }
 
             const result = await cartResponse.json();
-            console.log('[PDP] Raw API response:', result);
+            console.log('[PDP] Add to cart response:', result);
             
             if (!result.success) {
               throw new Error(result.error || result.message || 'Failed to add product to cart');
             }
-
-            console.log('[PDP] API success, result object:', result);
-            console.log('[PDP] result.cart exists?', !!result.cart);
-            console.log('[PDP] result.cart value:', result.cart);
 
             // Success! Show success message and update mini-cart
             inlineAlert?.remove();
@@ -211,32 +212,12 @@ export default async function decorate(block) {
               block: 'center',
             });
 
-            // Update cart state to sync mini-cart
-            console.log('[PDP] About to check if result.cart exists');
+            // Update cart state from HCL response to sync mini-cart
             if (result.cart) {
-              console.log('[PDP] ✓ result.cart exists, proceeding with updates');
-              console.log('[PDP] Dispatching SET_CART action with cart:', result.cart);
-              cartStore.dispatch({
-                type: ACTIONS.SET_CART,
-                payload: result.cart,
-              });
-              
-              // Also update simple cart state for direct updates
-              console.log('[PDP] Calling updateCartState with:', result.cart);
+              const { updateCartState } = await import('../../scripts/simple-cart-state.js');
               updateCartState(result.cart);
-              console.log('[PDP] updateCartState called successfully');
-              
-              // Also dispatch a custom event for extra reliability
-              window.dispatchEvent(new CustomEvent('hcl-cart-updated', {
-                detail: { cart: result.cart }
-              }));
-            } else {
-              console.error('[PDP] ✗ result.cart does NOT exist! Cannot update cart state');
-              console.log('[PDP] Full result object:', JSON.stringify(result, null, 2));
+              console.log('[PDP] ✓ Cart state updated, mini-cart should sync');
             }
-
-            // Also emit event for other subscribers
-            events.emit('cart/update', { cart: result.cart });
             
             // Wait a moment before resetting button
             await new Promise(resolve => setTimeout(resolve, 1500));

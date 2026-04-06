@@ -21,7 +21,7 @@ import { readBlockConfig } from '../../scripts/aem.js';
 import { rootLink } from '../../scripts/scripts.js';
 
 // Import our cart system
-import { getCartState } from '../../scripts/simple-cart-state.js';
+import { getCartState, fetchCartFromHCL } from '../../scripts/simple-cart-state.js';
 
 export default async function decorate(block) {
   // Configuration
@@ -36,8 +36,30 @@ export default async function decorate(block) {
     'checkout-url': checkoutURL = '',
   } = readBlockConfig(block);
 
-  // Get cart from our HCL system instead of drop-in cache
-  const hclCart = getCartState();
+  // Fetch cart from HCL Commerce
+  let hclCart = { cartId: null, items: [], total: 0 };
+  
+  try {
+    const getAccessToken = () => {
+      try {
+        return sessionStorage.getItem('hcl-access-token') || localStorage.getItem('hcl-access-token');
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const token = getAccessToken();
+    if (token) {
+      console.log('[CART] Syncing cart from HCL...');
+      hclCart = await fetchCartFromHCL(token);
+    } else {
+      console.warn('[CART] No authentication token found, cart will be empty');
+    }
+  } catch (error) {
+    console.error('[CART] Failed to fetch cart from HCL:', error.message);
+    hclCart = getCartState();
+  }
+
   console.log('[CART] Loading cart page with HCL cart:', hclCart);
 
   const isEmptyCart = !hclCart || !hclCart.items || hclCart.items.length === 0;

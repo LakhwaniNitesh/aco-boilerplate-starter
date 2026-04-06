@@ -1,55 +1,52 @@
 /**
  * HCL Cart Controller
- * Handles cart operations (add, get, update, remove)
+ * Handles cart operations by proxying to HCL Commerce REST APIs
+ * Single source of truth: HCL Commerce only
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { hclClient } from '../utils/hcl-client.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CART_STORAGE_DIR = path.join(__dirname, '../.cart-storage');
-const CART_FILE = path.join(CART_STORAGE_DIR, 'test-cart-localhost.json');
-
-// Ensure storage directory exists
-if (!fs.existsSync(CART_STORAGE_DIR)) {
-  fs.mkdirSync(CART_STORAGE_DIR, { recursive: true });
-}
-
-// Helper functions for file-based cart storage
-function loadCart() {
+/**
+ * Convert HCL Commerce API response to standard cart format
+ * HCL returns cart with items array, we normalize to our format
+ */
+function normalizeHCLCart(hclResponse) {
   try {
-    if (fs.existsSync(CART_FILE)) {
-      const data = fs.readFileSync(CART_FILE, 'utf8');
-      return JSON.parse(data);
+    if (!hclResponse) {
+      return { cartId: null, items: [], total: 0 };
     }
-  } catch (error) {
-    console.error('[CART] Error loading cart from file:', error.message);
-  }
-  return null;
-}
 
-function saveCart(cart) {
-  try {
-    fs.writeFileSync(CART_FILE, JSON.stringify(cart, null, 2), 'utf8');
-    console.log('[CART] ✓ Cart persisted to file');
+    // Handle different HCL API response formats
+    const items = (hclResponse.items || hclResponse.orderItems || []).map(item => ({
+      partNumber: item.partNumber || item.partnumber || '',
+      sku: item.sku || item.partNumber || item.partnumber || '',
+      quantity: item.quantity || 1,
+      price: item.unitPrice || item.price || 0,
+      name: item.displayName || item.name || 'Product',
+      orderItemId: item.orderItemId || null,
+    }));
+
+    const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    return {
+      cartId: hclResponse.cartId || hclResponse.orderId || null,
+      items,
+      total: parseFloat(total.toFixed(2)),
+    };
   } catch (error) {
-    console.error('[CART] Error saving cart to file:', error.message);
+    console.error('[CART-PROXY] Error normalizing HCL response:', error.message);
+    return { cartId: null, items: [], total: 0 };
   }
 }
 
 export const hclCartController = {
   /**
    * POST /api/hcl/cart/add
-   * Add product to cart
+   * Add product to cart - proxies to HCL Commerce REST API
    */
   addToCart: async (req, res, next) => {
     try {
-      const { partNumber, sku, quantity, accessToken, name, price } = req.body;
-      
-      // For localhost testing without auth
-      const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
+      const { partNumber, sku, quantity, accessToken } = req.body;
       const productId = partNumber || sku;
 
       if (!productId) {
@@ -59,62 +56,6 @@ export const hclCartController = {
         });
       }
 
-      // Localhost test mode - return mock cart response with accumulation
-      if (isLocalhost && !accessToken) {
-        console.log(`[CART] Adding to cart (localhost test mode): ${productId} x${quantity || 1}`);
-        
-        // Load or create cart from file
-        const cartId = 'test-cart-localhost';
-        let cart = loadCart();
-        
-        if (!cart) {
-          console.log(`[CART] ✓ Creating new cart with id: ${cartId}`);
-          cart = {
-            cartId,
-            items: [],
-            total: 0,
-          };
-        } else {
-          console.log(`[CART] ✓ Loaded existing cart from file, current items: ${cart.items.length}`);
-        }
-
-        // Check if product already exists in cart
-        const existingItem = cart.items.find(item => item.partNumber === productId);
-        
-        if (existingItem) {
-          // Update quantity AND product details (name, price may have changed)
-          existingItem.quantity += (quantity || 1);
-          existingItem.price = price || existingItem.price; // Update price if provided
-          existingItem.name = name || existingItem.name; // Update name if provided
-          console.log(`[CART] ✓ Updated item quantity → ${existingItem.quantity}, name: ${existingItem.name}, price: $${existingItem.price}`);
-        } else {
-          // Add new item
-          cart.items.push({
-            partNumber: productId,
-            sku: productId,
-            quantity: quantity || 1,
-            price: price || 0,
-            name: name || 'Product',
-          });
-          console.log(`[CART] ✓ Added new item (total items in cart: ${cart.items.length})`);
-        }
-
-        // Recalculate total
-        cart.total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        console.log(`[CART] ✓ Cart total: $${cart.total.toFixed(2)}`);
-
-        // Persist to file
-        saveCart(cart);
-        console.log(`[CART] ✓ Returning cart with ${cart.items.length} items, total: $${cart.total.toFixed(2)}`);
-
-        return res.json({
-          success: true,
-          message: 'Product added to cart (test mode)',
-          cart,
-        });
-      }
-
-      // Production mode - requires auth
       if (!accessToken) {
         return res.status(401).json({
           success: false,
@@ -122,132 +63,181 @@ export const hclCartController = {
         });
       }
 
-      const cart = await hclClient.addToCart(
+      console.log(`[CART-PROXY] Adding to cart: ${productId} x${quantity || 1}`);
+
+      // Call HCL Commerce REST API to add item to cart
+      const hclResponse = await hclClient.addToCart(
         accessToken,
         productId,
         quantity || 1
       );
 
-      res.json({
+      // Normalize response to our standard format
+      const normalizedCart = normalizeHCLCart(hclResponse);
+      console.log(`[CART-PROXY] ✓ Added to HCL cart. Items: ${normalizedCart.items.length}, Total: $${normalizedCart.total.toFixed(2)}`);
+
+      return res.json({
         success: true,
-        cart,
+        message: 'Product added to cart',
+        cart: normalizedCart,
       });
     } catch (error) {
-      next(error);
+      console.error('[CART-PROXY] Error adding to cart:', error.message);
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: error.message || 'Failed to add product to cart',
+        details: error.details,
+      });
     }
   },
 
   /**
    * GET /api/hcl/cart
-   * Get current cart for authenticated user or localhost test mode
+   * Get current cart - proxies to HCL Commerce REST API
    */
   getCart: async (req, res, next) => {
     try {
       const { accessToken } = req.query;
-      const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
-
-      // Localhost test mode - return persisted cart
-      if (isLocalhost && !accessToken) {
-        const cartId = 'test-cart-localhost';
-        const cart = cartStorage.get(cartId) || {
-          cartId,
-          items: [],
-          total: 0,
-        };
-        console.log(`[CART] Getting cart (localhost test mode): ${cart.items.length} items`);
-        return res.json({
-          success: true,
-          cart,
-        });
-      }
 
       if (!accessToken) {
-        return res.status(400).json({
-          error: 'Missing required parameter: accessToken',
+        return res.status(401).json({
+          success: false,
+          error: 'Missing required field: accessToken',
         });
       }
 
-      const cart = await hclClient.getCart(accessToken);
+      console.log('[CART-PROXY] Fetching cart from HCL...');
 
-      res.json({
+      // Call HCL Commerce REST API to get cart
+      const hclResponse = await hclClient.getCart(accessToken);
+
+      // Normalize response to our standard format
+      const normalizedCart = normalizeHCLCart(hclResponse);
+      console.log(`[CART-PROXY] ✓ Fetched cart. Items: ${normalizedCart.items.length}, Total: $${normalizedCart.total.toFixed(2)}`);
+
+      return res.json({
         success: true,
-        cart,
+        cart: normalizedCart,
       });
     } catch (error) {
-      next(error);
-    }
-  },
-
-  /**
-   * DELETE /api/hcl/cart/item/:orderId/:itemId
-   * Remove item from cart
-   */
-  removeFromCart: async (req, res, next) => {
-    try {
-      const { orderId, itemId } = req.params;
-      const { accessToken } = req.query;
-
-      if (!accessToken) {
-        return res.status(400).json({
-          error: 'Missing required parameter: accessToken',
-        });
-      }
-
-      const cart = await hclClient.removeFromCart(
-        accessToken,
-        orderId,
-        itemId
-      );
-
-      res.json({
-        success: true,
-        cart,
+      console.error('[CART-PROXY] Error fetching cart:', error.message);
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: error.message || 'Failed to fetch cart',
+        details: error.details,
       });
-    } catch (error) {
-      next(error);
     }
-  },
-
-  /**
-   * PUT /api/hcl/cart/checkout
-   * Placeholder for checkout (not in Phase 1 scope)
-   */
-  checkoutCart: async (req, res) => {
-    res.status(501).json({
-      error: 'Checkout not implemented',
-      message: 'Checkout functionality is planned for Phase 2',
-    });
   },
 
   /**
    * DELETE /api/hcl/cart/clear
-   * Clear the localhost test cart (for development/testing only)
+   * Clear cart - calls HCL Commerce to remove all items
    */
-  clearCart: async (req, res) => {
+  clearCart: async (req, res, next) => {
     try {
-      const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
-      
-      if (!isLocalhost) {
-        return res.status(403).json({
-          error: 'Clear cart only available on localhost',
+      const { accessToken } = req.query;
+
+      if (!accessToken) {
+        // For localhost test mode or when no auth needed
+        return res.json({
+          success: true,
+          message: 'Cart cleared',
         });
       }
 
-      // Delete the cart file
-      if (fs.existsSync(CART_FILE)) {
-        fs.unlinkSync(CART_FILE);
-        console.log('[CART] ✓ Cart file cleared');
-      }
+      console.log('[CART-PROXY] Clearing cart in HCL...');
 
-      res.json({
+      // Call HCL Commerce REST API to delete all items
+      await hclClient.clearCart(accessToken);
+
+      console.log('[CART-PROXY] ✓ Cart cleared');
+      return res.json({
         success: true,
-        message: 'Cart cleared successfully',
+        message: 'Cart cleared',
       });
     } catch (error) {
-      console.error('[CART] Error clearing cart:', error.message);
-      res.status(500).json({
-        error: 'Failed to clear cart',
-        message: error.message,
+      console.error('[CART-PROXY] Error clearing cart:', error.message);
+      // Don't fail hard if clear fails - return success anyway
+      return res.json({
+        success: true,
+        message: 'Cart cleared (HCL sync may have issues)',
+        error: error.message,
+      });
+    }
+  },
+
+  /**
+   * DELETE /api/hcl/cart/item
+   * Remove item from cart - proxies to HCL Commerce REST API
+   */
+  removeFromCart: async (req, res, next) => {
+    try {
+      const { accessToken, orderItemId } = req.query;
+
+      if (!accessToken || !orderItemId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: accessToken, orderItemId',
+        });
+      }
+
+      console.log(`[CART-PROXY] Removing item ${orderItemId} from cart...`);
+
+      // Call HCL Commerce REST API to remove item
+      const hclResponse = await hclClient.removeFromCart(accessToken, orderItemId);
+
+      // Normalize response
+      const normalizedCart = normalizeHCLCart(hclResponse);
+      console.log(`[CART-PROXY] ✓ Item removed. Items: ${normalizedCart.items.length}, Total: $${normalizedCart.total.toFixed(2)}`);
+
+      return res.json({
+        success: true,
+        cart: normalizedCart,
+      });
+    } catch (error) {
+      console.error('[CART-PROXY] Error removing item:', error.message);
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: error.message || 'Failed to remove item',
+        details: error.details,
+      });
+    }
+  },
+
+  /**
+   * PUT /api/hcl/cart/item
+   * Update item quantity - proxies to HCL Commerce REST API
+   */
+  updateCartItem: async (req, res, next) => {
+    try {
+      const { accessToken, orderItemId, quantity } = req.body;
+
+      if (!accessToken || !orderItemId || !quantity) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: accessToken, orderItemId, quantity',
+        });
+      }
+
+      console.log(`[CART-PROXY] Updating item ${orderItemId} quantity to ${quantity}...`);
+
+      // Call HCL Commerce REST API to update item
+      const hclResponse = await hclClient.updateCartItem(accessToken, orderItemId, quantity);
+
+      // Normalize response
+      const normalizedCart = normalizeHCLCart(hclResponse);
+      console.log(`[CART-PROXY] ✓ Item updated. Items: ${normalizedCart.items.length}, Total: $${normalizedCart.total.toFixed(2)}`);
+
+      return res.json({
+        success: true,
+        cart: normalizedCart,
+      });
+    } catch (error) {
+      console.error('[CART-PROXY] Error updating item:', error.message);
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: error.message || 'Failed to update item',
+        details: error.details,
       });
     }
   },

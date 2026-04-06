@@ -1,0 +1,20 @@
+{
+  "cartId": "test-cart-localhost",
+  "items": [
+    {
+      "partNumber": "CLA022_220601_TEST_6",
+      "sku": "CLA022_220601_TEST_6",
+      "quantity": 2,
+      "price": 600,
+      "name": "Budget Laptop Test 6"
+    },
+    {
+      "partNumber": "CLA022_220101",
+      "sku": "CLA022_220101",
+      "quantity": 1,
+      "price": 400,
+      "name": "Budget Laptop"
+    }
+  ],
+  "total": 1600
+}
