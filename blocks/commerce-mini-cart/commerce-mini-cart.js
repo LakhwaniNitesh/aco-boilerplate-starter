@@ -187,10 +187,6 @@ export default async function decorate(block) {
     console.log('[MINI-CART] Will use simple-cart-state only');
   }
 
-  // Initial update
-  console.log('[MINI-CART] Calling initial updateDisplay()');
-  updateDisplay();
-
   // Restore cart from localStorage (persistent across page refreshes)
   const restoreCartFromStorage = () => {
     try {
@@ -200,15 +196,20 @@ export default async function decorate(block) {
         console.log('[MINI-CART] Restored cart from localStorage:', cart);
         // Update simple cart state with stored cart
         updateCartState(cart);
-        updateDisplay();
+      } else {
+        console.log('[MINI-CART] No cart found in localStorage');
       }
     } catch (err) {
       console.log('[MINI-CART] Could not restore cart from localStorage:', err);
     }
   };
   
-  // Restore cart on page load
+  // Restore cart FIRST, before initial display
   restoreCartFromStorage();
+
+  // Initial update
+  console.log('[MINI-CART] Calling initial updateDisplay()');
+  updateDisplay();
 
   // Subscribe to simple cart state for direct updates
   console.log('[MINI-CART] Subscribing to simple cart state');
