@@ -73,9 +73,10 @@ export default async function decorate(block) {
   block.appendChild(container);
 
   // Load and subscribe to cart updates
+  const { cartStore, ACTIONS } = await import('../../scripts/cart-manager.js');
+  console.log('[MINI-CART] Initialized with cartStore:', cartStore);
+
   try {
-    const { cartStore, ACTIONS } = await import('../../scripts/cart-manager.js');
-    console.log('[MINI-CART] Initialized with cartStore:', cartStore);
 
     const updateDisplay = () => {
       const state = cartStore.getState();
@@ -162,7 +163,7 @@ export default async function decorate(block) {
       unsubscribe();
     });
   } catch (error) {
-    console.error('Failed to load cart manager:', error);
+    console.error('[MINI-CART] Failed to load cart manager:', error);
     emptyState.textContent = 'Cart unavailable';
   }
 }
