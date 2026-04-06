@@ -8,6 +8,25 @@ let cartState = {
   total: 0,
 };
 
+// Initialize from localStorage if available
+function initializeCartState() {
+  try {
+    const storedCart = localStorage.getItem('hcl-cart');
+    if (storedCart) {
+      const parsed = JSON.parse(storedCart);
+      cartState = {
+        items: parsed.items || [],
+        total: parsed.total || 0,
+      };
+      console.log('[SIMPLE-CART-STATE] Initialized from localStorage:', cartState);
+    }
+  } catch (err) {
+    console.warn('[SIMPLE-CART-STATE] Could not load cart from localStorage:', err);
+  }
+}
+
+initializeCartState();
+
 const listeners = new Set();
 
 export function updateCartState(newCart) {
@@ -16,6 +35,14 @@ export function updateCartState(newCart) {
     items: newCart.items || [],
     total: newCart.total || 0,
   };
+  
+  // Persist to localStorage for recovery on page reload
+  try {
+    localStorage.setItem('hcl-cart', JSON.stringify(cartState));
+    console.log('[SIMPLE-CART-STATE] Cart persisted to localStorage');
+  } catch (err) {
+    console.warn('[SIMPLE-CART-STATE] Could not persist cart to localStorage:', err);
+  }
   
   // Notify all listeners
   listeners.forEach(listener => {
