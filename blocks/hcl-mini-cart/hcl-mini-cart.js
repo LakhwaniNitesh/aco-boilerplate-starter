@@ -1,6 +1,7 @@
 import { readBlockConfig } from '../../scripts/aem.js';
 import { events } from '@dropins/tools/event-bus.js';
 import { subscribeToCart, getCartState } from '../../scripts/simple-cart-state.js';
+import './hcl-mini-cart.css';
 
 export default async function decorate(block) {
   console.log('[MINI-CART] Block decorating started...');

@@ -5,6 +5,9 @@
 
 import { hclClient } from '../utils/hcl-client.js';
 
+// In-memory cart storage for localhost testing
+const cartStorage = new Map();
+
 export const hclCartController = {
   /**
    * POST /api/hcl/cart/add
@@ -25,23 +28,48 @@ export const hclCartController = {
         });
       }
 
-      // Localhost test mode - return mock cart response
+      // Localhost test mode - return mock cart response with accumulation
       if (isLocalhost && !accessToken) {
         console.log(`[CART] Adding to cart (localhost test mode): ${productId} x${quantity || 1}`);
+        
+        // Get or create cart
+        const cartId = 'test-cart-localhost';
+        let cart = cartStorage.get(cartId) || {
+          cartId,
+          items: [],
+          total: 0,
+        };
+
+        // Check if product already exists in cart
+        const existingItem = cart.items.find(item => item.partNumber === productId);
+        
+        if (existingItem) {
+          // Update quantity if already in cart
+          existingItem.quantity += (quantity || 1);
+          console.log(`[CART] Updated existing item quantity to ${existingItem.quantity}`);
+        } else {
+          // Add new item
+          cart.items.push({
+            partNumber: productId,
+            sku: productId,
+            quantity: quantity || 1,
+            price: 99.99,
+            name: 'Test Product',
+          });
+          console.log(`[CART] Added new item to cart`);
+        }
+
+        // Recalculate total
+        cart.total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        console.log(`[CART] Cart total: $${cart.total.toFixed(2)}`);
+
+        // Store cart
+        cartStorage.set(cartId, cart);
+
         return res.json({
           success: true,
           message: 'Product added to cart (test mode)',
-          cart: {
-            cartId: 'test-cart-' + Date.now(),
-            items: [{
-              partNumber: productId,
-              sku: productId,
-              quantity: quantity || 1,
-              price: 99.99,
-              name: 'Test Product',
-            }],
-            total: (quantity || 1) * 99.99,
-          },
+          cart,
         });
       }
 
