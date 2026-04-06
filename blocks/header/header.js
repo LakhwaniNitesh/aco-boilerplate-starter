@@ -243,27 +243,17 @@ export default async function decorate(block) {
   const miniCartPath = miniCartMeta ? new URL(miniCartMeta, window.location).pathname : '/mini-cart';
   loadFragment(miniCartPath).then((miniCartFragment) => {
     const miniCartElement = miniCartFragment.firstElementChild;
-    console.log('[HEADER] Mini-cart fragment loaded:', miniCartElement);
     minicartPanel.append(miniCartElement);
     
-    // Find block inside section - check multiple possible selectors
+    // Find block inside section - the fragment loads a section containing the block
     let block = miniCartElement.querySelector('div.commerce-mini-cart');
     if (!block) {
       block = miniCartElement.querySelector('div[class*="mini-cart"]');
     }
-    if (!block) {
-      block = miniCartElement.querySelector('div.hcl-mini-cart');
-    }
     
     if (block) {
-      console.log('[HEADER] Found mini-cart block, decorating...', block);
       decorateBlock(block);
       loadBlock(block);
-    } else {
-      console.log('[HEADER] Mini-cart block not found. Available classes:', {
-        sectionClass: miniCartElement?.className,
-        childClasses: Array.from(miniCartElement?.querySelectorAll('div') || []).map(d => d.className).slice(0, 5),
-      });
     }
   });
 
