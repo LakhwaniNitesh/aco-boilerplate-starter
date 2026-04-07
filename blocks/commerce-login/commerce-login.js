@@ -1,296 +1,589 @@
-/**/**/* eslint-disable import/no-unresolved */
+/* eslint-disable import/no-unresolved *//**/**/* eslint-disable import/no-unresolved */
+
+
+
+/** * Commerce Login Block - HCL Commerce Authentication
 
  * Commerce Login Block - HCL Commerce Authentication
 
- * Provides authentication UI for HCL Commerce wcToken management * Commerce Login Block - Adobe EDS Storefront/* eslint-disable import/no-extraneous-dependencies */
+ * * Provides authentication UI for HCL Commerce wcToken management * Commerce Login Block - Adobe EDS Storefront/* eslint-disable import/no-extraneous-dependencies */
+
+ * Provides a custom login form for HCL Commerce authentication.
+
+ * Manages wcToken in sessionStorage for authenticated requests. *
 
  *
 
- * Features: * import { SignIn } from '@dropins/storefront-auth/containers/SignIn.js';
+ * Features: * Features: * import { SignIn } from '@dropins/storefront-auth/containers/SignIn.js';
 
  * - Login with username/password
 
- * - Store wcToken in sessionStorage * Provides authentication UI for HCL Commerce wcToken management.import { render as authRenderer } from '@dropins/storefront-auth/render.js';
+ * - Store wcToken in sessionStorage * - Login with username/password
 
  * - Display logged-in user information
 
- * - Logout with token invalidation * Implements login form and logout button with session persistence.import { checkIsAuthenticated } from '../../scripts/configs.js';
+ * - Logout with token invalidation * - Store wcToken in sessionStorage * Provides authentication UI for HCL Commerce wcToken management.import { render as authRenderer } from '@dropins/storefront-auth/render.js';
 
  * - Error message display
 
+ * - Custom events for other components * - Display logged-in user information
+
+ * - Token expiry monitoring
+
+ * * - Logout with token invalidation * Implements login form and logout button with session persistence.import { checkIsAuthenticated } from '../../scripts/configs.js';
+
+ * Usage in HTML:
+
+ * <div class="commerce-login"></div> * - Error message display
+
+ */
+
  * - Custom events for other components * import { CUSTOMER_FORGOTPASSWORD_PATH, CUSTOMER_ACCOUNT_PATH } from '../../scripts/constants.js';
+
+import { rootLink } from '../../scripts/scripts.js';
 
  *
 
- * Usage in HTML: * Features:import { rootLink } from '../../scripts/scripts.js';
+/**
 
- * <div class="commerce-login"></div>
+ * Main block decorator - entry point * Usage in HTML: * Features:import { rootLink } from '../../scripts/scripts.js';
 
- */ * - Login with username/password
+ */
 
-
-
-export default async function decorate(block) { * - Store wcToken in sessionStorage// Initialize
+export default async function decorate(block) { * <div class="commerce-login"></div>
 
   // Check if user is already logged in
 
-  const wcToken = getStoredToken(); * - Display logged-in user informationimport '../../scripts/initializers/auth.js';
+  const wcToken = getStoredToken(); */ * - Login with username/password
 
 
 
-  if (wcToken && !isTokenExpired()) { * - Logout with token invalidation
+  if (wcToken && !isTokenExpired()) {
 
     // User has valid token - show logout UI
 
-    renderLogoutUI(block); * - Error message displayexport default async function decorate(block) {
+    renderLogoutUI(block);export default async function decorate(block) { * - Store wcToken in sessionStorage// Initialize
 
   } else {
 
-    // No token or expired - show login form * - Custom events for other components  if (checkIsAuthenticated()) {
+    // No token or expired - show login form  // Check if user is already logged in
 
     if (wcToken && isTokenExpired()) {
 
-      clearStoredToken(); // Clean up expired token *     window.location.href = rootLink(CUSTOMER_ACCOUNT_PATH);
+      clearStoredToken(); // Clean up expired token  const wcToken = getStoredToken(); * - Display logged-in user informationimport '../../scripts/initializers/auth.js';
 
     }
 
-    renderLoginUI(block); * Usage in AEM:  } else {
+    renderLoginUI(block);
 
   }
 
-} * Create a new page section with block type "commerce-login"    await authRenderer.render(SignIn, {
+  if (wcToken && !isTokenExpired()) { * - Logout with token invalidation
 
+  // Start token expiry monitor
 
-
-/** * No configuration needed - uses sessionStorage automatically      routeForgotPassword: () => rootLink(CUSTOMER_FORGOTPASSWORD_PATH),
-
- * Get stored wcToken from sessionStorage
-
- */ *       routeRedirectOnSignIn: () => rootLink(CUSTOMER_ACCOUNT_PATH),
-
-function getStoredToken() {
-
-  try { * Usage in HTML:    })(block);
-
-    return sessionStorage.getItem('hcl_wcToken');
-
-  } catch (e) { * <div class="commerce-login"></div>  }
-
-    console.warn('[LOGIN-BLOCK] sessionStorage not available:', e);
-
-    return null; */}
-
-  }
+  startTokenExpiryMonitor(block);    // User has valid token - show logout UI
 
 }
 
-export default async function decorate(block) {
+    renderLogoutUI(block); * - Error message displayexport default async function decorate(block) {
 
-/**  // ====================================
+/**
 
- * Check if token has expired  // 1. CHECK IF USER IS ALREADY LOGGED IN
+ * Get stored wcToken from sessionStorage  } else {
 
- */  // ====================================
+ */
 
-function isTokenExpired() {  
-
-  try {  const wcToken = getStoredToken();
-
-    const expiresAt = parseInt(sessionStorage.getItem('hcl_tokenExpires'), 10);  
-
-    if (!expiresAt) return true;  if (wcToken && !isTokenExpired()) {
-
-    return Date.now() >= expiresAt;    // User has valid token - show logout UI
-
-  } catch (e) {    renderLogoutUI(block);
-
-    return true;  } else {
-
-  }    // No token or expired - show login form
-
-}    if (wcToken && isTokenExpired()) {
-
-      clearStoredToken(); // Clean up expired token
-
-/**    }
-
- * Clear all stored authentication data    renderLoginUI(block);
-
- */  }
-
-function clearStoredToken() {}
+function getStoredToken() {    // No token or expired - show login form * - Custom events for other components  if (checkIsAuthenticated()) {
 
   try {
 
-    sessionStorage.removeItem('hcl_wcToken');/**
+    return sessionStorage.getItem('hcl_wcToken');    if (wcToken && isTokenExpired()) {
 
-    sessionStorage.removeItem('hcl_userId'); * Get stored wcToken from sessionStorage
+  } catch (e) {
 
-    sessionStorage.removeItem('hcl_displayName'); */
+    console.warn('[LOGIN-BLOCK] sessionStorage not available:', e);      clearStoredToken(); // Clean up expired token *     window.location.href = rootLink(CUSTOMER_ACCOUNT_PATH);
 
-    sessionStorage.removeItem('hcl_firstName');function getStoredToken() {
+    return null;
 
-    sessionStorage.removeItem('hcl_lastName');  try {
+  }    }
 
-    sessionStorage.removeItem('hcl_email');    return sessionStorage.getItem('hcl_wcToken');
+}
 
-    sessionStorage.removeItem('hcl_tokenExpires');  } catch (e) {
-
-  } catch (e) {    console.warn('[LOGIN-BLOCK] sessionStorage not available:', e);
-
-    console.warn('[LOGIN-BLOCK] Error clearing storage:', e);    return null;
-
-  }  }
-
-}}
-
-
-
-/**/**
-
- * Store authentication data in sessionStorage * Check if token has expired
-
- */ */
-
-function storeAuthData(authResponse) {function isTokenExpired() {
-
-  try {  try {
-
-    sessionStorage.setItem('hcl_wcToken', authResponse.wcToken);    const expiresAt = parseInt(sessionStorage.getItem('hcl_tokenExpires'), 10);
-
-    sessionStorage.setItem('hcl_userId', authResponse.userId);    if (!expiresAt || isNaN(expiresAt)) {
-
-    sessionStorage.setItem('hcl_displayName', authResponse.displayName || authResponse.email);      return true; // No expiry set, consider expired
-
-    sessionStorage.setItem('hcl_firstName', authResponse.firstName || '');    }
-
-    sessionStorage.setItem('hcl_lastName', authResponse.lastName || '');    return Date.now() > expiresAt;
-
-    sessionStorage.setItem('hcl_email', authResponse.email || '');  } catch (e) {
-
-    console.warn('[LOGIN-BLOCK] Error checking expiry:', e);
-
-    // Calculate expiry time    return true;
-
-    const expiresIn = authResponse.expiresIn || 1500; // 25 minutes default  }
-
-    const expiresAt = Date.now() + (expiresIn * 1000);}
-
-    sessionStorage.setItem('hcl_tokenExpires', expiresAt.toString());
+    renderLoginUI(block); * Usage in AEM:  } else {
 
 /**
 
-    console.log('[LOGIN-BLOCK] Auth data stored, token expires in', expiresIn, 'seconds'); * Clear all stored authentication data
+ * Check if token has expired  }
 
-  } catch (e) { */
+ */
 
-    console.warn('[LOGIN-BLOCK] Error storing auth data:', e);function clearStoredToken() {
+function isTokenExpired() {} * Create a new page section with block type "commerce-login"    await authRenderer.render(SignIn, {
 
-  }  try {
+  try {
 
-}    sessionStorage.removeItem('hcl_wcToken');
+    const expiresAt = parseInt(sessionStorage.getItem('hcl_tokenExpires'), 10);
+
+    if (!expiresAt) return true;
+
+    return Date.now() > expiresAt;/** * No configuration needed - uses sessionStorage automatically      routeForgotPassword: () => rootLink(CUSTOMER_FORGOTPASSWORD_PATH),
+
+  } catch (e) {
+
+    return true; * Get stored wcToken from sessionStorage
+
+  }
+
+} */ *       routeRedirectOnSignIn: () => rootLink(CUSTOMER_ACCOUNT_PATH),
+
+
+
+/**function getStoredToken() {
+
+ * Clear all stored authentication data
+
+ */  try { * Usage in HTML:    })(block);
+
+function clearStoredToken() {
+
+  try {    return sessionStorage.getItem('hcl_wcToken');
+
+    sessionStorage.removeItem('hcl_wcToken');
+
+    sessionStorage.removeItem('hcl_tokenExpires');  } catch (e) { * <div class="commerce-login"></div>  }
 
     sessionStorage.removeItem('hcl_userId');
 
-/**    sessionStorage.removeItem('hcl_displayName');
+    sessionStorage.removeItem('hcl_email');    console.warn('[LOGIN-BLOCK] sessionStorage not available:', e);
 
- * Dispatch custom event for other components to listen to    sessionStorage.removeItem('hcl_firstName');
+    sessionStorage.removeItem('hcl_displayName');
 
- */    sessionStorage.removeItem('hcl_lastName');
+  } catch (e) {    return null; */}
 
-function dispatchAuthEvent(eventType, data) {    sessionStorage.removeItem('hcl_email');
+    console.warn('[LOGIN-BLOCK] Could not clear storage:', e);
 
-  try {    sessionStorage.removeItem('hcl_tokenExpires');
+  }  }
 
-    const event = new CustomEvent(eventType, {  } catch (e) {
+}
 
-      detail: data,    console.warn('[LOGIN-BLOCK] Error clearing tokens:', e);
-
-      bubbles: true,  }
-
-      cancelable: true,}
-
-    });
-
-    document.dispatchEvent(event);/**
-
-    console.log('[LOGIN-BLOCK] Dispatched event:', eventType); * Store authentication data in sessionStorage
-
-  } catch (e) { */
-
-    console.warn('[LOGIN-BLOCK] Error dispatching event:', e);function storeAuthData(authResponse) {
-
-  }  try {
-
-}    sessionStorage.setItem('hcl_wcToken', authResponse.wcToken);
-
-    sessionStorage.setItem('hcl_userId', authResponse.userId);
-
-/**    sessionStorage.setItem('hcl_displayName', authResponse.displayName || authResponse.email);
-
- * Render login form UI    sessionStorage.setItem('hcl_firstName', authResponse.firstName || '');
-
- */    sessionStorage.setItem('hcl_lastName', authResponse.lastName || '');
-
-function renderLoginUI(block) {    sessionStorage.setItem('hcl_email', authResponse.email || '');
-
-  block.innerHTML = '';    
-
-    // Calculate expiry time (current time + expiresIn seconds)
-
-  const form = document.createElement('form');    const expiresAt = Date.now() + ((authResponse.expiresIn || 3600) * 1000);
-
-  form.className = 'commerce-login__form';    sessionStorage.setItem('hcl_tokenExpires', expiresAt.toString());
-
-  form.innerHTML = `  } catch (e) {
-
-    <div class="commerce-login__container">    console.error('[LOGIN-BLOCK] Error storing auth data:', e);
-
-      <h1 class="commerce-login__title">Sign In</h1>  }
-
-      }
-
-      <div class="commerce-login__errors" id="login-errors" style="display: none;"></div>
+}
 
 /**
 
-      <div class="commerce-login__field"> * Dispatch custom event for other components to listen
+ * Store authentication data in sessionStorageexport default async function decorate(block) {
 
-        <label for="login-username" class="commerce-login__label">Username</label> */
+ */
 
-        <inputfunction dispatchAuthEvent(eventType, data = {}) {
+function storeAuthData(authResponse) {/**  // ====================================
 
-          type="text"  const eventName = eventType === 'login' ? 'hcl-user-logged-in' : 'hcl-user-logged-out';
+  try {
+
+    sessionStorage.setItem('hcl_wcToken', authResponse.wcToken); * Check if token has expired  // 1. CHECK IF USER IS ALREADY LOGGED IN
+
+    sessionStorage.setItem('hcl_userId', authResponse.userId || '');
+
+    sessionStorage.setItem('hcl_email', authResponse.email || ''); */  // ====================================
+
+    sessionStorage.setItem('hcl_displayName', authResponse.displayName || '');
+
+function isTokenExpired() {  
+
+    // Calculate expiry time
+
+    const expiresIn = authResponse.expiresIn || 3600; // default 1 hour  try {  const wcToken = getStoredToken();
+
+    const expiresAt = Date.now() + (expiresIn * 1000);
+
+    sessionStorage.setItem('hcl_tokenExpires', expiresAt.toString());    const expiresAt = parseInt(sessionStorage.getItem('hcl_tokenExpires'), 10);  
+
+  } catch (e) {
+
+    console.warn('[LOGIN-BLOCK] Could not store auth data:', e);    if (!expiresAt) return true;  if (wcToken && !isTokenExpired()) {
+
+  }
+
+}    return Date.now() >= expiresAt;    // User has valid token - show logout UI
+
+
+
+/**  } catch (e) {    renderLogoutUI(block);
+
+ * Render the login form UI
+
+ */    return true;  } else {
+
+function renderLoginUI(block) {
+
+  block.innerHTML = `  }    // No token or expired - show login form
+
+    <div class="commerce-login-container">
+
+      <div class="commerce-login-form">}    if (wcToken && isTokenExpired()) {
+
+        <h2>Sign In</h2>
+
+        <form id="commerce-login-form">      clearStoredToken(); // Clean up expired token
+
+          <div class="form-group">
+
+            <label for="username">Email or Username</label>/**    }
+
+            <input 
+
+              type="text"  * Clear all stored authentication data    renderLoginUI(block);
+
+              id="username" 
+
+              name="username"  */  }
+
+              placeholder="Enter your email or username"
+
+              requiredfunction clearStoredToken() {}
+
+            />
+
+          </div>  try {
+
+
+
+          <div class="form-group">    sessionStorage.removeItem('hcl_wcToken');/**
+
+            <label for="password">Password</label>
+
+            <input     sessionStorage.removeItem('hcl_userId'); * Get stored wcToken from sessionStorage
+
+              type="password" 
+
+              id="password"     sessionStorage.removeItem('hcl_displayName'); */
+
+              name="password" 
+
+              placeholder="Enter your password"    sessionStorage.removeItem('hcl_firstName');function getStoredToken() {
+
+              required
+
+            />    sessionStorage.removeItem('hcl_lastName');  try {
+
+          </div>
+
+    sessionStorage.removeItem('hcl_email');    return sessionStorage.getItem('hcl_wcToken');
+
+          <button type="submit" class="commerce-login-button">Sign In</button>
+
+        </form>    sessionStorage.removeItem('hcl_tokenExpires');  } catch (e) {
+
+
+
+        <div id="commerce-login-error" class="commerce-login-error" style="display: none;"></div>  } catch (e) {    console.warn('[LOGIN-BLOCK] sessionStorage not available:', e);
+
+        <div id="commerce-login-loading" class="commerce-login-loading" style="display: none;">
+
+          <span class="spinner"></span>    console.warn('[LOGIN-BLOCK] Error clearing storage:', e);    return null;
+
+          <p>Signing in...</p>
+
+        </div>  }  }
+
+
+
+        <div class="commerce-login-links">}}
+
+          <a href="#forgot-password">Forgot password?</a>
+
+          <a href="#create-account">Create account</a>
+
+        </div>
+
+      </div>/**/**
+
+    </div>
+
+  `; * Store authentication data in sessionStorage * Check if token has expired
+
+
+
+  attachLoginFormListeners(block); */ */
+
+}
+
+function storeAuthData(authResponse) {function isTokenExpired() {
+
+/**
+
+ * Render the logged-in user UI  try {  try {
+
+ */
+
+function renderLogoutUI(block) {    sessionStorage.setItem('hcl_wcToken', authResponse.wcToken);    const expiresAt = parseInt(sessionStorage.getItem('hcl_tokenExpires'), 10);
+
+  const displayName = sessionStorage.getItem('hcl_displayName') || 'User';
+
+  const email = sessionStorage.getItem('hcl_email') || '';    sessionStorage.setItem('hcl_userId', authResponse.userId);    if (!expiresAt || isNaN(expiresAt)) {
+
+
+
+  block.innerHTML = `    sessionStorage.setItem('hcl_displayName', authResponse.displayName || authResponse.email);      return true; // No expiry set, consider expired
+
+    <div class="commerce-login-container">
+
+      <div class="commerce-logout-info">    sessionStorage.setItem('hcl_firstName', authResponse.firstName || '');    }
+
+        <div class="user-info">
+
+          <h2>Welcome, ${displayName}</h2>    sessionStorage.setItem('hcl_lastName', authResponse.lastName || '');    return Date.now() > expiresAt;
+
+          ${email ? `<p class="user-email">${email}</p>` : ''}
+
+        </div>    sessionStorage.setItem('hcl_email', authResponse.email || '');  } catch (e) {
+
+        <div class="logout-actions">
+
+          <a href="/customer/account" class="link-button">My Account</a>    console.warn('[LOGIN-BLOCK] Error checking expiry:', e);
+
+          <button id="commerce-logout-button" class="commerce-logout-button">Sign Out</button>
+
+        </div>    // Calculate expiry time    return true;
+
+      </div>
+
+    </div>    const expiresIn = authResponse.expiresIn || 1500; // 25 minutes default  }
+
+  `;
+
+    const expiresAt = Date.now() + (expiresIn * 1000);}
+
+  // Attach logout listener
+
+  const logoutBtn = block.querySelector('#commerce-logout-button');    sessionStorage.setItem('hcl_tokenExpires', expiresAt.toString());
+
+  if (logoutBtn) {
+
+    logoutBtn.addEventListener('click', (e) => {/**
+
+      e.preventDefault();
+
+      clearStoredToken();    console.log('[LOGIN-BLOCK] Auth data stored, token expires in', expiresIn, 'seconds'); * Clear all stored authentication data
+
+      dispatchAuthEvent('hcl-user-logged-out');
+
+      renderLoginUI(block);  } catch (e) { */
+
+    });
+
+  }    console.warn('[LOGIN-BLOCK] Error storing auth data:', e);function clearStoredToken() {
+
+}
+
+  }  try {
+
+/**
+
+ * Attach event listeners to login form}    sessionStorage.removeItem('hcl_wcToken');
+
+ */
+
+function attachLoginFormListeners(block) {    sessionStorage.removeItem('hcl_userId');
+
+  const form = block.querySelector('#commerce-login-form');
+
+  const errorDiv = block.querySelector('#commerce-login-error');/**    sessionStorage.removeItem('hcl_displayName');
+
+  const loadingDiv = block.querySelector('#commerce-login-loading');
+
+ * Dispatch custom event for other components to listen to    sessionStorage.removeItem('hcl_firstName');
+
+  if (!form) return;
+
+ */    sessionStorage.removeItem('hcl_lastName');
+
+  form.addEventListener('submit', async (e) => {
+
+    e.preventDefault();function dispatchAuthEvent(eventType, data) {    sessionStorage.removeItem('hcl_email');
+
+
+
+    const username = block.querySelector('#username').value.trim();  try {    sessionStorage.removeItem('hcl_tokenExpires');
+
+    const password = block.querySelector('#password').value.trim();
+
+    const event = new CustomEvent(eventType, {  } catch (e) {
+
+    // Validation
+
+    if (!username || !password) {      detail: data,    console.warn('[LOGIN-BLOCK] Error clearing tokens:', e);
+
+      showError('Please enter both username and password', errorDiv);
+
+      return;      bubbles: true,  }
+
+    }
+
+      cancelable: true,}
+
+    // Show loading state
+
+    loadingDiv.style.display = 'flex';    });
+
+    errorDiv.style.display = 'none';
+
+    form.style.display = 'none';    document.dispatchEvent(event);/**
+
+
+
+    try {    console.log('[LOGIN-BLOCK] Dispatched event:', eventType); * Store authentication data in sessionStorage
+
+      // Call login endpoint
+
+      const response = await fetch('/api/hcl/login', {  } catch (e) { */
+
+        method: 'POST',
+
+        headers: {    console.warn('[LOGIN-BLOCK] Error dispatching event:', e);function storeAuthData(authResponse) {
+
+          'Content-Type': 'application/json',
+
+        },  }  try {
+
+        body: JSON.stringify({
+
+          username,}    sessionStorage.setItem('hcl_wcToken', authResponse.wcToken);
+
+          password,
+
+        }),    sessionStorage.setItem('hcl_userId', authResponse.userId);
+
+      });
+
+/**    sessionStorage.setItem('hcl_displayName', authResponse.displayName || authResponse.email);
+
+      if (!response.ok) {
+
+        const errorData = await response.json().catch(() => ({})); * Render login form UI    sessionStorage.setItem('hcl_firstName', authResponse.firstName || '');
+
+        throw new Error(errorData.message || `Login failed: ${response.statusText}`);
+
+      } */    sessionStorage.setItem('hcl_lastName', authResponse.lastName || '');
+
+
+
+      const authData = await response.json();function renderLoginUI(block) {    sessionStorage.setItem('hcl_email', authResponse.email || '');
+
+
+
+      // Store auth data  block.innerHTML = '';    
+
+      storeAuthData(authData);
+
+    // Calculate expiry time (current time + expiresIn seconds)
+
+      // Dispatch success event
+
+      dispatchAuthEvent('hcl-user-logged-in', { user: authData });  const form = document.createElement('form');    const expiresAt = Date.now() + ((authResponse.expiresIn || 3600) * 1000);
+
+
+
+      // Show logged-in UI  form.className = 'commerce-login__form';    sessionStorage.setItem('hcl_tokenExpires', expiresAt.toString());
+
+      renderLogoutUI(block);
+
+    } catch (error) {  form.innerHTML = `  } catch (e) {
+
+      console.error('[LOGIN-BLOCK] Login error:', error);
+
+      showError(error.message || 'Login failed. Please try again.', errorDiv);    <div class="commerce-login__container">    console.error('[LOGIN-BLOCK] Error storing auth data:', e);
+
+
+
+      // Reset form      <h1 class="commerce-login__title">Sign In</h1>  }
+
+      loadingDiv.style.display = 'none';
+
+      form.style.display = 'block';      }
+
+    }
+
+  });      <div class="commerce-login__errors" id="login-errors" style="display: none;"></div>
+
+}
+
+/**
+
+/**
+
+ * Show error message      <div class="commerce-login__field"> * Dispatch custom event for other components to listen
+
+ */
+
+function showError(message, errorDiv) {        <label for="login-username" class="commerce-login__label">Username</label> */
+
+  if (errorDiv) {
+
+    errorDiv.textContent = message;        <inputfunction dispatchAuthEvent(eventType, data = {}) {
+
+    errorDiv.style.display = 'block';
+
+  }          type="text"  const eventName = eventType === 'login' ? 'hcl-user-logged-in' : 'hcl-user-logged-out';
+
+}
 
           id="login-username"  const event = new CustomEvent(eventName, {
 
-          class="commerce-login__input"    detail: {
+/**
 
-          placeholder="Enter your username"      timestamp: Date.now(),
+ * Dispatch custom authentication events          class="commerce-login__input"    detail: {
 
-          required      ...data,
+ */
 
-          autocomplete="username"    },
+function dispatchAuthEvent(eventName, detail = {}) {          placeholder="Enter your username"      timestamp: Date.now(),
 
-        />  });
+  const event = new CustomEvent(eventName, {
+
+    detail,          required      ...data,
+
+    bubbles: true,
+
+    cancelable: true,          autocomplete="username"    },
+
+  });
+
+  document.dispatchEvent(event);        />  });
+
+}
 
       </div>  window.dispatchEvent(event);
 
-  console.log(`[LOGIN-BLOCK] Event dispatched: ${eventName}`);
+/**
 
-      <div class="commerce-login__field">}
+ * Monitor token expiry and refresh UI if needed  console.log(`[LOGIN-BLOCK] Event dispatched: ${eventName}`);
 
-        <label for="login-password" class="commerce-login__label">Password</label>
+ */
+
+function startTokenExpiryMonitor(block) {      <div class="commerce-login__field">}
+
+  // Check token every 60 seconds
+
+  setInterval(() => {        <label for="login-password" class="commerce-login__label">Password</label>
+
+    const wcToken = getStoredToken();
 
         <input/**
 
-          type="password" * RENDER LOGIN FORM
+    if (wcToken && isTokenExpired()) {
 
-          id="login-password" * Shows when user is not authenticated
+      // Token expired - clear and show login          type="password" * RENDER LOGIN FORM
 
-          class="commerce-login__input" */
+      clearStoredToken();
 
-          placeholder="Enter your password"function renderLoginUI(block) {
+      dispatchAuthEvent('hcl-token-expired');          id="login-password" * Shows when user is not authenticated
+
+      renderLoginUI(block);
+
+    }          class="commerce-login__input" */
+
+  }, 60000);
+
+}          placeholder="Enter your password"function renderLoginUI(block) {
+
 
           required  block.innerHTML = `
 
