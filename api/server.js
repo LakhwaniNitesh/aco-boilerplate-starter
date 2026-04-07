@@ -86,6 +86,8 @@ app.get('/health', (req, res) => {
 
 // Authentication
 app.post('/api/hcl/login', hclAuthController.login);
+app.post('/api/hcl/logout', hclAuthController.logout);
+app.get('/api/hcl/auth/validate', hclAuthController.validateToken);
 app.get('/api/hcl/auth/available-users', hclAuthController.getAvailableUsers);
 
 // Cart operations

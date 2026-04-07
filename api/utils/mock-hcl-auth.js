@@ -10,19 +10,36 @@
 export const mockHCLAuth = {
   /**
    * Mock user database for development
+   * 
+   * Test credentials provided:
+   * - auroraadobetest / passw0rd
+   * - adobetest1 / passw0rd
+   * - adobetest2 / passw0rd
    */
   mockUsers: {
     auroraadobetest: {
       password: 'passw0rd',
       userId: 'user-123',
       email: 'aurora@example.com',
-      name: 'Aurora Test User',
+      firstName: 'Aurora',
+      lastName: 'Test',
+      displayName: 'Aurora Test User',
     },
-    testuser: {
-      password: 'testpass',
+    adobetest1: {
+      password: 'passw0rd',
       userId: 'user-456',
-      email: 'test@example.com',
-      name: 'Test User',
+      email: 'adobetest1@example.com',
+      firstName: 'Adobe',
+      lastName: 'Test 1',
+      displayName: 'Adobe Test 1',
+    },
+    adobetest2: {
+      password: 'passw0rd',
+      userId: 'user-789',
+      email: 'adobetest2@example.com',
+      firstName: 'Adobe',
+      lastName: 'Test 2',
+      displayName: 'Adobe Test 2',
     },
   },
 
