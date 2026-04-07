@@ -51,7 +51,9 @@ export default async function initializeDropins() {
     setEndpoint(getConfigValue('commerce-endpoint'));
 
     // Initialize Global Drop-ins
-    await import('./auth.js');
+    // DISABLED: Drop-in auth uses GraphQL but HCL Commerce requires REST API
+    // Using custom commerce-login block with REST API instead
+    // await import('./auth.js');
 
     import('./cart.js');
 
