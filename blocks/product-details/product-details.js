@@ -156,7 +156,11 @@ export default async function decorate(block) {
             // Get access token for HCL Commerce
             const getAccessToken = () => {
               try {
-                return sessionStorage.getItem('hcl-access-token') || localStorage.getItem('hcl-access-token');
+                // Check various possible token storage keys
+                return sessionStorage.getItem('hcl_wcToken') 
+                  || sessionStorage.getItem('hcl-access-token') 
+                  || localStorage.getItem('hcl_wcToken')
+                  || localStorage.getItem('hcl-access-token');
               } catch (e) {
                 return null;
               }
@@ -164,7 +168,19 @@ export default async function decorate(block) {
 
             const accessToken = getAccessToken();
             if (!accessToken) {
-              throw new Error('Not authenticated. Please log in first.');
+              // Show a login prompt/link
+              inlineAlert?.remove();
+              inlineAlert = await UI.render(InLineAlert, {
+                type: 'error',
+                heading: 'Authentication Required',
+                description: 'Please log in first before adding items to your cart. Click the Sign In button in the header.',
+              });
+              addToCart.setProps((prev) => ({
+                ...prev,
+                children: labels.PDP?.Product?.AddToCart?.label,
+                disabled: false,
+              }));
+              return;
             }
 
             console.log('[PDP] Adding to HCL cart with accessToken');
