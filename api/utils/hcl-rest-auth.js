@@ -2,19 +2,19 @@
  * HCL Commerce REST API Authentication
  * 
  * Uses HCL Commerce Identity/Login REST API endpoints:
- * - POST /identity/v1/customers/login - Authenticate and get wcToken
- * - POST /identity/v1/customers/logout - Invalidate wcToken
+ * - POST /store/{storeId}/loginidentity - Authenticate user and get wcToken
+ * - POST /store/{storeId}/guestidentity - Get guest token
  * 
  * References:
  * https://help.hcl-software.com/commerce/9.0.0/restapi/code/authentication_and_session_management.html
  * 
  * Token Lifecycle:
  * 1. User provides username/password
- * 2. POST to /identity/v1/customers/login
+ * 2. POST to /store/{storeId}/loginidentity with logonId and password
  * 3. Receive wcToken (valid for duration specified)
  * 4. Store wcToken in sessionStorage on frontend
  * 5. Include wcToken in all subsequent cart/checkout API calls
- * 6. On logout, POST to /identity/v1/customers/logout to invalidate token
+ * 6. On logout, invalidate token
  */
 
 import fetch from 'node-fetch';
