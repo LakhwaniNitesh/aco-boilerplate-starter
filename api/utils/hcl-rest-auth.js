@@ -82,8 +82,8 @@ class HCLRestAuth {
   /**
    * Login to HCL Commerce using REST API
    * 
-   * Endpoint: POST /identity/v1/customers/login
-   * Body: { logonId, password, storeId }
+   * Endpoint: POST /store/{storeId}/loginidentity
+   * Body: { logonId, password }
    * Response: { wcToken, userId, email, displayName, ... }
    * 
    * @param {string} username - HCL Commerce user/customer ID (logonId)
@@ -92,12 +92,11 @@ class HCLRestAuth {
    */
   async login(username, password) {
     try {
-      const loginEndpoint = `${this.hclHost}/identity/v1/customers/login`;
+      const loginEndpoint = `${this.hclHost}/store/${this.hclStoreId}/loginidentity`;
       
       const requestBody = {
         logonId: username,
         password: password,
-        storeId: this.hclStoreId,
       };
 
       logger.info(`[HCL-REST-AUTH] Attempting login for user: ${username}`);
