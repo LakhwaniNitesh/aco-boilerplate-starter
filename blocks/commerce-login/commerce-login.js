@@ -77,17 +77,31 @@ function attachFormListeners(block) {
     errorDiv.style.display = 'none';
     form.style.display = 'none';
     try {
+      console.log('[LOGIN] Attempting login with:', { username, timestamp: new Date().toISOString() });
+      const requestBody = JSON.stringify({ username, password });
+      console.log('[LOGIN] Request body:', requestBody);
+      
       const response = await fetch('/api/hcl/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: requestBody,
       });
-      if (!response.ok) throw new Error('Login failed');
-      const authData = await response.json();
+      
+      console.log('[LOGIN] Response status:', response.status);
+      const responseText = await response.text();
+      console.log('[LOGIN] Response body:', responseText);
+      
+      if (!response.ok) {
+        throw new Error(`Login failed with status ${response.status}: ${responseText}`);
+      }
+      
+      const authData = JSON.parse(responseText);
+      console.log('[LOGIN] Auth data received:', { userId: authData.userId, email: authData.email });
       storeAuthData(authData);
       renderLogoutUI(block);
     } catch (error) {
-      errorDiv.textContent = error.message || 'Login failed';
+      console.error('[LOGIN] Error:', error);
+      errorDiv.textContent = error.message || 'Login failed. Check console for details.';
       errorDiv.style.display = 'block';
       loadingDiv.style.display = 'none';
       form.style.display = 'block';
