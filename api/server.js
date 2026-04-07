@@ -16,10 +16,20 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from .env file in project root
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = dirname(__dirname); // Go up one directory from api/server.js
+const envPath = join(projectRoot, '.env');
+console.log(`[DEBUG] Loading .env from: ${envPath}`);
+const dotenvResult = dotenv.config({ path: envPath });
+if (dotenvResult.error) {
+  console.error(`[ERROR] Failed to load .env: ${dotenvResult.error.message}`);
+} else {
+  console.log(`[DEBUG] Successfully loaded .env file`);
+}
 
 // Import middleware
 import { errorHandler } from './middleware/error-handler.js';
@@ -29,9 +39,6 @@ import { validateEnvVars } from './middleware/env-validator.js';
 // Import controllers
 import { hclAuthController } from './controllers/hcl-auth-controller.js';
 import { hclCartController } from './controllers/hcl-cart-controller.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // Initialize Express app
 const app = express();

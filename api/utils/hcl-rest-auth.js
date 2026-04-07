@@ -18,9 +18,14 @@
  */
 
 import fetch from 'node-fetch';
-import { Core } from '@adobe/aio-sdk';
 
-const logger = Core.Logger('hcl-rest-auth');
+// Simple logger wrapper - using console for basic boilerplate server
+const logger = {
+  info: (msg) => console.log(`[INFO] ${msg}`),
+  debug: (msg) => console.log(`[DEBUG] ${msg}`),
+  warn: (msg) => console.warn(`[WARN] ${msg}`),
+  error: (msg) => console.error(`[ERROR] ${msg}`),
+};
 
 /**
  * HCL Commerce REST API Authentication Handler
@@ -28,11 +33,50 @@ const logger = Core.Logger('hcl-rest-auth');
  */
 class HCLRestAuth {
   constructor() {
-    this.hclHost = process.env.HCL_HOST || 'http://localhost:8080';
-    this.hclStoreId = process.env.HCL_STORE_ID || 'B2CStore';
-    this.hclCatalogId = process.env.HCL_CATALOG_ID || '10001';
-    this.hclLanguageId = process.env.HCL_LANGUAGE_ID || '-1';
-    this.hclCurrencyId = process.env.HCL_CURRENCY_ID || '1';
+    // Delay reading environment variables until runtime to ensure dotenv has loaded
+    this._initialized = false;
+    this._hclHost = null;
+    this._hclStoreId = null;
+    this._hclCatalogId = null;
+    this._hclLanguageId = null;
+    this._hclCurrencyId = null;
+  }
+
+  // Lazy initialization of environment variables
+  _ensureInitialized() {
+    if (!this._initialized) {
+      this._hclHost = process.env.HCL_HOST || 'http://localhost:8080';
+      this._hclStoreId = process.env.HCL_STORE_ID || 'B2CStore';
+      this._hclCatalogId = process.env.HCL_CATALOG_ID || '10001';
+      this._hclLanguageId = process.env.HCL_LANGUAGE_ID || '-1';
+      this._hclCurrencyId = process.env.HCL_CURRENCY_ID || '1';
+      this._initialized = true;
+    }
+  }
+
+  get hclHost() {
+    this._ensureInitialized();
+    return this._hclHost;
+  }
+
+  get hclStoreId() {
+    this._ensureInitialized();
+    return this._hclStoreId;
+  }
+
+  get hclCatalogId() {
+    this._ensureInitialized();
+    return this._hclCatalogId;
+  }
+
+  get hclLanguageId() {
+    this._ensureInitialized();
+    return this._hclLanguageId;
+  }
+
+  get hclCurrencyId() {
+    this._ensureInitialized();
+    return this._hclCurrencyId;
   }
 
   /**

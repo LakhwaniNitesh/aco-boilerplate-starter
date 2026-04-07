@@ -15,8 +15,14 @@ import mockHCLAuth from '../utils/mock-hcl-auth.js';
  * 
  * Real HCL: Requires HCL_HOST and HCL_STORE_ID environment variables
  * Mock: Uses in-memory user database (test credentials built-in)
+ * 
+ * NOTE: This is evaluated at runtime (not at module load time) to ensure
+ * dotenv has already loaded the .env file.
  */
-const USE_REAL_HCL_AUTH = process.env.USE_REAL_HCL_AUTH === 'true';
+const getUseRealHCLAuth = () => {
+  const value = process.env.USE_REAL_HCL_AUTH === 'true';
+  return value;
+};
 
 export const hclAuthController = {
   /**
@@ -53,8 +59,9 @@ export const hclAuthController = {
 
       // Use real HCL REST API or mock based on environment
       let authResult;
+      const useReal = getUseRealHCLAuth();
       
-      if (USE_REAL_HCL_AUTH) {
+      if (useReal) {
         console.log('[AUTH-CONTROLLER] Using REAL HCL Commerce REST API');
         authResult = await hclRestAuth.login(username, password);
       } else {
@@ -119,7 +126,8 @@ export const hclAuthController = {
       console.log('[AUTH-CONTROLLER] Processing logout');
 
       // Call HCL logout if using real auth
-      if (USE_REAL_HCL_AUTH) {
+      const useReal = getUseRealHCLAuth();
+      if (useReal) {
         const logoutResult = await hclRestAuth.logout(wcToken);
         console.log(`[AUTH-CONTROLLER] HCL logout response: ${logoutResult.success}`);
       } else {
@@ -160,7 +168,8 @@ export const hclAuthController = {
       console.log('[AUTH-CONTROLLER] Validating token');
 
       let isValid;
-      if (USE_REAL_HCL_AUTH) {
+      const useReal = getUseRealHCLAuth();
+      if (useReal) {
         const validationResult = await hclRestAuth.validateToken(wcToken);
         isValid = validationResult.valid;
       } else {
@@ -175,6 +184,38 @@ export const hclAuthController = {
 
     } catch (error) {
       console.error(`[AUTH-CONTROLLER] Validation error: ${error.message}`);
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/hcl/auth/available-users
+   * Get list of available test users for development
+   */
+  getAvailableUsers: async (req, res, next) => {
+    try {
+      res.json({
+        success: true,
+        users: [
+          {
+            username: 'auroraadobetest',
+            password: 'passw0rd',
+            description: 'Aurora Test User',
+          },
+          {
+            username: 'adobetest1',
+            password: 'passw0rd',
+            description: 'Adobe Test User 1',
+          },
+          {
+            username: 'adobetest2',
+            password: 'passw0rd',
+            description: 'Adobe Test User 2',
+          },
+        ],
+      });
+    } catch (error) {
+      console.error(`[AUTH-CONTROLLER] Error getting available users: ${error.message}`);
       next(error);
     }
   },

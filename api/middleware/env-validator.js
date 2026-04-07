@@ -6,8 +6,6 @@
 const REQUIRED_ENV_VARS = [
   'HCL_HOST',
   'HCL_STORE_ID',
-  'HCL_AUTH_USERNAME',
-  'HCL_AUTH_PASSWORD',
 ];
 
 export const validateEnvVars = () => {
