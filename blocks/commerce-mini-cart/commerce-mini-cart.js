@@ -1,6 +1,9 @@
 export default async function decorate(block) {
-  // Import CSS
-  import('./commerce-mini-cart.css');
+  // Import CSS - use link element instead of import statement
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = new URL('./commerce-mini-cart.css', import.meta.url).href;
+  document.head.appendChild(link);
   
   // Test localStorage availability
   console.log('[MINI-CART] Testing localStorage availability');
