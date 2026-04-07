@@ -92,18 +92,57 @@ class HCLRestAuth {
    */
   async login(username, password) {
     try {
-      const loginEndpoint = `${this.hclHost}/store/${this.hclStoreId}/loginidentity`;
+      // Try primary endpoint first
+      let result = await this._tryLoginEndpoint(username, password, `${this.hclHost}/store/${this.hclStoreId}/loginidentity`);
       
+      // If "tenant not found" error, provide helpful debugging info
+      if (!result.success && result.error && result.error.includes('tenant')) {
+        logger.warn(`[HCL-REST-AUTH] Tenant error detected. Attempting alternative endpoints...`);
+        
+        // Try alternative endpoint without storeId in path
+        result = await this._tryLoginEndpoint(username, password, `${this.hclHost}/identity/v1/customers/login`);
+        
+        if (!result.success) {
+          // Provide diagnostic information
+          logger.error(`[HCL-REST-AUTH] ⚠ Cannot connect with current store ID: ${this.hclStoreId}`);
+          logger.error(`[HCL-REST-AUTH] Please verify:`);
+          logger.error(`[HCL-REST-AUTH]   1. HCL_HOST is correct: ${this.hclHost}`);
+          logger.error(`[HCL-REST-AUTH]   2. HCL_STORE_ID exists and is accessible: ${this.hclStoreId}`);
+          logger.error(`[HCL-REST-AUTH]   3. User exists in HCL Commerce: ${username}`);
+          logger.error(`[HCL-REST-AUTH] Error details: ${result.error}`);
+        }
+      }
+      
+      return result;
+
+    } catch (error) {
+      logger.error(`[HCL-REST-AUTH] Login error: ${error.message}`);
+      logger.debug(`[HCL-REST-AUTH] Stack trace: ${error.stack}`);
+      
+      return {
+        success: false,
+        error: `Authentication service error: ${error.message}`,
+        statusCode: 503,
+      };
+    }
+  }
+
+  /**
+   * Try a specific login endpoint with error handling
+   * @private
+   */
+  async _tryLoginEndpoint(username, password, endpoint) {
+    try {
       const requestBody = {
         logonId: username,
         password: password,
       };
 
       logger.info(`[HCL-REST-AUTH] Attempting login for user: ${username}`);
-      logger.debug(`[HCL-REST-AUTH] Login endpoint: ${loginEndpoint}`);
-      logger.debug(`[HCL-REST-AUTH] Request body (sanitized): logonId=${username}, storeId=${this.hclStoreId}`);
+      logger.debug(`[HCL-REST-AUTH] Login endpoint: ${endpoint}`);
+      logger.debug(`[HCL-REST-AUTH] Request body (sanitized): logonId=${username}`);
 
-      const response = await fetch(loginEndpoint, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,9 +161,15 @@ class HCLRestAuth {
         logger.debug(`[HCL-REST-AUTH] Error response: ${responseText}`);
         
         let errorDetail = 'Authentication failed';
+        let statusCode = response.status;
+        
         try {
           const errorBody = JSON.parse(responseText);
           errorDetail = errorBody.message || errorBody.error || errorDetail;
+          // Capture specific error codes
+          if (errorBody.errors && Array.isArray(errorBody.errors) && errorBody.errors[0]) {
+            errorDetail = errorBody.errors[0].message || errorDetail;
+          }
         } catch (e) {
           // Response was not JSON, use status message
         }
@@ -132,7 +177,8 @@ class HCLRestAuth {
         return {
           success: false,
           error: errorDetail,
-          statusCode: response.status,
+          statusCode: statusCode,
+          endpoint: endpoint, // Include for diagnostics
         };
       }
 
@@ -150,7 +196,7 @@ class HCLRestAuth {
       }
 
       // Extract wcToken from response
-      const wcToken = responseBody.wcToken || responseBody.token;
+      const wcToken = responseBody.wcToken || responseBody.token || responseBody.accessToken;
       
       if (!wcToken) {
         logger.error('[HCL-REST-AUTH] No wcToken in response');
@@ -181,12 +227,12 @@ class HCLRestAuth {
       };
 
     } catch (error) {
-      logger.error(`[HCL-REST-AUTH] Login error: ${error.message}`);
+      logger.error(`[HCL-REST-AUTH] Endpoint error: ${error.message}`);
       logger.debug(`[HCL-REST-AUTH] Stack trace: ${error.stack}`);
       
       return {
         success: false,
-        error: `Authentication service error: ${error.message}`,
+        error: `Service error: ${error.message}`,
         statusCode: 503,
       };
     }

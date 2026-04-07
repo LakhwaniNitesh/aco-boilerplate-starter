@@ -96,6 +96,7 @@ app.post('/api/hcl/login', hclAuthController.login);
 app.post('/api/hcl/logout', hclAuthController.logout);
 app.get('/api/hcl/auth/validate', hclAuthController.validateToken);
 app.get('/api/hcl/auth/available-users', hclAuthController.getAvailableUsers);
+app.get('/api/hcl/auth/diagnose', hclAuthController.diagnose);
 
 // Cart operations
 app.post('/api/hcl/cart/add', hclCartController.addToCart);

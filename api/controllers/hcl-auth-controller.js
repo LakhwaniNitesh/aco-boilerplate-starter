@@ -219,4 +219,44 @@ export const hclAuthController = {
       next(error);
     }
   },
+
+  /**
+   * GET /api/hcl/auth/diagnose
+   * Diagnostic endpoint to test HCL Commerce connectivity
+   * Shows current configuration and tests login endpoint
+   */
+  diagnose: async (req, res, next) => {
+    try {
+      const useReal = getUseRealHCLAuth();
+      
+      res.json({
+        success: true,
+        mode: useReal ? 'REAL HCL Commerce' : 'MOCK Authentication',
+        configuration: {
+          HCL_HOST: process.env.HCL_HOST || 'http://localhost:8080',
+          HCL_STORE_ID: process.env.HCL_STORE_ID || 'B2CStore',
+          HCL_CATALOG_ID: process.env.HCL_CATALOG_ID || '10001',
+          USE_REAL_HCL_AUTH: process.env.USE_REAL_HCL_AUTH === 'true',
+        },
+        loginEndpoints: {
+          primary: `${process.env.HCL_HOST || 'http://localhost:8080'}/store/${process.env.HCL_STORE_ID || 'B2CStore'}/loginidentity`,
+          alternative: `${process.env.HCL_HOST || 'http://localhost:8080'}/identity/v1/customers/login`,
+        },
+        testCredentials: {
+          username: 'auroraadobetest',
+          password: 'passw0rd',
+        },
+        instructions: [
+          '1. If mode is MOCK, switch to REAL by setting USE_REAL_HCL_AUTH=true in .env',
+          '2. Verify HCL_HOST points to your HCL Commerce VM',
+          '3. Verify HCL_STORE_ID exists and user has access',
+          '4. Try logging in with test credentials',
+          '5. If "tenant not found" error, check store ID',
+        ],
+      });
+    } catch (error) {
+      console.error(`[AUTH-CONTROLLER] Diagnostic error: ${error.message}`);
+      next(error);
+    }
+  },
 };
