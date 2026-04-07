@@ -10,8 +10,9 @@ import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
 import { decorateBlock, loadBlock } from '../../scripts/aem.js';
 
-import renderAuthCombine from './renderAuthCombine.js';
-import { renderAuthDropdown } from './renderAuthDropdown.js';
+// DISABLED: Using REST-based custom login block instead of GraphQL drop-in auth
+// import renderAuthCombine from './renderAuthCombine.js';
+// import { renderAuthDropdown } from './renderAuthDropdown.js';
 import { rootLink } from '../../scripts/scripts.js';
 
 // media query match that indicates mobile/tablet width
@@ -391,9 +392,11 @@ export default async function decorate(block) {
   toggleMenu(nav, navSections, isDesktop.matches);
   isDesktop.addEventListener('change', () => toggleMenu(nav, navSections, isDesktop.matches));
 
-  renderAuthCombine(
-    navSections,
-    () => !isDesktop.matches && toggleMenu(nav, navSections, false),
-  );
-  renderAuthDropdown(navTools);
+  // DISABLED: Drop-in auth uses GraphQL but HCL Commerce requires REST API
+  // Using custom commerce-login block with REST API instead
+  // renderAuthCombine(
+  //   navSections,
+  //   () => !isDesktop.matches && toggleMenu(nav, navSections, false),
+  // );
+  // renderAuthDropdown(navTools);
 }
