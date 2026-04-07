@@ -169,12 +169,27 @@ export default async function decorate(block) {
             const accessToken = getAccessToken();
             if (!accessToken) {
               // Show a login prompt/link
-              inlineAlert?.remove();
+              if (inlineAlert) {
+                inlineAlert.remove();
+              }
               inlineAlert = await UI.render(InLineAlert, {
                 type: 'error',
                 heading: 'Authentication Required',
                 description: 'Please log in first before adding items to your cart. Click the Sign In button in the header.',
+                icon: Icon({ source: 'Warning' }),
+                'aria-live': 'assertive',
+                role: 'alert',
+                onDismiss: () => {
+                  inlineAlert?.remove();
+                },
+              })($alert);
+              
+              // Scroll alert into view
+              $alert.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
               });
+              
               addToCart.setProps((prev) => ({
                 ...prev,
                 children: labels.PDP?.Product?.AddToCart?.label,
