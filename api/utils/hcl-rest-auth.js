@@ -260,6 +260,10 @@ class HCLRestAuth {
       // Parse Set-Cookie header to extract session cookies
       const sessionCookies = {};
       if (setCookieHeader) {
+        console.log(`[HCL-REST-AUTH] Processing Set-Cookie header`);
+        console.log(`[HCL-REST-AUTH] Set-Cookie header type: ${typeof setCookieHeader}`);
+        console.log(`[HCL-REST-AUTH] Set-Cookie header is array: ${Array.isArray(setCookieHeader)}`);
+        
         // setCookieHeader is a comma-separated string of cookies from HCL
         // Each cookie has format: "name=value; Path=...; HttpOnly; Secure"
         // Multiple cookies are separated by commas
@@ -267,13 +271,15 @@ class HCLRestAuth {
         let cookieArray = [];
         if (Array.isArray(setCookieHeader)) {
           cookieArray = setCookieHeader;
+          console.log(`[HCL-REST-AUTH] Got array with ${cookieArray.length} cookies`);
         } else {
           // Split on commas, but be careful about URLs with commas
           // Format: "Cookie1=...; Path=/; HttpOnly, Cookie2=...; Path=/"
           cookieArray = setCookieHeader.split(',').map(c => c.trim());
+          console.log(`[HCL-REST-AUTH] Split string into ${cookieArray.length} cookies`);
         }
         
-        logger.debug(`[HCL-REST-AUTH] Parsing ${cookieArray.length} cookies from Set-Cookie header`);
+        console.log(`[HCL-REST-AUTH] Parsing ${cookieArray.length} cookies from Set-Cookie header`);
         
         cookieArray.forEach((cookieString, index) => {
           if (cookieString) {
@@ -284,12 +290,13 @@ class HCLRestAuth {
               const trimmedName = name.trim();
               const trimmedValue = value.trim();
               sessionCookies[trimmedName] = trimmedValue;
-              logger.debug(`[HCL-REST-AUTH] ✓ Captured session cookie #${index + 1}: ${trimmedName}=${trimmedValue.substring(0, 30)}...`);
+              console.log(`[HCL-REST-AUTH] ✓ Captured session cookie #${index + 1}: ${trimmedName}=${trimmedValue.substring(0, 30)}...`);
             }
           }
         });
         
-        logger.debug(`[HCL-REST-AUTH] Total cookies parsed: ${Object.keys(sessionCookies).length}`);
+        console.log(`[HCL-REST-AUTH] Total cookies parsed: ${Object.keys(sessionCookies).length}`);
+        console.log(`[HCL-REST-AUTH] Session cookies object:`, sessionCookies);
       }
 
       // Return standardized response (matches Adobe Commerce format)
