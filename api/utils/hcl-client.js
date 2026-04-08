@@ -49,7 +49,8 @@ class HCLClient {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+          // HCL Commerce expects token in Cookie header, not Authorization: Bearer
+          ...(accessToken && { Cookie: `WCToken=${accessToken}` }),
         },
         agent,
       };
