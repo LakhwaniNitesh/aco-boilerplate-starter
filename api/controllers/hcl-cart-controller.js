@@ -111,9 +111,20 @@ export const hclCartController = {
       console.log(`[CART-PROXY] Adding to cart: ${productId} x${quantity || 1}`);
 
       // Initialize HCL client with session cookies from login response
+      // CRITICAL: Clear existing cookies and use ONLY the cookies from THIS request
+      // This prevents cookie mismatch when multiple users or sessions exist
       if (bodySessionCookies && Object.keys(bodySessionCookies).length > 0) {
-        console.log(`[CART-PROXY] Initializing HCL client with ${Object.keys(bodySessionCookies).length} session cookies from login`);
+        console.log(`[CART-PROXY] Clearing old cookies and setting NEW cookies from request`);
+        console.log(`[CART-PROXY] Old cookies:`, JSON.stringify(hclClient.sessionCookies));
+        console.log(`[CART-PROXY] New cookies from body:`, JSON.stringify(bodySessionCookies));
+        
+        // CRITICAL FIX: Clear all existing cookies first
+        hclClient.sessionCookies = {};
+        
+        // Then assign ONLY the cookies from this request
         Object.assign(hclClient.sessionCookies, bodySessionCookies);
+        
+        console.log(`[CART-PROXY] ✓ Session cookies reset. Now using ${Object.keys(hclClient.sessionCookies).length} cookies: ${Object.keys(hclClient.sessionCookies).join(', ')}`);
       }
       
       // Call HCL Commerce REST API to add item to cart
