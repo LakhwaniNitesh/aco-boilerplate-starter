@@ -19,6 +19,7 @@ class HCLClient {
     this.baseUrl = null;
     this.accessToken = null;
     this.tokenExpiry = null;
+    this.sessionCookies = {}; // Store session cookies (JSESSIONID, WC_PERSISTENT, etc)
   }
 
   /**
@@ -48,27 +49,62 @@ class HCLClient {
       // If token is URL-encoded (contains %2C, %2F, etc), decode it for Cookie header
       const decodedToken = accessToken ? decodeURIComponent(accessToken) : null;
       
+      // Build Cookie header with tokens AND any session cookies from previous responses
+      let cookieHeader = '';
+      if (decodedToken) {
+        cookieHeader = `WCToken=${decodedToken}; WCTrustedToken=${decodedToken}`;
+      }
+      
+      // Add any session cookies we've captured (JSESSIONID, WC_PERSISTENT, etc)
+      const sessionCookieString = Object.entries(this.sessionCookies)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('; ');
+      
+      if (sessionCookieString) {
+        cookieHeader = cookieHeader ? `${cookieHeader}; ${sessionCookieString}` : sessionCookieString;
+      }
+      
       const options = {
         method,
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
           Host: url.hostname,
-          // HCL Commerce requires BOTH WCToken and WCTrustedToken in Cookie header
-          // Both are the same value from login response
-          ...(decodedToken && { Cookie: `WCToken=${decodedToken}; WCTrustedToken=${decodedToken}` }),
+          ...(cookieHeader && { Cookie: cookieHeader }),
         },
         agent,
       };
 
       console.log(`[DEBUG] ${method} ${url.toString()}`);
-      if (decodedToken) {
-        console.log(`[DEBUG] Auth: Cookie header with WCToken + WCTrustedToken set`);
-        console.log(`[DEBUG] Token (first 50 chars): ${decodedToken.substring(0, 50)}`);
+      if (cookieHeader) {
+        console.log(`[DEBUG] Auth: Cookie header with tokens + session cookies`);
+        if (decodedToken) {
+          console.log(`[DEBUG] Token (first 50 chars): ${decodedToken.substring(0, 50)}`);
+        }
+        if (sessionCookieString) {
+          console.log(`[DEBUG] Session cookies: ${sessionCookieString.substring(0, 80)}`);
+        }
       }
 
       const req = https.request(url, options, (res) => {
         let data = '';
+
+        // Capture Set-Cookie headers to store session cookies
+        if (res.headers['set-cookie']) {
+          const cookies = Array.isArray(res.headers['set-cookie']) 
+            ? res.headers['set-cookie'] 
+            : [res.headers['set-cookie']];
+          
+          cookies.forEach(cookieString => {
+            // Parse "name=value; Path=...; HttpOnly" format
+            const parts = cookieString.split(';');
+            const [name, value] = parts[0].split('=');
+            if (name && value) {
+              this.sessionCookies[name.trim()] = value.trim();
+              console.log(`[DEBUG] Captured session cookie: ${name.trim()}`);
+            }
+          });
+        }
 
         res.on('data', chunk => {
           data += chunk;
