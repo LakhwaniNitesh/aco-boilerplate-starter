@@ -93,6 +93,15 @@ class HCLClient {
           console.log(`[DEBUG] Session cookies: ${sessionCookieString.substring(0, 80)}`);
         }
       }
+      
+      // DEBUG: Log complete Cookie header being sent
+      if (cookieHeader) {
+        console.log(`[DEBUG] ╔════════════════════════════════════════`);
+        console.log(`[DEBUG] ║ COMPLETE COOKIE HEADER BEING SENT`);
+        console.log(`[DEBUG] ║ ${cookieHeader}`);
+        console.log(`[DEBUG] ║ Session cookies object:`, JSON.stringify(this.sessionCookies));
+        console.log(`[DEBUG] ╚════════════════════════════════════════`);
+      }
 
       const req = https.request(url, options, (res) => {
         let data = '';
@@ -103,15 +112,20 @@ class HCLClient {
             ? res.headers['set-cookie'] 
             : [res.headers['set-cookie']];
           
-          cookies.forEach(cookieString => {
+          console.log(`[DEBUG] ╔════════════════════════════════════════`);
+          console.log(`[DEBUG] ║ SET-COOKIE RECEIVED FROM HCL`);
+          console.log(`[DEBUG] ║ Count: ${cookies.length}`);
+          cookies.forEach((cookieString, idx) => {
+            console.log(`[DEBUG] ║ Cookie ${idx + 1}: ${cookieString.substring(0, 100)}`);
             // Parse "name=value; Path=...; HttpOnly" format
             const parts = cookieString.split(';');
             const [name, value] = parts[0].split('=');
             if (name && value) {
               this.sessionCookies[name.trim()] = value.trim();
-              console.log(`[DEBUG] Captured session cookie: ${name.trim()}`);
+              console.log(`[DEBUG] ║   → Stored as: ${name.trim()}=${value.trim().substring(0, 40)}...`);
             }
           });
+          console.log(`[DEBUG] ╚════════════════════════════════════════`);
         }
 
         res.on('data', chunk => {
