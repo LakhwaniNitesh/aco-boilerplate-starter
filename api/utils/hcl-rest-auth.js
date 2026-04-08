@@ -100,16 +100,17 @@ class HCLRestAuth {
   async login(username, password) {
     try {
       // Try multiple endpoint variations in order
+      // Based on HCL Commerce REST API documentation
       const endpoints = [
-        // Standard HCL Commerce endpoint
+        // Primary endpoint from HCL REST API docs
         `${this.hclHost}/store/${this.hclStoreId}/loginidentity`,
-        // Alternative with forward slash
-        `${this.hclHost}/store/${this.hclStoreId}/login/identity`,
-        // REST API v2 endpoint
+        // With query parameter for JSON response
+        `${this.hclHost}/store/${this.hclStoreId}/loginidentity?responseFormat=json`,
+        // Alternative REST API v2 format
         `${this.hclHost}/wcs/v2/store/${this.hclStoreId}/customers/login`,
         // Generic identity endpoint
         `${this.hclHost}/identity/v1/customers/login`,
-        // Old API endpoint
+        // Old API format
         `${this.hclHost}/rest/identity/v1/customers/login`,
       ];
 
@@ -160,10 +161,13 @@ class HCLRestAuth {
    * @private
    */
   async _tryLoginEndpoint(username, password, endpoint) {
+  async _tryLoginEndpoint(username, password, endpoint) {
     try {
+      // HCL Commerce expects logonId and logonPassword (or password)
+      // Try both field names to support different HCL versions
       const requestBody = {
         logonId: username,
-        password: password,
+        logonPassword: password, // Some versions use logonPassword
       };
 
       logger.info(`[HCL-REST-AUTH] Attempting login for user: ${username}`);
