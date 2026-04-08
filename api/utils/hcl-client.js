@@ -54,16 +54,16 @@ class HCLClient {
           'Content-Type': 'application/json',
           Accept: 'application/json',
           Host: url.hostname,
-          // HCL Commerce expects token in Cookie header, not Authorization: Bearer
-          // Use decoded token in Cookie header
-          ...(decodedToken && { Cookie: `WCToken=${decodedToken}` }),
+          // HCL Commerce requires BOTH WCToken and WCTrustedToken in Cookie header
+          // Both are the same value from login response
+          ...(decodedToken && { Cookie: `WCToken=${decodedToken}; WCTrustedToken=${decodedToken}` }),
         },
         agent,
       };
 
       console.log(`[DEBUG] ${method} ${url.toString()}`);
       if (decodedToken) {
-        console.log(`[DEBUG] Auth: Cookie header with WCToken set`);
+        console.log(`[DEBUG] Auth: Cookie header with WCToken + WCTrustedToken set`);
         console.log(`[DEBUG] Token (first 50 chars): ${decodedToken.substring(0, 50)}`);
       }
 
