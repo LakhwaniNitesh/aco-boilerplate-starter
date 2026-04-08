@@ -28,6 +28,12 @@ function renderSignIn(element) {
 }
 
 export function renderAuthDropdown(navTools) {
+  // Defensive check: ensure navTools exists
+  if (!navTools) {
+    console.warn('[RENDER-AUTH-DROPDOWN] navTools is null or undefined');
+    return;
+  }
+
   const dropdownElement = document.createRange().createContextualFragment(`
  <div class="dropdown-wrapper nav-tools-wrapper">
     <button type="button" class="nav-dropdown-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="login-modal"></button>

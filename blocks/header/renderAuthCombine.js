@@ -212,7 +212,19 @@ const onHeaderLinkClick = (element) => {
 const renderAuthCombine = (navSections, toggleMenu) => {
   if (getCookie('auth_dropin_firstname')) return;
 
+  // Defensive check: ensure navSections exists and has the expected structure
+  if (!navSections) {
+    console.warn('[RENDER-AUTH-COMBINE] navSections is null or undefined');
+    return;
+  }
+
   const navListEl = navSections.querySelector('.default-content-wrapper > ul');
+
+  // If the expected nav structure doesn't exist, skip rendering
+  if (!navListEl) {
+    console.warn('[RENDER-AUTH-COMBINE] Could not find .default-content-wrapper > ul in navSections');
+    return;
+  }
 
   const listItems = navListEl.querySelectorAll(
     '.default-content-wrapper > ul > li',
