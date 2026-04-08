@@ -161,7 +161,6 @@ class HCLRestAuth {
    * @private
    */
   async _tryLoginEndpoint(username, password, endpoint) {
-  async _tryLoginEndpoint(username, password, endpoint) {
     try {
       // HCL Commerce expects logonId and logonPassword (or password)
       // Try both field names to support different HCL versions
