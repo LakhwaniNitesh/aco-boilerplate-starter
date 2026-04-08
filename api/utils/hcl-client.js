@@ -56,8 +56,13 @@ class HCLClient {
       }
       
       // Add any session cookies we've captured (JSESSIONID, WC_PERSISTENT, etc)
+      // CRITICAL: Decode URL-encoded cookie values before sending to HCL
       const sessionCookieString = Object.entries(this.sessionCookies)
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => {
+          // Decode the cookie value if it's URL-encoded
+          const decodedValue = typeof value === 'string' && value.includes('%') ? decodeURIComponent(value) : value;
+          return `${key}=${decodedValue}`;
+        })
         .join('; ');
       
       if (sessionCookieString) {
