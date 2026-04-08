@@ -99,26 +99,47 @@ class HCLRestAuth {
    */
   async login(username, password) {
     try {
-      // Try primary endpoint first
-      let result = await this._tryLoginEndpoint(username, password, `${this.hclHost}/store/${this.hclStoreId}/loginidentity`);
+      // Try multiple endpoint variations in order
+      const endpoints = [
+        // Standard HCL Commerce endpoint
+        `${this.hclHost}/store/${this.hclStoreId}/loginidentity`,
+        // Alternative with forward slash
+        `${this.hclHost}/store/${this.hclStoreId}/login/identity`,
+        // REST API v2 endpoint
+        `${this.hclHost}/wcs/v2/store/${this.hclStoreId}/customers/login`,
+        // Generic identity endpoint
+        `${this.hclHost}/identity/v1/customers/login`,
+        // Old API endpoint
+        `${this.hclHost}/rest/identity/v1/customers/login`,
+      ];
+
+      let result = null;
       
-      // If "tenant not found" error, provide helpful debugging info
-      if (!result.success && result.error && result.error.includes('tenant')) {
-        logger.warn(`[HCL-REST-AUTH] Tenant error detected. Attempting alternative endpoints...`);
+      for (const endpoint of endpoints) {
+        logger.info(`[HCL-REST-AUTH] Trying endpoint: ${endpoint}`);
+        result = await this._tryLoginEndpoint(username, password, endpoint);
         
-        // Try alternative endpoint without storeId in path
-        result = await this._tryLoginEndpoint(username, password, `${this.hclHost}/identity/v1/customers/login`);
-        
-        if (!result.success) {
-          // Provide diagnostic information
-          logger.error(`[HCL-REST-AUTH] ⚠ Cannot connect with current store ID: ${this.hclStoreId}`);
-          logger.error(`[HCL-REST-AUTH] Please verify:`);
-          logger.error(`[HCL-REST-AUTH]   1. HCL_HOST is correct: ${this.hclHost}`);
-          logger.error(`[HCL-REST-AUTH]   2. HCL_STORE_ID exists and is accessible: ${this.hclStoreId}`);
-          logger.error(`[HCL-REST-AUTH]   3. User exists in HCL Commerce: ${username}`);
-          logger.error(`[HCL-REST-AUTH] Error details: ${result.error}`);
+        if (result.success) {
+          logger.info(`[HCL-REST-AUTH] ✓ Successfully authenticated using endpoint: ${endpoint}`);
+          return result;
         }
+        
+        // Don't retry if it's a 401 (bad credentials)
+        if (result.statusCode === 401) {
+          logger.error(`[HCL-REST-AUTH] Authentication failed (invalid credentials)`);
+          return result;
+        }
+        
+        logger.warn(`[HCL-REST-AUTH] Endpoint failed with status ${result.statusCode}, trying next...`);
       }
+      
+      // All endpoints failed - return the last error
+      logger.error(`[HCL-REST-AUTH] ⚠ All authentication endpoints failed`);
+      logger.error(`[HCL-REST-AUTH] Please verify:`);
+      logger.error(`[HCL-REST-AUTH]   1. HCL_HOST is correct: ${this.hclHost}`);
+      logger.error(`[HCL-REST-AUTH]   2. HCL_STORE_ID exists and is accessible: ${this.hclStoreId}`);
+      logger.error(`[HCL-REST-AUTH]   3. User exists in HCL Commerce: ${username}`);
+      logger.error(`[HCL-REST-AUTH] Last error: ${result.error}`);
       
       return result;
 
