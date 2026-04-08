@@ -203,12 +203,19 @@ export default async function decorate(block) {
             // CRITICAL: Also retrieve and send session cookies from login
             let sessionCookies = {};
             try {
-              const authData = JSON.parse(sessionStorage.getItem('hcl_auth') || '{}');
+              const rawAuthData = sessionStorage.getItem('hcl_auth');
+              console.log('[PDP] Raw hcl_auth from sessionStorage:', rawAuthData);
+              
+              const authData = JSON.parse(rawAuthData || '{}');
+              console.log('[PDP] Parsed authData:', JSON.stringify(authData, null, 2));
+              
               if (authData.sessionCookies) {
                 sessionCookies = authData.sessionCookies;
                 console.log('[PDP] Retrieved session cookies for cart request:', Object.keys(sessionCookies));
+                console.log('[PDP] Session cookies content:', JSON.stringify(sessionCookies, null, 2));
               } else {
                 console.warn('[PDP] No session cookies found in hcl_auth');
+                console.warn('[PDP] authData keys:', Object.keys(authData));
               }
             } catch (e) {
               console.error('[PDP] Error retrieving session cookies:', e);

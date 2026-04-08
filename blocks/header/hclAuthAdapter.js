@@ -52,12 +52,18 @@ authApi.authenticateCustomer = async (email, password) => {
     // CRITICAL: Also store session cookies from HCL backend
     if (data.sessionCookies) {
       console.log('[HCL-AUTH-ADAPTER] Storing session cookies:', data.sessionCookies);
-      sessionStorage.setItem('hcl_auth', JSON.stringify({
+      const hclAuthData = {
         token: data.token,
         userId: data.userId,
         sessionCookies: data.sessionCookies,
         storedAt: Date.now(),
-      }));
+      };
+      console.log('[HCL-AUTH-ADAPTER] Full data being stored to sessionStorage.hcl_auth:', JSON.stringify(hclAuthData, null, 2));
+      sessionStorage.setItem('hcl_auth', JSON.stringify(hclAuthData));
+      
+      // Verify it was stored
+      const verification = sessionStorage.getItem('hcl_auth');
+      console.log('[HCL-AUTH-ADAPTER] Verification - data from sessionStorage:', verification);
     } else {
       console.warn('[HCL-AUTH-ADAPTER] ⚠ No sessionCookies in login response!');
       console.warn('[HCL-AUTH-ADAPTER] Response keys:', Object.keys(data));
