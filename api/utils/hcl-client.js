@@ -59,6 +59,7 @@ class HCLClient {
       console.log(`[DEBUG] ${method} ${url.toString()}`);
       if (accessToken) {
         console.log(`[DEBUG] Auth: Cookie header with WCToken set`);
+        console.log(`[DEBUG] Token (first 50 chars): ${accessToken.substring(0, 50)}`);
       }
 
       const req = https.request(url, options, (res) => {
@@ -177,6 +178,11 @@ class HCLClient {
         ],
         x_inventoryValidation: true,
       };
+      
+      // Some HCL versions require token in body as well
+      if (accessToken) {
+        requestBody.wcToken = accessToken;
+      }
       
       console.log(`[DEBUG] Adding to cart: ${partNumber} x${quantity}, body=${JSON.stringify(requestBody)}`);
       
