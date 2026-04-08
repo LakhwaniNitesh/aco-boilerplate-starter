@@ -1,5 +1,10 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable import/no-cycle */
+
+// HCL Commerce Auth Adapter - Load FIRST before any auth initializers
+// This overrides the drop-in auth API to use HCL REST API instead of GraphQL
+import './blocks/header/hclAuthAdapter.js';
+
 import { events } from '@dropins/tools/event-bus.js';
 import {
   buildBlock,

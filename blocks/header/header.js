@@ -10,8 +10,7 @@ import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
 import { decorateBlock, loadBlock } from '../../scripts/aem.js';
 
-// Auth: Using HCL REST API adapter instead of default GraphQL
-import './hclAuthAdapter.js'; // Override auth API methods before rendering
+// Auth: Loaded globally in scripts.js with HCL REST API adapter
 import renderAuthCombine from './renderAuthCombine.js';
 import { renderAuthDropdown } from './renderAuthDropdown.js';
 import { rootLink } from '../../scripts/scripts.js';
