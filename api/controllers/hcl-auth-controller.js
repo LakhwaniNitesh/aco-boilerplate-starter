@@ -84,7 +84,7 @@ export const hclAuthController = {
       // and included in subsequent requests to cart/checkout endpoints
       console.log(`[AUTH-CONTROLLER] ✓ Login successful for user: ${username}`);
 
-      res.json({
+      const responseData = {
         success: true,
         wcToken: authResult.wcToken || authResult.accessToken,
         accessToken: authResult.wcToken || authResult.accessToken, // Alias for consistency
@@ -97,7 +97,15 @@ export const hclAuthController = {
         // Include session cookies from login response (JSESSIONID, WC_PERSISTENT, etc)
         // Frontend should pass these to subsequent cart requests
         sessionCookies: authResult.sessionCookies || {},
+      };
+
+      console.log(`[AUTH-CONTROLLER] Sending login response with sessionCookies:`, {
+        hasCookies: !!responseData.sessionCookies,
+        cookieKeys: Object.keys(responseData.sessionCookies || {}),
+        sessionCookiesValue: responseData.sessionCookies,
       });
+
+      res.json(responseData);
 
     } catch (error) {
       console.error(`[AUTH-CONTROLLER] Login error: ${error.message}`);
