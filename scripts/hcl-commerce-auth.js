@@ -17,9 +17,14 @@ class HCLAuthService {
     this.token = this.getStoredToken();
     this.userId = this.getStoredUserId();
     this.tokenExpiry = this.getStoredExpiry();
-    this.sessionCookies = this.getStoredSessionCookies();
+    this.sessionCookies = this.getStoredSessionCookies() || {}; // Ensure always an object
     this.refreshTimer = null;
     this.proxyUrl = window.location.origin || 'http://localhost:3000';
+    console.log('[HCL-AUTH] Service initialized with:', {
+      hasToken: !!this.token,
+      hasUserId: !!this.userId,
+      sessionCookieKeys: Object.keys(this.sessionCookies || {}),
+    });
   }
 
   /**
@@ -227,9 +232,12 @@ class HCLAuthService {
   getStoredSessionCookies() {
     try {
       const data = JSON.parse(sessionStorage.getItem('hcl_auth') || '{}');
-      return data.sessionCookies || null;
+      const cookies = data.sessionCookies || {};
+      console.log('[HCL-AUTH] getStoredSessionCookies returning:', { keys: Object.keys(cookies), value: cookies });
+      return cookies;
     } catch (e) {
-      return null;
+      console.error('[HCL-AUTH] Error retrieving stored session cookies:', e);
+      return {};
     }
   }
 

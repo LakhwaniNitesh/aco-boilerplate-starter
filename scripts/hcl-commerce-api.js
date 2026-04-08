@@ -47,17 +47,20 @@ class HCLCommerceAPI {
       
       // Get session cookies from auth service
       const sessionCookies = hclAuthService.getSessionCookies();
+      const cookieKeys = sessionCookies ? Object.keys(sessionCookies) : [];
+      
       console.log('[HCL-API] Session cookies from auth service:', {
         hasCookies: !!sessionCookies,
-        keys: sessionCookies ? Object.keys(sessionCookies) : [],
+        cookieCount: cookieKeys.length,
+        keys: cookieKeys,
         value: sessionCookies,
       });
       
-      if (sessionCookies && Object.keys(sessionCookies).length > 0) {
+      if (cookieKeys.length > 0) {
         requestBody.sessionCookies = sessionCookies;
-        console.log(`[HCL-API] ✓ Including ${Object.keys(sessionCookies).length} session cookies in request`);
+        console.log(`[HCL-API] ✓ Including ${cookieKeys.length} session cookies in request`);
       } else {
-        console.warn('[HCL-API] ⚠ No session cookies available to include');
+        console.warn('[HCL-API] ⚠ No session cookies available to include (empty or null)');
       }
       
       options.body = JSON.stringify(requestBody);
