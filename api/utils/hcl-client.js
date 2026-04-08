@@ -49,11 +49,17 @@ class HCLClient {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          Host: url.hostname,
           // HCL Commerce expects token in Cookie header, not Authorization: Bearer
           ...(accessToken && { Cookie: `WCToken=${accessToken}` }),
         },
         agent,
       };
+
+      console.log(`[DEBUG] ${method} ${url.toString()}`);
+      if (accessToken) {
+        console.log(`[DEBUG] Auth: Cookie header with WCToken set`);
+      }
 
       const req = https.request(url, options, (res) => {
         let data = '';
@@ -64,8 +70,10 @@ class HCLClient {
 
         res.on('end', () => {
           try {
+            console.log(`[DEBUG] Response status: ${res.statusCode}`);
             const parsed = data ? JSON.parse(data) : {};
             if (res.statusCode >= 400) {
+              console.error(`[ERROR] HCL API returned ${res.statusCode}: ${JSON.stringify(parsed).substring(0, 200)}`);
               reject({
                 statusCode: res.statusCode,
                 message: parsed.message || parsed.error || `HTTP ${res.statusCode}`,
@@ -87,6 +95,7 @@ class HCLClient {
       req.on('error', reject);
 
       if (body) {
+        console.log(`[DEBUG] Request body: ${JSON.stringify(body).substring(0, 300)}`);
         req.write(JSON.stringify(body));
       }
 
@@ -156,13 +165,17 @@ class HCLClient {
    */
   async addToCart(accessToken, partNumber, quantity = 1) {
     try {
+      const catalogId = process.env.HCL_CATALOG_ID || '10001';
+      
+      console.log(`[DEBUG] Adding to cart: partNumber=${partNumber}, qty=${quantity}, catalogId=${catalogId}, storeId=${this.storeId}`);
+      
       return await this.request(
         'POST',
         `${this.baseUrl}/cart?langId=1&responseFormat=json`,
         {
           body: [
             {
-              catalogId: process.env.HCL_CATALOG_ID || '10001',
+              catalogId,
               partNumber,
               quantity,
               storeId: this.storeId,

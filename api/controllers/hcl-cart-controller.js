@@ -49,6 +49,8 @@ export const hclCartController = {
       const { partNumber, sku, quantity, accessToken } = req.body;
       const productId = partNumber || sku;
 
+      console.log(`[CART-PROXY] Request body: partNumber=${partNumber}, sku=${sku}, quantity=${quantity}, accessToken=${accessToken ? 'present' : 'missing'}`);
+
       if (!productId) {
         return res.status(400).json({
           success: false,
@@ -83,6 +85,7 @@ export const hclCartController = {
       });
     } catch (error) {
       console.error('[CART-PROXY] Error adding to cart:', error.message);
+      console.error('[CART-PROXY] Full error:', error);
       return res.status(error.statusCode || 500).json({
         success: false,
         error: error.message || 'Failed to add product to cart',
