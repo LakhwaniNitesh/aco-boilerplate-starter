@@ -41,11 +41,26 @@ authApi.authenticateCustomer = async (email, password) => {
     const data = await response.json();
 
     console.log('[HCL-AUTH-ADAPTER] Login successful', { email });
+    console.log('[HCL-AUTH-ADAPTER] Response data:', JSON.stringify(data, null, 2));
 
     // Store token in session storage (same as Adobe Commerce would do)
     if (data.token) {
       sessionStorage.setItem('auth_token', data.token);
       sessionStorage.setItem('customer_email', email);
+    }
+
+    // CRITICAL: Also store session cookies from HCL backend
+    if (data.sessionCookies) {
+      console.log('[HCL-AUTH-ADAPTER] Storing session cookies:', data.sessionCookies);
+      sessionStorage.setItem('hcl_auth', JSON.stringify({
+        token: data.token,
+        userId: data.userId,
+        sessionCookies: data.sessionCookies,
+        storedAt: Date.now(),
+      }));
+    } else {
+      console.warn('[HCL-AUTH-ADAPTER] ⚠ No sessionCookies in login response!');
+      console.warn('[HCL-AUTH-ADAPTER] Response keys:', Object.keys(data));
     }
 
     // Return success response in format expected by drop-in auth
