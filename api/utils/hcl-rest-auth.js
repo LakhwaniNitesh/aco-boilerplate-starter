@@ -260,19 +260,36 @@ class HCLRestAuth {
       // Parse Set-Cookie header to extract session cookies
       const sessionCookies = {};
       if (setCookieHeader) {
-        // setCookieHeader might be a single string or array depending on fetch implementation
-        const cookieStrings = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
-        cookieStrings.forEach(cookieString => {
+        // setCookieHeader is a comma-separated string of cookies from HCL
+        // Each cookie has format: "name=value; Path=...; HttpOnly; Secure"
+        // Multiple cookies are separated by commas
+        
+        let cookieArray = [];
+        if (Array.isArray(setCookieHeader)) {
+          cookieArray = setCookieHeader;
+        } else {
+          // Split on commas, but be careful about URLs with commas
+          // Format: "Cookie1=...; Path=/; HttpOnly, Cookie2=...; Path=/"
+          cookieArray = setCookieHeader.split(',').map(c => c.trim());
+        }
+        
+        logger.debug(`[HCL-REST-AUTH] Parsing ${cookieArray.length} cookies from Set-Cookie header`);
+        
+        cookieArray.forEach((cookieString, index) => {
           if (cookieString) {
             // Parse "name=value; Path=...; HttpOnly" format
             const parts = cookieString.split(';');
             const [name, value] = parts[0].split('=');
             if (name && value) {
-              sessionCookies[name.trim()] = value.trim();
-              logger.debug(`[HCL-REST-AUTH] Captured session cookie from login: ${name.trim()}`);
+              const trimmedName = name.trim();
+              const trimmedValue = value.trim();
+              sessionCookies[trimmedName] = trimmedValue;
+              logger.debug(`[HCL-REST-AUTH] ✓ Captured session cookie #${index + 1}: ${trimmedName}=${trimmedValue.substring(0, 30)}...`);
             }
           }
         });
+        
+        logger.debug(`[HCL-REST-AUTH] Total cookies parsed: ${Object.keys(sessionCookies).length}`);
       }
 
       // Return standardized response (matches Adobe Commerce format)

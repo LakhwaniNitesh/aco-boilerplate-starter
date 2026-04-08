@@ -48,6 +48,11 @@ export const hclCartController = {
     try {
       const { partNumber, sku, quantity, accessToken: bodyAccessToken, userId, sessionCookies: bodySessionCookies } = req.body;
       
+      // DEBUG: Log the full request body
+      console.log(`[CART-PROXY] Full request body keys:`, Object.keys(req.body));
+      console.log(`[CART-PROXY] sessionCookies value from body:`, bodySessionCookies);
+      console.log(`[CART-PROXY] sessionCookies type:`, typeof bodySessionCookies);
+      
       // Accept token from EITHER headers (Authorization or Cookie) OR request body
       let accessToken = bodyAccessToken;
       
