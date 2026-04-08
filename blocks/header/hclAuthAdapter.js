@@ -29,105 +29,50 @@ let isAuthInProgress = false;
 window.fetch = async function(...args) {
   const [resource, config] = args;
   
-  // Log ALL POST requests to understand what's happening
-  if (typeof resource === 'string' && config?.method === 'POST') {
-    console.log('[HCL-AUTH-ADAPTER] POST request to:', resource);
-    if (config.body) {
-      try {
-        const bodyObj = JSON.parse(config.body);
-        console.log('[HCL-AUTH-ADAPTER] Body keys:', Object.keys(bodyObj));
-      } catch(e) { /* ignore */ }
-    }
-  }
+  // Check if this is a call to our /api/hcl/login endpoint
+  const isHclLoginRequest = typeof resource === 'string' && 
+                            resource.includes('/api/hcl/login') && 
+                            config?.method === 'POST';
   
-  // Intercept requests to the drop-in auth endpoint (including /authenticate)
-  const isAuthRequest = typeof resource === 'string' && 
-                       (resource.includes('/auth') || resource.includes('/authenticate')) && 
-                       config?.method === 'POST';
-  
-  if (isAuthRequest) {
+  if (isHclLoginRequest) {
+    console.log('[HCL-AUTH-ADAPTER] Intercepted /api/hcl/login request');
+    
+    // Call original fetch to hit the backend
+    const response = await originalFetch.apply(window, args);
+    
+    // Clone the response so we can read it and still return it
+    const responseClone = response.clone();
+    
     try {
-      console.log('[HCL-AUTH-ADAPTER] Intercepted auth request to:', resource);
+      const responseData = await response.json();
+      console.log('[HCL-AUTH-ADAPTER] /api/hcl/login response received');
+      console.log('[HCL-AUTH-ADAPTER] Response has sessionCookies:', !!responseData.sessionCookies);
       
-      // Parse the request body to see if it's a login request
-      const body = config.body ? JSON.parse(config.body) : {};
-      console.log('[HCL-AUTH-ADAPTER] Request body has keys:', Object.keys(body));
-      
-      // If this looks like a login request (has email/username and password)
-      if ((body.email || body.username) && body.password) {
-        console.log('[HCL-AUTH-ADAPTER] Detected login request for:', body.email || body.username);
-        isAuthInProgress = true;
+      // CRITICAL: If response has sessionCookies, store them immediately
+      if (responseData.sessionCookies) {
+        console.log('[HCL-AUTH-ADAPTER] ✓ Found sessionCookies in response, storing to sessionStorage');
+        const hclAuthData = {
+          token: responseData.token || responseData.accessToken || responseData.wcToken,
+          userId: responseData.userId,
+          sessionCookies: responseData.sessionCookies,
+          storedAt: Date.now(),
+        };
+        console.log('[HCL-AUTH-ADAPTER] Full auth data:', JSON.stringify(hclAuthData, null, 2));
+        sessionStorage.setItem('hcl_auth', JSON.stringify(hclAuthData));
         
-        try {
-          // Call our HCL login endpoint instead
-          const hclResponse = await originalFetch.call(window, '/api/hcl/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              username: body.email || body.username,
-              password: body.password,
-            }),
-          });
-
-          if (!hclResponse.ok) {
-            throw new Error(`HCL Login failed: ${hclResponse.status}`);
-          }
-
-          const hclData = await hclResponse.json();
-          console.log('[HCL-AUTH-ADAPTER] Login successful from HCL');
-          console.log('[HCL-AUTH-ADAPTER] Response data has sessionCookies:', !!hclData.sessionCookies);
-
-          // CRITICAL: Store session cookies to sessionStorage
-          if (hclData.sessionCookies) {
-            console.log('[HCL-AUTH-ADAPTER] Storing session cookies:', hclData.sessionCookies);
-            const hclAuthData = {
-              token: hclData.token || hclData.accessToken,
-              userId: hclData.userId,
-              sessionCookies: hclData.sessionCookies,
-              storedAt: Date.now(),
-            };
-            console.log('[HCL-AUTH-ADAPTER] Full data being stored to sessionStorage.hcl_auth:', JSON.stringify(hclAuthData, null, 2));
-            sessionStorage.setItem('hcl_auth', JSON.stringify(hclAuthData));
-            
-            // Verify it was stored
-            const verification = sessionStorage.getItem('hcl_auth');
-            console.log('[HCL-AUTH-ADAPTER] Verification - data from sessionStorage:', verification);
-          } else {
-            console.warn('[HCL-AUTH-ADAPTER] ⚠ No sessionCookies in login response!');
-            console.warn('[HCL-AUTH-ADAPTER] Response keys:', Object.keys(hclData));
-          }
-
-          // Return response in format expected by drop-in auth
-          // Wrap in a Response object so the drop-in gets what it expects
-          const responseData = {
-            customer: {
-              email: body.email || body.username,
-              firstname: hclData.firstName || '',
-              lastname: hclData.lastName || '',
-            },
-            token: hclData.token || hclData.accessToken,
-          };
-
-          return new Response(JSON.stringify(responseData), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        } catch (error) {
-          console.error('[HCL-AUTH-ADAPTER] Login failed:', error);
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 401,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        } finally {
-          isAuthInProgress = false;
-        }
+        // Verify storage
+        const stored = sessionStorage.getItem('hcl_auth');
+        console.log('[HCL-AUTH-ADAPTER] ✓ Verification - stored to sessionStorage:', !!stored);
+      } else {
+        console.warn('[HCL-AUTH-ADAPTER] ⚠ No sessionCookies found in response');
+        console.log('[HCL-AUTH-ADAPTER] Response keys:', Object.keys(responseData));
       }
-    } catch (error) {
-      console.warn('[HCL-AUTH-ADAPTER] Error intercepting request:', error);
-      // Fall through to original fetch if not a login request
+    } catch (e) {
+      console.warn('[HCL-AUTH-ADAPTER] Error parsing response:', e);
     }
+    
+    // Return the original response (not the clone)
+    return responseClone;
   }
 
   // For all other requests, use original fetch
