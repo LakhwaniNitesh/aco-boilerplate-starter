@@ -47,7 +47,7 @@ class HCLAuthService {
       const data = await response.json();
 
       // Store token and metadata
-      this.token = data.token;
+      this.token = data.wcToken || data.accessToken || data.token;
       this.userId = data.userId;
       this.tokenExpiry = Date.now() + (data.expiresIn * 1000);
       
