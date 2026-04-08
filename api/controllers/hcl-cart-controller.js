@@ -92,6 +92,17 @@ export const hclCartController = {
 
       console.log(`[CART-PROXY] Adding to cart: ${productId} x${quantity || 1}`);
 
+      // First, get/initialize the cart to establish the session
+      // This is required before adding items in HCL Commerce
+      console.log(`[CART-PROXY] Initializing cart session...`);
+      try {
+        await hclClient.getCart(accessToken);
+        console.log(`[CART-PROXY] ✓ Cart session initialized`);
+      } catch (e) {
+        console.warn(`[CART-PROXY] Warning: Could not initialize cart:`, e.message);
+        // Continue anyway - maybe the user doesn't have a cart yet
+      }
+
       // Call HCL Commerce REST API to add item to cart
       const hclResponse = await hclClient.addToCart(
         accessToken,
