@@ -251,11 +251,16 @@ class HCLRestAuth {
       logger.info(`[HCL-REST-AUTH] ✓ Login successful for user: ${username}`);
       logger.debug(`[HCL-REST-AUTH] Token received (truncated): ${wcToken.substring(0, 20)}...`);
 
+      // URL-decode the token if it contains encoded characters (e.g., %2C for comma)
+      // HCL returns URL-encoded tokens but we need to decode them for Cookie header
+      const decodedToken = decodeURIComponent(wcToken);
+      logger.debug(`[HCL-REST-AUTH] Decoded token (truncated): ${decodedToken.substring(0, 20)}...`);
+
       // Return standardized response (matches Adobe Commerce format)
       return {
         success: true,
-        wcToken: wcToken,
-        accessToken: wcToken, // Alias for consistency
+        wcToken: decodedToken,
+        accessToken: decodedToken, // Alias for consistency
         userId: responseBody.userId || responseBody.customerId,
         email: responseBody.email || responseBody.logonId,
         firstName: responseBody.firstName || '',
