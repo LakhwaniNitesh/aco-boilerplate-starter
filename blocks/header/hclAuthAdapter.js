@@ -67,57 +67,6 @@ authApi.authenticateCustomer = async (email, password) => {
  * Override the createCustomer method to use HCL REST API
  * Called when user submits sign-up form in the modal
  */
-authApi.createCustomer = async (customer, password) => {
-  try {
-    console.log('[HCL-AUTH-ADAPTER] createCustomer called', { 
-      email: customer.email,
-      firstname: customer.firstname,
-    });
-
-    // Call your backend proxy which connects to HCL
-    const response = await fetch('/api/hcl/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: customer.email,
-        firstName: customer.firstname,
-        lastName: customer.lastname,
-        password,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Registration failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    console.log('[HCL-AUTH-ADAPTER] Registration successful', { email: customer.email });
-
-    // Store token in session storage
-    if (data.token) {
-      sessionStorage.setItem('auth_token', data.token);
-      sessionStorage.setItem('customer_email', customer.email);
-    }
-
-    // Return success response in format expected by drop-in auth
-    return {
-      customer: {
-        email: customer.email,
-        firstname: customer.firstname,
-        lastname: customer.lastname,
-      },
-      token: data.token,
-    };
-  } catch (error) {
-    console.error('[HCL-AUTH-ADAPTER] Registration failed:', error);
-    throw new Error(error.message || 'Registration failed. Please try again.');
-  }
-};
-
 /**
  * Override getCustomerToken to retrieve stored token from sessionStorage
  */
@@ -136,45 +85,6 @@ authApi.revokeCustomerToken = async () => {
   sessionStorage.removeItem('auth_token');
   sessionStorage.removeItem('customer_email');
   return true;
-};
-
-/**
- * Override fetchCustomer to retrieve customer data from backend
- */
-authApi.fetchCustomer = async () => {
-  try {
-    const token = sessionStorage.getItem('auth_token');
-    const email = sessionStorage.getItem('customer_email');
-
-    if (!token || !email) {
-      return null;
-    }
-
-    // Optionally fetch customer details from backend
-    const response = await fetch('/api/hcl/customer', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        // Token expired or invalid
-        sessionStorage.removeItem('auth_token');
-        sessionStorage.removeItem('customer_email');
-        return null;
-      }
-      throw new Error(`Failed to fetch customer: ${response.status}`);
-    }
-
-    const customer = await response.json();
-    return customer;
-  } catch (error) {
-    console.error('[HCL-AUTH-ADAPTER] fetchCustomer failed:', error);
-    return null;
-  }
 };
 
 export { authApi };
