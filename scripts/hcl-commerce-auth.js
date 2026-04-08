@@ -65,14 +65,20 @@ class HCLAuthService {
       this.userId = data.userId;
       this.tokenExpiry = Date.now() + (data.expiresIn * 1000);
       
+      // DEBUGGING: Log full response structure
+      console.log('[HCL-AUTH] FULL LOGIN RESPONSE DATA:', JSON.stringify(data, null, 2));
+      
       // Store session cookies from login response
       if (data.sessionCookies) {
         this.sessionCookies = data.sessionCookies;
+        console.log(`[HCL-AUTH] ✓ Setting this.sessionCookies to:`, this.sessionCookies);
         console.log(`[HCL-AUTH] ✓ Stored ${Object.keys(data.sessionCookies).length} session cookies from login response`);
       } else {
         console.warn('[HCL-AUTH] ⚠ No sessionCookies in login response!');
+        console.warn('[HCL-AUTH] ⚠ Response keys:', Object.keys(data));
       }
 
+      console.log('[HCL-AUTH] Before storeToken, this.sessionCookies =', this.sessionCookies);
       this.storeToken();
       this.scheduleTokenRefresh();
 
