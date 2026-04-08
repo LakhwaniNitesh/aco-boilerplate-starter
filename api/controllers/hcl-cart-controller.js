@@ -46,10 +46,35 @@ export const hclCartController = {
    */
   addToCart: async (req, res, next) => {
     try {
-      const { partNumber, sku, quantity, accessToken } = req.body;
+      const { partNumber, sku, quantity, accessToken: bodyAccessToken } = req.body;
+      
+      // Accept token from EITHER headers (Authorization or Cookie) OR request body
+      let accessToken = bodyAccessToken;
+      
+      // Check Authorization header first (e.g., "Bearer token123" or just "token123")
+      if (!accessToken && req.headers.authorization) {
+        accessToken = req.headers.authorization.replace(/^Bearer\s+/, '');
+      }
+      
+      // Check for WCToken in headers
+      if (!accessToken && req.headers.wctoken) {
+        accessToken = req.headers.wctoken;
+      }
+      
+      // Check for Cookie header with WCToken
+      if (!accessToken && req.headers.cookie) {
+        const cookieMatch = req.headers.cookie.match(/WCToken=([^;]+)/);
+        if (cookieMatch) {
+          accessToken = cookieMatch[1];
+        }
+      }
+      
       const productId = partNumber || sku;
 
-      console.log(`[CART-PROXY] Request body: partNumber=${partNumber}, sku=${sku}, quantity=${quantity}, accessToken=${accessToken ? 'present' : 'missing'}`);
+      console.log(`[CART-PROXY] Request received`);
+      console.log(`[CART-PROXY]   Body: partNumber=${partNumber}, sku=${sku}, quantity=${quantity}`);
+      console.log(`[CART-PROXY]   Auth source: ${bodyAccessToken ? 'body' : (req.headers.authorization ? 'Authorization header' : (req.headers.wctoken ? 'WCToken header' : (req.headers.cookie ? 'Cookie header' : 'NONE')))}`);
+      console.log(`[CART-PROXY]   Token present: ${accessToken ? 'yes' : 'no'}`);
 
       if (!productId) {
         return res.status(400).json({
@@ -61,7 +86,7 @@ export const hclCartController = {
       if (!accessToken) {
         return res.status(401).json({
           success: false,
-          error: 'Missing required field: accessToken',
+          error: 'Missing required field: accessToken (in body, Authorization header, WCToken header, or Cookie)',
         });
       }
 
@@ -100,12 +125,28 @@ export const hclCartController = {
    */
   getCart: async (req, res, next) => {
     try {
-      const { accessToken } = req.query;
+      // Accept token from query params OR headers
+      let accessToken = req.query.accessToken;
+      
+      if (!accessToken && req.headers.authorization) {
+        accessToken = req.headers.authorization.replace(/^Bearer\s+/, '');
+      }
+      
+      if (!accessToken && req.headers.wctoken) {
+        accessToken = req.headers.wctoken;
+      }
+      
+      if (!accessToken && req.headers.cookie) {
+        const cookieMatch = req.headers.cookie.match(/WCToken=([^;]+)/);
+        if (cookieMatch) {
+          accessToken = cookieMatch[1];
+        }
+      }
 
       if (!accessToken) {
         return res.status(401).json({
           success: false,
-          error: 'Missing required field: accessToken',
+          error: 'Missing required field: accessToken (in query, Authorization header, WCToken header, or Cookie)',
         });
       }
 
@@ -175,12 +216,29 @@ export const hclCartController = {
    */
   removeFromCart: async (req, res, next) => {
     try {
-      const { accessToken, orderItemId } = req.query;
+      // Accept token from query OR headers
+      let accessToken = req.query.accessToken;
+      const orderItemId = req.query.orderItemId;
+      
+      if (!accessToken && req.headers.authorization) {
+        accessToken = req.headers.authorization.replace(/^Bearer\s+/, '');
+      }
+      
+      if (!accessToken && req.headers.wctoken) {
+        accessToken = req.headers.wctoken;
+      }
+      
+      if (!accessToken && req.headers.cookie) {
+        const cookieMatch = req.headers.cookie.match(/WCToken=([^;]+)/);
+        if (cookieMatch) {
+          accessToken = cookieMatch[1];
+        }
+      }
 
       if (!accessToken || !orderItemId) {
         return res.status(400).json({
           success: false,
-          error: 'Missing required fields: accessToken, orderItemId',
+          error: 'Missing required fields: accessToken (in query/headers), orderItemId',
         });
       }
 
@@ -213,12 +271,29 @@ export const hclCartController = {
    */
   updateCartItem: async (req, res, next) => {
     try {
-      const { accessToken, orderItemId, quantity } = req.body;
+      // Accept token from body OR headers
+      const { accessToken: bodyAccessToken, orderItemId, quantity } = req.body;
+      let accessToken = bodyAccessToken;
+      
+      if (!accessToken && req.headers.authorization) {
+        accessToken = req.headers.authorization.replace(/^Bearer\s+/, '');
+      }
+      
+      if (!accessToken && req.headers.wctoken) {
+        accessToken = req.headers.wctoken;
+      }
+      
+      if (!accessToken && req.headers.cookie) {
+        const cookieMatch = req.headers.cookie.match(/WCToken=([^;]+)/);
+        if (cookieMatch) {
+          accessToken = cookieMatch[1];
+        }
+      }
 
       if (!accessToken || !orderItemId || !quantity) {
         return res.status(400).json({
           success: false,
-          error: 'Missing required fields: accessToken, orderItemId, quantity',
+          error: 'Missing required fields: accessToken (in body/headers), orderItemId, quantity',
         });
       }
 
