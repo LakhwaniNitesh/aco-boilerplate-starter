@@ -11,11 +11,31 @@ const agent = new https.Agent({
 
 class HCLClient {
   constructor() {
+    // IMPORTANT: Do NOT read environment variables in constructor
+    // They will not be loaded yet when the module is imported
+    // Initialize will be called from server.js AFTER dotenv.config()
+    this.host = null;
+    this.storeId = null;
+    this.baseUrl = null;
+    this.accessToken = null;
+    this.tokenExpiry = null;
+  }
+
+  /**
+   * Initialize client with environment variables
+   * MUST be called after dotenv.config() in server.js
+   */
+  initialize() {
     this.host = process.env.HCL_HOST;
     this.storeId = process.env.HCL_STORE_ID;
     this.baseUrl = `${this.host}/wcs/resources/store/${this.storeId}`;
-    this.accessToken = null;
-    this.tokenExpiry = null;
+    
+    if (!this.host || !this.storeId) {
+      console.error('[ERROR] HCL_HOST or HCL_STORE_ID not set in environment');
+      throw new Error('Missing required environment variables: HCL_HOST and HCL_STORE_ID');
+    }
+    
+    console.log(`[INFO] HCL Client initialized: ${this.baseUrl}`);
   }
 
   /**
@@ -214,4 +234,6 @@ class HCLClient {
   }
 }
 
+// Export the class and create singleton instance (will be initialized in server.js)
 export const hclClient = new HCLClient();
+export { HCLClient };

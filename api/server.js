@@ -36,9 +36,19 @@ import { errorHandler } from './middleware/error-handler.js';
 import { logger } from './middleware/logger.js';
 import { validateEnvVars } from './middleware/env-validator.js';
 
-// Import controllers
+// Import controllers and clients
 import { hclAuthController } from './controllers/hcl-auth-controller.js';
 import { hclCartController } from './controllers/hcl-cart-controller.js';
+import { hclClient } from './utils/hcl-client.js';
+
+// IMPORTANT: Initialize HCL client AFTER loading environment variables
+try {
+  hclClient.initialize();
+  console.log('[INFO] ✅ HCL Client initialized successfully');
+} catch (error) {
+  console.error('[ERROR] Failed to initialize HCL Client:', error.message);
+  process.exit(1);
+}
 
 // Initialize Express app
 const app = express();
