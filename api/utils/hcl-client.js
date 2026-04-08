@@ -165,13 +165,18 @@ class HCLClient {
    */
   async addToCart(accessToken, partNumber, quantity = 1) {
     try {
-      // HCL Commerce expects the array directly as the body, not wrapped in an object
-      const requestBody = [
-        {
-          partNumber,
-          quantity,
-        },
-      ];
+      // HCL Commerce expects this exact structure based on Postman successful request
+      const requestBody = {
+        orderId: '.',
+        x_calculatedOrder: '0',
+        orderItem: [
+          {
+            quantity: String(quantity),
+            partNumber,
+          },
+        ],
+        x_inventoryValidation: true,
+      };
       
       console.log(`[DEBUG] Adding to cart: ${partNumber} x${quantity}, body=${JSON.stringify(requestBody)}`);
       
