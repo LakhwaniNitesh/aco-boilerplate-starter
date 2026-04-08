@@ -51,7 +51,23 @@ function storeAuthData(authResponse) {
     const expiresIn = authResponse.expiresIn || 3600;
     const expiresAt = Date.now() + (expiresIn * 1000);
     sessionStorage.setItem('hcl_tokenExpires', expiresAt.toString());
-  } catch (e) {}
+    
+    // CRITICAL: Store sessionCookies from login response for cart operations
+    if (authResponse.sessionCookies) {
+      console.log('[LOGIN] Storing sessionCookies:', authResponse.sessionCookies);
+      sessionStorage.setItem('hcl_auth', JSON.stringify({
+        token: authResponse.wcToken || authResponse.accessToken,
+        userId: authResponse.userId,
+        sessionCookies: authResponse.sessionCookies,
+        storedAt: Date.now(),
+      }));
+      console.log('[LOGIN] ✓ sessionCookies stored to sessionStorage.hcl_auth');
+    } else {
+      console.warn('[LOGIN] ⚠ No sessionCookies in login response');
+    }
+  } catch (e) {
+    console.error('[LOGIN] Error storing auth data:', e);
+  }
 }
 
 function renderLoginUI(block) {
