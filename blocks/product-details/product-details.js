@@ -200,6 +200,20 @@ export default async function decorate(block) {
 
             console.log('[PDP] Adding to HCL cart with accessToken');
             
+            // CRITICAL: Also retrieve and send session cookies from login
+            let sessionCookies = {};
+            try {
+              const authData = JSON.parse(sessionStorage.getItem('hcl_auth') || '{}');
+              if (authData.sessionCookies) {
+                sessionCookies = authData.sessionCookies;
+                console.log('[PDP] Retrieved session cookies for cart request:', Object.keys(sessionCookies));
+              } else {
+                console.warn('[PDP] No session cookies found in hcl_auth');
+              }
+            } catch (e) {
+              console.error('[PDP] Error retrieving session cookies:', e);
+            }
+            
             const cartResponse = await fetch('/api/hcl/cart/add', {
               method: 'POST',
               headers: {
@@ -210,6 +224,7 @@ export default async function decorate(block) {
                 sku: values?.sku,
                 quantity: values?.quantity || 1,
                 accessToken,
+                sessionCookies,  // CRITICAL: Include session cookies
               }),
             });
 
