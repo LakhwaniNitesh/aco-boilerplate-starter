@@ -161,8 +161,9 @@ export const hclCartController = {
    */
   getCart: async (req, res, next) => {
     try {
-      // Accept token from query params OR headers
-      let accessToken = req.query.accessToken;
+      // Accept token from query params OR headers OR body
+      let accessToken = req.query.accessToken || req.body?.accessToken;
+      const { sessionCookies: bodySessionCookies } = req.body || {};
       
       if (!accessToken && req.headers.authorization) {
         accessToken = req.headers.authorization.replace(/^Bearer\s+/, '');
@@ -182,8 +183,14 @@ export const hclCartController = {
       if (!accessToken) {
         return res.status(401).json({
           success: false,
-          error: 'Missing required field: accessToken (in query, Authorization header, WCToken header, or Cookie)',
+          error: 'Missing required field: accessToken (in query, body, Authorization header, WCToken header, or Cookie)',
         });
+      }
+
+      // Initialize HCL client with session cookies from request if provided
+      if (bodySessionCookies && Object.keys(bodySessionCookies).length > 0) {
+        hclClient.sessionCookies = {};
+        Object.assign(hclClient.sessionCookies, bodySessionCookies);
       }
 
       console.log('[CART-PROXY] Fetching cart from HCL...');
@@ -252,9 +259,10 @@ export const hclCartController = {
    */
   removeFromCart: async (req, res, next) => {
     try {
-      // Accept token from query OR headers
-      let accessToken = req.query.accessToken;
+      // Accept token from query OR headers OR body
+      let accessToken = req.query.accessToken || req.body?.accessToken;
       const orderItemId = req.query.orderItemId;
+      const { sessionCookies: bodySessionCookies } = req.body || {};
       
       if (!accessToken && req.headers.authorization) {
         accessToken = req.headers.authorization.replace(/^Bearer\s+/, '');
@@ -276,6 +284,12 @@ export const hclCartController = {
           success: false,
           error: 'Missing required fields: accessToken (in query/headers), orderItemId',
         });
+      }
+
+      // Initialize HCL client with session cookies from request if provided
+      if (bodySessionCookies && Object.keys(bodySessionCookies).length > 0) {
+        hclClient.sessionCookies = {};
+        Object.assign(hclClient.sessionCookies, bodySessionCookies);
       }
 
       console.log(`[CART-PROXY] Removing item ${orderItemId} from cart...`);
@@ -308,7 +322,7 @@ export const hclCartController = {
   updateCartItem: async (req, res, next) => {
     try {
       // Accept token from body OR headers
-      const { accessToken: bodyAccessToken, orderItemId, quantity } = req.body;
+      const { accessToken: bodyAccessToken, orderItemId, quantity, sessionCookies: bodySessionCookies } = req.body || {};
       let accessToken = bodyAccessToken;
       
       if (!accessToken && req.headers.authorization) {
@@ -331,6 +345,12 @@ export const hclCartController = {
           success: false,
           error: 'Missing required fields: accessToken (in body/headers), orderItemId, quantity',
         });
+      }
+
+      // Initialize HCL client with session cookies from request if provided
+      if (bodySessionCookies && Object.keys(bodySessionCookies).length > 0) {
+        hclClient.sessionCookies = {};
+        Object.assign(hclClient.sessionCookies, bodySessionCookies);
       }
 
       console.log(`[CART-PROXY] Updating item ${orderItemId} quantity to ${quantity}...`);
