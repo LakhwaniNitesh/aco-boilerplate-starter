@@ -177,7 +177,7 @@ class HCLClient {
       
       return await this.request(
         'POST',
-        `${this.baseUrl}/cart?langId=1&responseFormat=json`,
+        `${this.baseUrl}/cart/@self?responseFormat=json`,
         requestBody,
         accessToken
       );
