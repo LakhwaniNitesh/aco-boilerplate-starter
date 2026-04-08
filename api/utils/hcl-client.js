@@ -193,6 +193,26 @@ class HCLClient {
         accessToken
       );
     } catch (error) {
+      // If cart doesn't exist (404), try to create one with POST
+      if (error.statusCode === 404) {
+        console.log('[DEBUG] Cart not found (404), attempting to create new cart...');
+        try {
+          return await this.request(
+            'POST',
+            `${this.baseUrl}/cart?responseFormat=json`,
+            {},
+            accessToken
+          );
+        } catch (createError) {
+          console.error('❌ Create cart failed:', createError);
+          throw {
+            status: createError.statusCode || 500,
+            message: 'Failed to create cart',
+            details: createError,
+          };
+        }
+      }
+      
       console.error('❌ Get cart failed:', error);
       throw {
         status: error.statusCode || 500,
