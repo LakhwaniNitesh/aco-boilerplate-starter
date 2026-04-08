@@ -278,3 +278,104 @@ cd484ec feat: Add comprehensive token verification logging to trace token flow
 - **HCL Commerce Docs:** [Authentication & Session Management](https://help.hcl-software.com/commerce/9.0.0/restapi/code/authentication_and_session_management.html)
 - **HTTP Cookies:** [MDN: Set-Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie)
 - **Session Management:** HTTP stateless protocol uses cookies for session persistence
+
+---
+
+## CRITICAL FIX: Session Cookie Singleton Mismatch (Commits: 0ea4aaa, e2a87f6)
+
+### The Problem
+
+After fully implementing session cookie capture and transmission, cart requests **still failed** with "generic user" error **even though sessionCookies were being sent to the backend**.
+
+Logs showed:
+```
+[CART-PROXY] sessionCookies value from body: {JSESSIONID: "...", WC_PERSISTENT: "..."}
+[CART-PROXY] Session cookies from login: 2 cookies
+[DEBUG] Session cookies: JSESSIONID=...; WC_PERSISTENT=...
+[ERROR] HCL API returned 400: "This request cannot run as a generic user."
+```
+
+The cookies were there, but HCL was still rejecting them.
+
+### Root Cause Analysis
+
+The issue was **singleton state persistence** in `hclClient`:
+
+```javascript
+// BEFORE (Problematic Code in addToCart)
+if (bodySessionCookies && Object.keys(bodySessionCookies).length > 0) {
+  Object.assign(hclClient.sessionCookies, bodySessionCookies);  // MERGES, doesn't replace!
+}
+```
+
+**The Problem Scenario:**
+```
+1. User A logs in → Backend stores {JSESSIONID_A, WC_PERSISTENT_A} in hclClient.sessionCookies
+2. User A adds to cart → Token A + Cookies A sent to HCL ✅ Works
+
+Then later...
+
+3. User B logs in → Frontend stores {JSESSIONID_B, WC_PERSISTENT_B} in sessionStorage
+4. User B adds to cart → Cart endpoint receives B's cookies
+5. Object.assign() MERGES them: hclClient.sessionCookies now has {A's old data + B's new data}
+6. But wait - both JSESSIONID_A and JSESSIONID_B would just overwrite each other...
+
+ACTUAL PROBLEM: The token B is from User B's session, but if there's ANY stale data in hclClient from a previous request, and if the old JSESSIONID is still partially there, HCL sees a mismatch:
+   - Token says "I'm User B"
+   - Cookie says "I'm from User A's session"
+   - HCL rejects as "generic user"
+```
+
+### The Solution
+
+**Clear THEN Assign** - Completely replace singleton cookies for each request:
+
+```javascript
+// AFTER (Fixed Code)
+if (bodySessionCookies && Object.keys(bodySessionCookies).length > 0) {
+  console.log(`[CART-PROXY] Clearing old cookies and setting NEW cookies from request`);
+  console.log(`[CART-PROXY] Old cookies:`, JSON.stringify(hclClient.sessionCookies));
+  console.log(`[CART-PROXY] New cookies from body:`, JSON.stringify(bodySessionCookies));
+  
+  // CRITICAL: Clear all existing cookies first
+  hclClient.sessionCookies = {};
+  
+  // Then assign ONLY the cookies from this request
+  Object.assign(hclClient.sessionCookies, bodySessionCookies);
+  
+  console.log(`[CART-PROXY] ✓ Session cookies reset. Now using ${Object.keys(hclClient.sessionCookies).length} cookies`);
+}
+```
+
+### Implementation Applied To
+
+Modified `api/controllers/hcl-cart-controller.js` in all cart endpoints:
+
+1. **addToCart()** (lines 116-127) - POST /api/hcl/cart/add
+2. **getCart()** (lines 158-163) - GET /api/hcl/cart
+3. **removeFromCart()** (lines 280-285) - DELETE /api/hcl/cart/item
+4. **updateCartItem()** (lines 324-329) - PUT /api/hcl/cart/item
+
+### Why This Works
+
+Each cart operation now:
+1. **Clears** → `hclClient.sessionCookies = {}`
+2. **Assigns Fresh** → `Object.assign(hclClient.sessionCookies, bodySessionCookies)`
+3. **Sends Unified** → Token + Fresh Cookies to HCL
+
+**Result:** Token and Cookies always match the current request, never a mix of old + new data.
+
+### Verification Logs
+
+Monitor these logs to confirm the fix is applied:
+
+```
+[CART-PROXY] Clearing old cookies and setting NEW cookies from request
+[CART-PROXY] Old cookies: {"JSESSIONID":"0000PXErq05z0Zi9B1VuDWXzWoZ:-1","WC_PERSISTENT":"FBvB2KH2WH%2B..."}
+[CART-PROXY] New cookies from body: {"JSESSIONID":"0000PXErq05z0Zi9B1VuDWXzWoZ:-1","WC_PERSISTENT":"FBvB2KH2WH%2B..."}
+[CART-PROXY] ✓ Session cookies reset. Now using 2 cookies: JSESSIONID, WC_PERSISTENT
+```
+
+If you see this in logs, the fix is working correctly.
+
+
