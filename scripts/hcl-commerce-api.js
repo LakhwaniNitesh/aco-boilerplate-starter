@@ -38,12 +38,21 @@ class HCLCommerceAPI {
       credentials: 'include',
     };
 
-    // Add token to request body or query string
+    // Add token and session cookies to request body
     if (body) {
-      options.body = JSON.stringify({
+      const requestBody = {
         ...body,
         accessToken: token,
-      });
+      };
+      
+      // Get session cookies from auth service
+      const sessionCookies = hclAuthService.getSessionCookies();
+      if (sessionCookies && Object.keys(sessionCookies).length > 0) {
+        requestBody.sessionCookies = sessionCookies;
+        console.log(`[HCL-API] Including ${Object.keys(sessionCookies).length} session cookies in cart request`);
+      }
+      
+      options.body = JSON.stringify(requestBody);
     } else if (method === 'GET') {
       const separator = endpoint.includes('?') ? '&' : '?';
       url = `${url}${separator}accessToken=${encodeURIComponent(token)}`;

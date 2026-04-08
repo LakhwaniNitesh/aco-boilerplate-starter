@@ -17,6 +17,7 @@ class HCLAuthService {
     this.token = this.getStoredToken();
     this.userId = this.getStoredUserId();
     this.tokenExpiry = this.getStoredExpiry();
+    this.sessionCookies = this.getStoredSessionCookies();
     this.refreshTimer = null;
     this.proxyUrl = window.location.origin || 'http://localhost:3000';
   }
@@ -49,6 +50,12 @@ class HCLAuthService {
       this.token = data.token;
       this.userId = data.userId;
       this.tokenExpiry = Date.now() + (data.expiresIn * 1000);
+      
+      // Store session cookies from login response
+      if (data.sessionCookies) {
+        this.sessionCookies = data.sessionCookies;
+        console.log(`[HCL-AUTH] Stored ${Object.keys(data.sessionCookies).length} session cookies from login response`);
+      }
 
       this.storeToken();
       this.scheduleTokenRefresh();
@@ -154,12 +161,20 @@ class HCLAuthService {
     this.token = null;
     this.userId = null;
     this.tokenExpiry = null;
+    this.sessionCookies = null;
 
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
     }
 
     this.clearStoredToken();
+  }
+
+  /**
+   * Get session cookies from login
+   */
+  getSessionCookies() {
+    return this.sessionCookies || {};
   }
 
   /**
@@ -172,6 +187,7 @@ class HCLAuthService {
         token: this.token,
         userId: this.userId,
         expiry: this.tokenExpiry,
+        sessionCookies: this.sessionCookies || {},
         storedAt: Date.now(),
       };
       sessionStorage.setItem('hcl_auth', JSON.stringify(data));
@@ -187,6 +203,18 @@ class HCLAuthService {
     try {
       const data = JSON.parse(sessionStorage.getItem('hcl_auth') || '{}');
       return data.token || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Get stored session cookies
+   */
+  getStoredSessionCookies() {
+    try {
+      const data = JSON.parse(sessionStorage.getItem('hcl_auth') || '{}');
+      return data.sessionCookies || null;
     } catch (e) {
       return null;
     }
