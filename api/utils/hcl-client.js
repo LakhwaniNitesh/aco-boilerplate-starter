@@ -44,6 +44,10 @@ class HCLClient {
   async request(method, path, body = null, accessToken = null) {
     return new Promise((resolve, reject) => {
       const url = new URL(path.startsWith('http') ? path : this.baseUrl + path);
+      
+      // If token is URL-encoded (contains %2C, %2F, etc), decode it for Cookie header
+      const decodedToken = accessToken ? decodeURIComponent(accessToken) : null;
+      
       const options = {
         method,
         headers: {
@@ -51,15 +55,16 @@ class HCLClient {
           Accept: 'application/json',
           Host: url.hostname,
           // HCL Commerce expects token in Cookie header, not Authorization: Bearer
-          ...(accessToken && { Cookie: `WCToken=${accessToken}` }),
+          // Use decoded token in Cookie header
+          ...(decodedToken && { Cookie: `WCToken=${decodedToken}` }),
         },
         agent,
       };
 
       console.log(`[DEBUG] ${method} ${url.toString()}`);
-      if (accessToken) {
+      if (decodedToken) {
         console.log(`[DEBUG] Auth: Cookie header with WCToken set`);
-        console.log(`[DEBUG] Token (first 50 chars): ${accessToken.substring(0, 50)}`);
+        console.log(`[DEBUG] Token (first 50 chars): ${decodedToken.substring(0, 50)}`);
       }
 
       const req = https.request(url, options, (res) => {
@@ -178,11 +183,6 @@ class HCLClient {
         ],
         x_inventoryValidation: true,
       };
-      
-      // Some HCL versions require token in body as well
-      if (accessToken) {
-        requestBody.wcToken = accessToken;
-      }
       
       console.log(`[DEBUG] Adding to cart: ${partNumber} x${quantity}, body=${JSON.stringify(requestBody)}`);
       
