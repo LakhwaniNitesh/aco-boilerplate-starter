@@ -18,6 +18,7 @@
  */
 
 import fetch from 'node-fetch';
+import https from 'https';
 
 // Simple logger wrapper - using console for basic boilerplate server
 const logger = {
@@ -26,6 +27,12 @@ const logger = {
   warn: (msg) => console.warn(`[WARN] ${msg}`),
   error: (msg) => console.error(`[ERROR] ${msg}`),
 };
+
+// Create an HTTPS agent that accepts self-signed certificates
+// This is needed for development environments using self-signed certs
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false, // Accept self-signed certificates
+});
 
 /**
  * HCL Commerce REST API Authentication Handler
@@ -150,6 +157,7 @@ class HCLRestAuth {
         },
         body: JSON.stringify(requestBody),
         timeout: 5000,
+        agent: httpsAgent, // Use agent that accepts self-signed certificates
       });
 
       const responseText = await response.text();
@@ -263,6 +271,7 @@ class HCLRestAuth {
           'Authorization': `Bearer ${wcToken}`, // Some versions use header
         },
         timeout: 5000,
+        agent: httpsAgent, // Use agent that accepts self-signed certificates
       });
 
       const responseText = await response.text();
@@ -321,6 +330,7 @@ class HCLRestAuth {
           'Authorization': `Bearer ${wcToken}`,
         },
         timeout: 5000,
+        agent: httpsAgent, // Use agent that accepts self-signed certificates
       });
 
       if (response.status === 401) {
