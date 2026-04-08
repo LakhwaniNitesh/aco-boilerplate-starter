@@ -252,7 +252,7 @@ class HCLClient {
   }
 
   /**
-   * Add product to cart
+   * Add product to cart with auto-retry if session cookies need to be established
    */
   async addToCart(accessToken, partNumber, quantity = 1, userId = null) {
     try {
@@ -276,12 +276,46 @@ class HCLClient {
       
       console.log(`[DEBUG] Adding to cart: ${partNumber} x${quantity}${userId ? `, userId=${userId}` : ''}, body=${JSON.stringify(requestBody)}`);
       
-      return await this.request(
-        'POST',
-        `${this.baseUrl}/cart?langId=1&responseFormat=json`,
-        requestBody,
-        accessToken
-      );
+      // First attempt
+      let attempt = 1;
+      let lastError = null;
+      
+      while (attempt <= 2) {
+        try {
+          console.log(`[DEBUG] Add to cart attempt ${attempt}/2`);
+          
+          const result = await this.request(
+            'POST',
+            `${this.baseUrl}/cart?langId=1&responseFormat=json`,
+            requestBody,
+            accessToken
+          );
+          
+          console.log(`[DEBUG] ✓ Add to cart succeeded on attempt ${attempt}`);
+          return result;
+          
+        } catch (error) {
+          lastError = error;
+          
+          // Check if this is the "generic user" error
+          if (error.statusCode === 400 && 
+              error.details?.errors?.[0]?.errorKey === 'USR.CWXFR0130E' &&
+              attempt === 1) {
+            console.log(`[DEBUG] Got "generic user" error - likely need session cookies`);
+            console.log(`[DEBUG] Session cookies captured so far:`, JSON.stringify(this.sessionCookies));
+            console.log(`[DEBUG] Retrying with any captured session cookies...`);
+            attempt++;
+            // Loop will retry with the cookies we captured from the 400 response
+          } else {
+            // Other errors - don't retry
+            throw error;
+          }
+        }
+      }
+      
+      // If we get here, both attempts failed
+      throw lastError;
+      
     } catch (error) {
       console.error('❌ Add to cart failed:', error);
       throw {
