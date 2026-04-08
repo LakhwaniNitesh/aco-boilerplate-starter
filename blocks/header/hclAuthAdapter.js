@@ -29,13 +29,29 @@ let isAuthInProgress = false;
 window.fetch = async function(...args) {
   const [resource, config] = args;
   
-  // Intercept requests to the drop-in auth endpoint
-  if (typeof resource === 'string' && resource.includes('/auth') && config?.method === 'POST') {
+  // Log ALL POST requests to understand what's happening
+  if (typeof resource === 'string' && config?.method === 'POST') {
+    console.log('[HCL-AUTH-ADAPTER] POST request to:', resource);
+    if (config.body) {
+      try {
+        const bodyObj = JSON.parse(config.body);
+        console.log('[HCL-AUTH-ADAPTER] Body keys:', Object.keys(bodyObj));
+      } catch(e) { /* ignore */ }
+    }
+  }
+  
+  // Intercept requests to the drop-in auth endpoint (including /authenticate)
+  const isAuthRequest = typeof resource === 'string' && 
+                       (resource.includes('/auth') || resource.includes('/authenticate')) && 
+                       config?.method === 'POST';
+  
+  if (isAuthRequest) {
     try {
       console.log('[HCL-AUTH-ADAPTER] Intercepted auth request to:', resource);
       
       // Parse the request body to see if it's a login request
       const body = config.body ? JSON.parse(config.body) : {};
+      console.log('[HCL-AUTH-ADAPTER] Request body has keys:', Object.keys(body));
       
       // If this looks like a login request (has email/username and password)
       if ((body.email || body.username) && body.password) {
