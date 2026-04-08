@@ -194,6 +194,11 @@ class HCLRestAuth {
       const responseText = await response.text();
       
       logger.debug(`[HCL-REST-AUTH] Response status: ${response.status}`);
+      
+      // Capture Set-Cookie headers from login response
+      // These should include JSESSIONID and WC_PERSISTENT
+      const setCookieHeader = response.headers.get('set-cookie');
+      logger.debug(`[HCL-REST-AUTH] Set-Cookie header from login: ${setCookieHeader}`);
 
       if (!response.ok) {
         logger.warn(`[HCL-REST-AUTH] Login failed with status ${response.status}`);
@@ -252,6 +257,24 @@ class HCLRestAuth {
       logger.debug(`[HCL-REST-AUTH] Token received (truncated): ${wcToken.substring(0, 20)}...`);
       logger.debug(`[HCL-REST-AUTH] Full response body: ${JSON.stringify(responseBody, null, 2)}`);
 
+      // Parse Set-Cookie header to extract session cookies
+      const sessionCookies = {};
+      if (setCookieHeader) {
+        // setCookieHeader might be a single string or array depending on fetch implementation
+        const cookieStrings = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
+        cookieStrings.forEach(cookieString => {
+          if (cookieString) {
+            // Parse "name=value; Path=...; HttpOnly" format
+            const parts = cookieString.split(';');
+            const [name, value] = parts[0].split('=');
+            if (name && value) {
+              sessionCookies[name.trim()] = value.trim();
+              logger.debug(`[HCL-REST-AUTH] Captured session cookie from login: ${name.trim()}`);
+            }
+          }
+        });
+      }
+
       // Return standardized response (matches Adobe Commerce format)
       return {
         success: true,
@@ -263,6 +286,8 @@ class HCLRestAuth {
         lastName: responseBody.lastName || '',
         displayName: responseBody.displayName || username,
         expiresIn: responseBody.expiresIn || 3600, // Default 1 hour if not specified
+        // Pass session cookies from login response to client
+        sessionCookies: sessionCookies,
         // Pass through all other fields
         ...responseBody,
       };

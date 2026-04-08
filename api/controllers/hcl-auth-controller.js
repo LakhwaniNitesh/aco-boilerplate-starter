@@ -94,6 +94,9 @@ export const hclAuthController = {
         firstName: authResult.firstName || '',
         lastName: authResult.lastName || '',
         expiresIn: authResult.expiresIn || 3600, // Token expiration in seconds
+        // Include session cookies from login response (JSESSIONID, WC_PERSISTENT, etc)
+        // Frontend should pass these to subsequent cart requests
+        sessionCookies: authResult.sessionCookies || {},
       });
 
     } catch (error) {

@@ -46,7 +46,7 @@ export const hclCartController = {
    */
   addToCart: async (req, res, next) => {
     try {
-      const { partNumber, sku, quantity, accessToken: bodyAccessToken, userId } = req.body;
+      const { partNumber, sku, quantity, accessToken: bodyAccessToken, userId, sessionCookies: bodySessionCookies } = req.body;
       
       // Accept token from EITHER headers (Authorization or Cookie) OR request body
       let accessToken = bodyAccessToken;
@@ -76,6 +76,7 @@ export const hclCartController = {
       console.log(`[CART-PROXY]   Auth source: ${bodyAccessToken ? 'body' : (req.headers.authorization ? 'Authorization header' : (req.headers.wctoken ? 'WCToken header' : (req.headers.cookie ? 'Cookie header' : 'NONE')))}`);
       console.log(`[CART-PROXY]   Token present: ${accessToken ? 'yes' : 'no'}`);
       console.log(`[CART-PROXY]   Token (first 50 chars): ${accessToken ? accessToken.substring(0, 50) : 'NONE'}`);
+      console.log(`[CART-PROXY]   Session cookies from login: ${bodySessionCookies ? Object.keys(bodySessionCookies).length + ' cookies' : 'none'}`);
       
       if (!productId) {
         return res.status(400).json({
@@ -104,8 +105,11 @@ export const hclCartController = {
 
       console.log(`[CART-PROXY] Adding to cart: ${productId} x${quantity || 1}`);
 
-      // Try adding to cart directly (session cookies will be established on first request)
-      // If this fails, we can try GET cart first
+      // Initialize HCL client with session cookies from login response
+      if (bodySessionCookies && Object.keys(bodySessionCookies).length > 0) {
+        console.log(`[CART-PROXY] Initializing HCL client with ${Object.keys(bodySessionCookies).length} session cookies from login`);
+        Object.assign(hclClient.sessionCookies, bodySessionCookies);
+      }
       
       // Call HCL Commerce REST API to add item to cart
       const hclResponse = await hclClient.addToCart(
