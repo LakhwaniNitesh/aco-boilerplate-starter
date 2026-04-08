@@ -60,7 +60,14 @@ class HCLClient {
       const sessionCookieString = Object.entries(this.sessionCookies)
         .map(([key, value]) => {
           // Decode the cookie value if it's URL-encoded
-          const decodedValue = typeof value === 'string' && value.includes('%') ? decodeURIComponent(value) : value;
+          const isUrlEncoded = typeof value === 'string' && value.includes('%');
+          const decodedValue = isUrlEncoded ? decodeURIComponent(value) : value;
+          if (key === 'WC_PERSISTENT') {
+            console.log(`[DEBUG] [SESSION-COOKIE-DECODE] ${key}:`);
+            console.log(`[DEBUG] [SESSION-COOKIE-DECODE]   Original: ${value.substring(0, 50)}...`);
+            console.log(`[DEBUG] [SESSION-COOKIE-DECODE]   Is URL-encoded: ${isUrlEncoded}`);
+            console.log(`[DEBUG] [SESSION-COOKIE-DECODE]   Decoded: ${decodedValue.substring(0, 50)}...`);
+          }
           return `${key}=${decodedValue}`;
         })
         .join('; ');
