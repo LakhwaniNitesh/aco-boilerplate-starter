@@ -102,16 +102,17 @@ class HCLRestAuth {
       // Try multiple endpoint variations in order
       // Based on HCL Commerce REST API documentation
       const endpoints = [
-        // Primary endpoint from HCL REST API docs
-        `${this.hclHost}/store/${this.hclStoreId}/loginidentity`,
+        // Primary endpoint from HCL REST API docs - with /wcs/resources prefix
+        `${this.hclHost}/wcs/resources/store/${this.hclStoreId}/loginidentity`,
         // With query parameter for JSON response
+        `${this.hclHost}/wcs/resources/store/${this.hclStoreId}/loginidentity?responseFormat=json`,
+        // Alternative format without /wcs/resources (some HCL versions)
+        `${this.hclHost}/store/${this.hclStoreId}/loginidentity`,
         `${this.hclHost}/store/${this.hclStoreId}/loginidentity?responseFormat=json`,
         // Alternative REST API v2 format
         `${this.hclHost}/wcs/v2/store/${this.hclStoreId}/customers/login`,
         // Generic identity endpoint
         `${this.hclHost}/identity/v1/customers/login`,
-        // Old API format
-        `${this.hclHost}/rest/identity/v1/customers/login`,
       ];
 
       let result = null;
