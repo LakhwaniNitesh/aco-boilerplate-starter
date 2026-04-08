@@ -5,7 +5,7 @@ import { SignIn } from '@dropins/storefront-auth/containers/SignIn.js';
 import { events } from '@dropins/tools/event-bus.js';
 import { getCookie } from '../../scripts/configs.js';
 // CRITICAL: Import HCL auth adapter to intercept drop-in auth calls
-import '../../blocks/header/hclAuthAdapter.js';
+import './hclAuthAdapter.js';
 import { CUSTOMER_FORGOTPASSWORD_PATH } from '../../scripts/constants.js';
 import { rootLink } from '../../scripts/scripts.js';
 
