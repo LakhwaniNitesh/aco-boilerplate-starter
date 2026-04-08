@@ -235,7 +235,8 @@ class HCLRestAuth {
       }
 
       // Extract wcToken from response
-      const wcToken = responseBody.wcToken || responseBody.token || responseBody.accessToken;
+      // HCL Commerce returns 'WCToken' (uppercase W), but also check common variations
+      const wcToken = responseBody.WCToken || responseBody.wcToken || responseBody.token || responseBody.accessToken;
       
       if (!wcToken) {
         logger.error('[HCL-REST-AUTH] No wcToken in response');
