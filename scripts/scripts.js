@@ -1,11 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable import/no-cycle */
-
-// HCL Commerce Auth Adapter - Load FIRST before any auth initializers
-// This overrides the drop-in auth API to use HCL REST API instead of GraphQL
-import './blocks/header/hclAuthAdapter.js';
-
-import { events } from '@dropins/tools/event-bus.js';
+import { events } from "@dropins/tools/event-bus.js";
 import {
   buildBlock,
   decorateBlocks,
@@ -25,10 +20,14 @@ import {
   loadSections,
   loadCSS,
   sampleRUM,
-} from './aem.js';
-import { trackHistory } from './commerce.js';
-import initializeDropins from './initializers/index.js';
-import { initializeConfig, getRootPath, getListOfRootPaths } from './configs.js';
+} from "./aem.js";
+import { trackHistory } from "./commerce.js";
+import initializeDropins from "./initializers/index.js";
+import {
+  initializeConfig,
+  getRootPath,
+  getListOfRootPaths,
+} from "./configs.js";
 
 const AUDIENCES = {
   mobile: () => window.innerWidth < 600,
@@ -42,14 +41,19 @@ const AUDIENCES = {
  * @returns an array of HTMLElement nodes that match the given scope
  */
 export function getAllMetadata(scope) {
-  return [...document.head.querySelectorAll(`meta[property^="${scope}:"],meta[name^="${scope}-"]`)]
-    .reduce((res, meta) => {
-      const id = toClassName(meta.name
+  return [
+    ...document.head.querySelectorAll(
+      `meta[property^="${scope}:"],meta[name^="${scope}-"]`,
+    ),
+  ].reduce((res, meta) => {
+    const id = toClassName(
+      meta.name
         ? meta.name.substring(scope.length + 1)
-        : meta.getAttribute('property').split(':')[1]);
-      res[id] = meta.getAttribute('content');
-      return res;
-    }, {});
+        : meta.getAttribute("property").split(":")[1],
+    );
+    res[id] = meta.getAttribute("content");
+    return res;
+  }, {});
 }
 
 // Define an execution context
@@ -68,12 +72,16 @@ const pluginContext = {
  * @param {Element} main The container element
  */
 function buildHeroBlock(main) {
-  const h1 = main.querySelector('h1');
-  const picture = main.querySelector('picture');
+  const h1 = main.querySelector("h1");
+  const picture = main.querySelector("picture");
   // eslint-disable-next-line no-bitwise
-  if (h1 && picture && (h1.compareDocumentPosition(picture) & Node.DOCUMENT_POSITION_PRECEDING)) {
-    const section = document.createElement('div');
-    section.append(buildBlock('hero', { elems: [picture, h1] }));
+  if (
+    h1 &&
+    picture &&
+    h1.compareDocumentPosition(picture) & Node.DOCUMENT_POSITION_PRECEDING
+  ) {
+    const section = document.createElement("div");
+    section.append(buildBlock("hero", { elems: [picture, h1] }));
     main.prepend(section);
   }
 }
@@ -84,19 +92,22 @@ function buildHeroBlock(main) {
 async function loadFonts() {
   await loadCSS(`${window.hlx.codeBasePath}/styles/fonts.css`);
   try {
-    if (!window.location.hostname.includes('localhost')) sessionStorage.setItem('fonts-loaded', 'true');
+    if (!window.location.hostname.includes("localhost"))
+      sessionStorage.setItem("fonts-loaded", "true");
   } catch (e) {
     // do nothing
   }
 }
 
 function autolinkModals(element) {
-  element.addEventListener('click', async (e) => {
-    const origin = e.target.closest('a');
+  element.addEventListener("click", async (e) => {
+    const origin = e.target.closest("a");
 
-    if (origin && origin.href && origin.href.includes('/modals/')) {
+    if (origin && origin.href && origin.href.includes("/modals/")) {
       e.preventDefault();
-      const { openModal } = await import(`${window.hlx.codeBasePath}/blocks/modal/modal.js`);
+      const { openModal } = await import(
+        `${window.hlx.codeBasePath}/blocks/modal/modal.js`
+      );
       openModal(origin.href);
     }
   });
@@ -111,7 +122,7 @@ function buildAutoBlocks(main) {
     buildHeroBlock(main);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('Auto Blocking failed', error);
+    console.error("Auto Blocking failed", error);
   }
 }
 
@@ -120,26 +131,29 @@ function buildAutoBlocks(main) {
  * @param {Element} main The container element
  */
 function buildTemplateColumns(doc) {
-  const columns = doc.querySelectorAll('main > div.section[data-column-width]');
+  const columns = doc.querySelectorAll("main > div.section[data-column-width]");
 
   columns.forEach((column) => {
-    const columnWidth = column.getAttribute('data-column-width');
-    const gap = column.getAttribute('data-gap');
+    const columnWidth = column.getAttribute("data-column-width");
+    const gap = column.getAttribute("data-gap");
 
     if (columnWidth) {
-      column.style.setProperty('--column-width', columnWidth);
-      column.removeAttribute('data-column-width');
+      column.style.setProperty("--column-width", columnWidth);
+      column.removeAttribute("data-column-width");
     }
 
     if (gap) {
-      column.style.setProperty('--gap', `var(--spacing-${gap.toLocaleLowerCase()})`);
-      column.removeAttribute('data-gap');
+      column.style.setProperty(
+        "--gap",
+        `var(--spacing-${gap.toLocaleLowerCase()})`,
+      );
+      column.removeAttribute("data-gap");
     }
   });
 }
 
 async function applyTemplates(doc) {
-  if (doc.body.classList.contains('columns')) {
+  if (doc.body.classList.contains("columns")) {
     buildTemplateColumns(doc);
   }
 }
@@ -154,7 +168,7 @@ function notifyUI(event) {
   // notify dropins about the current loading state
   const handleEmit = () => events.emit(`aem/${event}`);
   // listen for prerender event
-  document.addEventListener('prerenderingchange', handleEmit, { once: true });
+  document.addEventListener("prerenderingchange", handleEmit, { once: true });
   // emit the event immediately
   handleEmit();
 }
@@ -182,36 +196,34 @@ function decorateLinks(main) {
   const root = getRootPath();
   const roots = getListOfRootPaths();
 
-  main.querySelectorAll('a').forEach((a) => {
+  main.querySelectorAll("a").forEach((a) => {
     // If we are in the root, do nothing
     if (roots.length === 0) return;
 
     try {
       const url = new URL(a.href);
-      const {
-        origin,
-        pathname,
-        search,
-        hash,
-      } = url;
+      const { origin, pathname, search, hash } = url;
 
       // if the links belongs to another store, do nothing
       if (roots.some((r) => r !== root && pathname.startsWith(r))) return;
 
       // If the link is already localized, do nothing
-      if (origin !== window.location.origin || pathname.startsWith(root)) return;
-      a.href = new URL(`${origin}${root}${pathname.replace(/^\//, '')}${search}${hash}`);
+      if (origin !== window.location.origin || pathname.startsWith(root))
+        return;
+      a.href = new URL(
+        `${origin}${root}${pathname.replace(/^\//, "")}${search}${hash}`,
+      );
     } catch {
-      console.warn('Could not make localized link');
+      console.warn("Could not make localized link");
     }
   });
 }
 
 function preloadFile(href, as) {
-  const link = document.createElement('link');
-  link.rel = 'preload';
+  const link = document.createElement("link");
+  link.rel = "preload";
   link.as = as;
-  link.crossOrigin = 'anonymous';
+  link.crossOrigin = "anonymous";
   link.href = href;
   document.head.appendChild(link);
 }
@@ -221,58 +233,92 @@ function preloadFile(href, as) {
  * @param {Element} doc The container element
  */
 async function loadEager(doc) {
-  document.documentElement.lang = 'en';
+  document.documentElement.lang = "en";
   decorateTemplateAndTheme();
 
   // Instrument experimentation plugin
-  if (getMetadata('experiment')
-    || Object.keys(getAllMetadata('campaign')).length
-    || Object.keys(getAllMetadata('audience')).length) {
+  if (
+    getMetadata("experiment") ||
+    Object.keys(getAllMetadata("campaign")).length ||
+    Object.keys(getAllMetadata("audience")).length
+  ) {
     // eslint-disable-next-line import/no-relative-packages
-    const { loadEager: runEager } = await import('../plugins/experimentation/src/index.js');
-    await runEager(document, { audiences: AUDIENCES, overrideMetadataFields: ['placeholders'] }, pluginContext);
+    const { loadEager: runEager } =
+      await import("../plugins/experimentation/src/index.js");
+    await runEager(
+      document,
+      { audiences: AUDIENCES, overrideMetadataFields: ["placeholders"] },
+      pluginContext,
+    );
   }
 
   await initializeDropins();
 
   window.adobeDataLayer = window.adobeDataLayer || [];
 
-  let pageType = 'CMS';
-  if (document.body.querySelector('main .product-details')) {
-    pageType = 'Product';
+  let pageType = "CMS";
+  if (document.body.querySelector("main .product-details")) {
+    pageType = "Product";
 
     // initialize pdp
-    await import('./initializers/pdp.js');
+    await import("./initializers/pdp.js");
 
     // Preload PDP Dropins assets
-    preloadFile('/scripts/__dropins__/storefront-pdp/api.js', 'script');
-    preloadFile('/scripts/__dropins__/storefront-pdp/render.js', 'script');
-    preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductHeader.js', 'script');
-    preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductPrice.js', 'script');
-    preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductShortDescription.js', 'script');
-    preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductOptions.js', 'script');
-    preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductQuantity.js', 'script');
-    preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductDescription.js', 'script');
-    preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductAttributes.js', 'script');
-    preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductGallery.js', 'script');
-  } else if (document.body.querySelector('main .product-list-page')) {
-    pageType = 'Category';
-    preloadFile('/scripts/widgets/search.js', 'script');
-  } else if (document.body.querySelector('main .product-list-page-custom')) {
+    preloadFile("/scripts/__dropins__/storefront-pdp/api.js", "script");
+    preloadFile("/scripts/__dropins__/storefront-pdp/render.js", "script");
+    preloadFile(
+      "/scripts/__dropins__/storefront-pdp/containers/ProductHeader.js",
+      "script",
+    );
+    preloadFile(
+      "/scripts/__dropins__/storefront-pdp/containers/ProductPrice.js",
+      "script",
+    );
+    preloadFile(
+      "/scripts/__dropins__/storefront-pdp/containers/ProductShortDescription.js",
+      "script",
+    );
+    preloadFile(
+      "/scripts/__dropins__/storefront-pdp/containers/ProductOptions.js",
+      "script",
+    );
+    preloadFile(
+      "/scripts/__dropins__/storefront-pdp/containers/ProductQuantity.js",
+      "script",
+    );
+    preloadFile(
+      "/scripts/__dropins__/storefront-pdp/containers/ProductDescription.js",
+      "script",
+    );
+    preloadFile(
+      "/scripts/__dropins__/storefront-pdp/containers/ProductAttributes.js",
+      "script",
+    );
+    preloadFile(
+      "/scripts/__dropins__/storefront-pdp/containers/ProductGallery.js",
+      "script",
+    );
+  } else if (document.body.querySelector("main .product-list-page")) {
+    pageType = "Category";
+    preloadFile("/scripts/widgets/search.js", "script");
+  } else if (document.body.querySelector("main .product-list-page-custom")) {
     // TODO Remove this bracket if not using custom PLP
-    pageType = 'Category';
-    const plpBlock = document.body.querySelector('main .product-list-page-custom');
+    pageType = "Category";
+    const plpBlock = document.body.querySelector(
+      "main .product-list-page-custom",
+    );
     const { category, urlpath } = readBlockConfig(plpBlock);
 
     if (category && urlpath) {
       // eslint-disable-next-line import/no-unresolved, import/no-absolute-path
-      const { preloadCategory } = await import('/blocks/product-list-page-custom/product-list-page-custom.js');
+      const { preloadCategory } =
+        await import("/blocks/product-list-page-custom/product-list-page-custom.js");
       preloadCategory({ id: category, urlPath: urlpath });
     }
-  } else if (document.body.querySelector('main .commerce-cart')) {
-    pageType = 'Cart';
-  } else if (document.body.querySelector('main .commerce-checkout')) {
-    pageType = 'Checkout';
+  } else if (document.body.querySelector("main .commerce-cart")) {
+    pageType = "Cart";
+  } else if (document.body.querySelector("main .commerce-checkout")) {
+    pageType = "Checkout";
   }
 
   window.adobeDataLayer.push(
@@ -280,7 +326,7 @@ async function loadEager(doc) {
       pageContext: {
         pageType,
         pageName: document.title,
-        eventType: 'visibilityHidden',
+        eventType: "visibilityHidden",
         maxXOffset: 0,
         maxYOffset: 0,
         minXOffset: 0,
@@ -294,10 +340,10 @@ async function loadEager(doc) {
     },
   );
   window.adobeDataLayer.push((dl) => {
-    dl.push({ event: 'page-view', eventInfo: { ...dl.getState() } });
+    dl.push({ event: "page-view", eventInfo: { ...dl.getState() } });
   });
 
-  const main = doc.querySelector('main');
+  const main = doc.querySelector("main");
   if (main) {
     // Main Decorations
     decorateMain(main);
@@ -306,16 +352,16 @@ async function loadEager(doc) {
     await applyTemplates(doc);
 
     // Load LCP blocks
-    await loadSection(main.querySelector('.section'), waitForFirstImage);
-    document.body.classList.add('appear');
+    await loadSection(main.querySelector(".section"), waitForFirstImage);
+    document.body.classList.add("appear");
   }
 
   // notify that the page is ready for eager loading
-  notifyUI('lcp');
+  notifyUI("lcp");
 
   try {
     /* if desktop (proxy for fast connection) or fonts already loaded, load fonts.css */
-    if (window.innerWidth >= 900 || sessionStorage.getItem('fonts-loaded')) {
+    if (window.innerWidth >= 900 || sessionStorage.getItem("fonts-loaded")) {
       loadFonts();
     }
   } catch (e) {
@@ -330,7 +376,7 @@ async function loadEager(doc) {
 async function loadLazy(doc) {
   autolinkModals(doc);
 
-  const main = doc.querySelector('main');
+  const main = doc.querySelector("main");
   await loadSections(main);
 
   const { hash } = window.location;
@@ -338,25 +384,28 @@ async function loadLazy(doc) {
   if (hash && element) element.scrollIntoView();
 
   await Promise.all([
-    loadHeader(doc.querySelector('header')),
-    loadFooter(doc.querySelector('footer')),
+    loadHeader(doc.querySelector("header")),
+    loadFooter(doc.querySelector("footer")),
     loadCSS(`${window.hlx.codeBasePath}/styles/lazy-styles.css`),
     loadFonts(),
-    import('./acdl/adobe-client-data-layer.min.js'),
+    import("./acdl/adobe-client-data-layer.min.js"),
   ]);
 
-  if (sessionStorage.getItem('acdl:debug')) {
-    import('./acdl/validate.js');
+  if (sessionStorage.getItem("acdl:debug")) {
+    import("./acdl/validate.js");
   }
 
   trackHistory();
 
   // Implement experimentation preview pill
-  if ((getMetadata('experiment')
-    || Object.keys(getAllMetadata('campaign')).length
-    || Object.keys(getAllMetadata('audience')).length)) {
+  if (
+    getMetadata("experiment") ||
+    Object.keys(getAllMetadata("campaign")).length ||
+    Object.keys(getAllMetadata("audience")).length
+  ) {
     // eslint-disable-next-line import/no-relative-packages
-    const { loadLazy: runLazy } = await import('../plugins/experimentation/src/index.js');
+    const { loadLazy: runLazy } =
+      await import("../plugins/experimentation/src/index.js");
     await runLazy(document, { audiences: AUDIENCES }, pluginContext);
   }
   loadCSS(`${window.hlx.codeBasePath}/styles/lazy-styles.css`);
@@ -368,17 +417,19 @@ async function loadLazy(doc) {
  * without impacting the user experience.
  */
 function loadDelayed() {
-  window.setTimeout(() => import('./delayed.js'), 3000);
+  window.setTimeout(() => import("./delayed.js"), 3000);
   // load anything that can be postponed to the latest here
 }
 
 export async function fetchIndex(indexFile, pageSize = 500) {
   const handleIndex = async (offset) => {
-    const resp = await fetch(`/${indexFile}.json?limit=${pageSize}&offset=${offset}`);
+    const resp = await fetch(
+      `/${indexFile}.json?limit=${pageSize}&offset=${offset}`,
+    );
     const json = await resp.json();
 
     const newIndex = {
-      complete: (json.limit + json.offset) === json.total,
+      complete: json.limit + json.offset === json.total,
       offset: json.offset + pageSize,
       promise: null,
       data: [...window.index[indexFile].data, ...json.data],
@@ -406,7 +457,7 @@ export async function fetchIndex(indexFile, pageSize = 500) {
   }
 
   window.index[indexFile].promise = handleIndex(window.index[indexFile].offset);
-  const newIndex = await (window.index[indexFile].promise);
+  const newIndex = await window.index[indexFile].promise;
   window.index[indexFile] = newIndex;
 
   return newIndex;
@@ -418,7 +469,7 @@ export async function fetchIndex(indexFile, pageSize = 500) {
  * @returns {string} - The localized link
  */
 export function rootLink(link) {
-  const root = getRootPath().replace(/\/$/, '');
+  const root = getRootPath().replace(/\/$/, "");
 
   // If the link is already localized, do nothing
   if (link.startsWith(root)) return link;
@@ -432,7 +483,7 @@ export function rootLink(link) {
  */
 // eslint-disable-next-line no-unused-vars
 export function getConsent(topic) {
-  console.warn('getConsent not implemented');
+  console.warn("getConsent not implemented");
   return true;
 }
 
@@ -443,10 +494,24 @@ async function loadPage() {
   loadDelayed();
 }
 
+// Load HCL Commerce Auth Adapter for local development
+// Dynamic import so it doesn't break when running against remote EDS
+(async () => {
+  try {
+    // Only attempt to load for local development or when adapter is available
+    await import('./blocks/header/hclAuthAdapter.js');
+    console.log('[scripts.js] HCL auth adapter loaded');
+  } catch (e) {
+    console.debug('[scripts.js] HCL auth adapter not available (remote mode):', e.message);
+  }
+})();
+
 loadPage();
 
 (async function loadDa() {
-  if (!new URL(window.location.href).searchParams.get('dapreview')) return;
+  if (!new URL(window.location.href).searchParams.get("dapreview")) return;
   // eslint-disable-next-line import/no-unresolved
-  import('https://da.live/scripts/dapreview.js').then(({ default: daPreview }) => daPreview(loadPage));
-}());
+  import("https://da.live/scripts/dapreview.js").then(
+    ({ default: daPreview }) => daPreview(loadPage),
+  );
+})();
