@@ -46,6 +46,15 @@ class HCLAuthService {
 
       const data = await response.json();
 
+      // DEBUG: Log full response
+      console.log('[HCL-AUTH] Full login response:', {
+        hasWcToken: !!data.wcToken,
+        hasAccessToken: !!data.accessToken,
+        hasToken: !!data.token,
+        hasSessionCookies: !!data.sessionCookies,
+        sessionCookiesKeys: data.sessionCookies ? Object.keys(data.sessionCookies) : [],
+      });
+
       // Store token and metadata
       this.token = data.wcToken || data.accessToken || data.token;
       this.userId = data.userId;
@@ -54,11 +63,15 @@ class HCLAuthService {
       // Store session cookies from login response
       if (data.sessionCookies) {
         this.sessionCookies = data.sessionCookies;
-        console.log(`[HCL-AUTH] Stored ${Object.keys(data.sessionCookies).length} session cookies from login response`);
+        console.log(`[HCL-AUTH] ✓ Stored ${Object.keys(data.sessionCookies).length} session cookies from login response`);
+      } else {
+        console.warn('[HCL-AUTH] ⚠ No sessionCookies in login response!');
       }
 
       this.storeToken();
       this.scheduleTokenRefresh();
+
+      console.log('[HCL-AUTH] After storeToken, sessionStorage contains:', JSON.parse(sessionStorage.getItem('hcl_auth') || '{}'));
 
       return {
         success: true,
