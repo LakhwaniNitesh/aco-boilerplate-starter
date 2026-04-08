@@ -169,7 +169,7 @@ class HCLClient {
   /**
    * Add product to cart
    */
-  async addToCart(accessToken, partNumber, quantity = 1) {
+  async addToCart(accessToken, partNumber, quantity = 1, userId = null) {
     try {
       // HCL Commerce expects this exact structure based on Postman successful request
       const requestBody = {
@@ -184,7 +184,12 @@ class HCLClient {
         x_inventoryValidation: true,
       };
       
-      console.log(`[DEBUG] Adding to cart: ${partNumber} x${quantity}, body=${JSON.stringify(requestBody)}`);
+      // Add userId if provided - might be needed for proper authentication
+      if (userId) {
+        requestBody.userId = userId;
+      }
+      
+      console.log(`[DEBUG] Adding to cart: ${partNumber} x${quantity}${userId ? `, userId=${userId}` : ''}, body=${JSON.stringify(requestBody)}`);
       
       return await this.request(
         'POST',

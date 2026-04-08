@@ -46,7 +46,7 @@ export const hclCartController = {
    */
   addToCart: async (req, res, next) => {
     try {
-      const { partNumber, sku, quantity, accessToken: bodyAccessToken } = req.body;
+      const { partNumber, sku, quantity, accessToken: bodyAccessToken, userId } = req.body;
       
       // Accept token from EITHER headers (Authorization or Cookie) OR request body
       let accessToken = bodyAccessToken;
@@ -72,10 +72,10 @@ export const hclCartController = {
       const productId = partNumber || sku;
 
       console.log(`[CART-PROXY] Request received`);
-      console.log(`[CART-PROXY]   Body: partNumber=${partNumber}, sku=${sku}, quantity=${quantity}`);
+      console.log(`[CART-PROXY]   Body: partNumber=${partNumber}, sku=${sku}, quantity=${quantity}, userId=${userId}`);
       console.log(`[CART-PROXY]   Auth source: ${bodyAccessToken ? 'body' : (req.headers.authorization ? 'Authorization header' : (req.headers.wctoken ? 'WCToken header' : (req.headers.cookie ? 'Cookie header' : 'NONE')))}`);
       console.log(`[CART-PROXY]   Token present: ${accessToken ? 'yes' : 'no'}`);
-
+      console.log(`[CART-PROXY]   Token (first 50 chars): ${accessToken ? accessToken.substring(0, 50) : 'NONE'}`);
       if (!productId) {
         return res.status(400).json({
           success: false,
@@ -96,7 +96,8 @@ export const hclCartController = {
       const hclResponse = await hclClient.addToCart(
         accessToken,
         productId,
-        quantity || 1
+        quantity || 1,
+        userId  // Pass userId if available
       );
 
       // Normalize response to our standard format
