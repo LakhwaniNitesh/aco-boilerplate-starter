@@ -186,37 +186,44 @@ class HCLClient {
    */
   async getCart(accessToken) {
     try {
-      return await this.request(
-        'GET',
+      // Try different endpoint patterns for getting cart
+      const endpoints = [
         `${this.baseUrl}/cart/@self?responseFormat=json`,
-        null,
-        accessToken
-      );
-    } catch (error) {
-      // If cart doesn't exist (404), try to create one with POST
-      if (error.statusCode === 404) {
-        console.log('[DEBUG] Cart not found (404), attempting to create new cart...');
+        `${this.baseUrl}/cart?responseFormat=json`,
+      ];
+      
+      for (const endpoint of endpoints) {
         try {
+          console.log(`[DEBUG] Trying GET cart endpoint: ${endpoint.substring(endpoint.lastIndexOf('/'))}`);
           return await this.request(
-            'POST',
-            `${this.baseUrl}/cart?responseFormat=json`,
-            {},
+            'GET',
+            endpoint,
+            null,
             accessToken
           );
-        } catch (createError) {
-          console.error('❌ Create cart failed:', createError);
-          throw {
-            status: createError.statusCode || 500,
-            message: 'Failed to create cart',
-            details: createError,
-          };
+        } catch (error) {
+          if (error.statusCode !== 404) {
+            // Non-404 error, don't retry
+            throw error;
+          }
+          // 404, try next endpoint
+          console.log(`[DEBUG] Endpoint returned 404, trying next...`);
         }
       }
       
-      console.error('❌ Get cart failed:', error);
+      // All GET attempts failed with 404, create new cart
+      console.log('[DEBUG] All GET cart endpoints returned 404, creating new cart...');
+      return await this.request(
+        'POST',
+        `${this.baseUrl}/cart?responseFormat=json`,
+        {},
+        accessToken
+      );
+    } catch (error) {
+      console.error('❌ Get/create cart failed:', error);
       throw {
         status: error.statusCode || 500,
-        message: 'Failed to retrieve cart',
+        message: 'Failed to retrieve/create cart',
         details: error,
       };
     }
