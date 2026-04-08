@@ -173,11 +173,17 @@ class HCLRestAuth {
       logger.debug(`[HCL-REST-AUTH] Login endpoint: ${endpoint}`);
       logger.debug(`[HCL-REST-AUTH] Request body (sanitized): logonId=${username}`);
 
+      // Extract hostname from endpoint for Host header
+      // HCL Commerce needs the Host header to match a configured virtual host
+      const url = new URL(endpoint);
+      const hostHeader = url.host; // This includes the port if present
+      
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Host': hostHeader, // Send Host header for virtual host routing
         },
         body: JSON.stringify(requestBody),
         timeout: 5000,
