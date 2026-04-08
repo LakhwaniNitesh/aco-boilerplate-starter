@@ -240,7 +240,7 @@ class HCLRestAuth {
       
       if (!wcToken) {
         logger.error('[HCL-REST-AUTH] No wcToken in response');
-        logger.debug(`[HCL-REST-AUTH] Response body: ${JSON.stringify(responseBody)}`);
+        logger.debug(`[HCL-REST-AUTH] Full response body: ${JSON.stringify(responseBody, null, 2)}`);
         return {
           success: false,
           error: 'No authentication token received from HCL Commerce',
@@ -250,6 +250,7 @@ class HCLRestAuth {
 
       logger.info(`[HCL-REST-AUTH] ✓ Login successful for user: ${username}`);
       logger.debug(`[HCL-REST-AUTH] Token received (truncated): ${wcToken.substring(0, 20)}...`);
+      logger.debug(`[HCL-REST-AUTH] Full response body: ${JSON.stringify(responseBody, null, 2)}`);
 
       // Return standardized response (matches Adobe Commerce format)
       return {

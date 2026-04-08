@@ -76,6 +76,7 @@ export const hclCartController = {
       console.log(`[CART-PROXY]   Auth source: ${bodyAccessToken ? 'body' : (req.headers.authorization ? 'Authorization header' : (req.headers.wctoken ? 'WCToken header' : (req.headers.cookie ? 'Cookie header' : 'NONE')))}`);
       console.log(`[CART-PROXY]   Token present: ${accessToken ? 'yes' : 'no'}`);
       console.log(`[CART-PROXY]   Token (first 50 chars): ${accessToken ? accessToken.substring(0, 50) : 'NONE'}`);
+      
       if (!productId) {
         return res.status(400).json({
           success: false,
@@ -89,6 +90,17 @@ export const hclCartController = {
           error: 'Missing required field: accessToken (in body, Authorization header, WCToken header, or Cookie)',
         });
       }
+
+      // === TOKEN VERIFICATION LOG ===
+      console.log(`[CART-PROXY] ╔════════════════════════════════════════`);
+      console.log(`[CART-PROXY] ║ TOKEN VERIFICATION`);
+      console.log(`[CART-PROXY] ║ Full token: ${accessToken}`);
+      console.log(`[CART-PROXY] ║ Length: ${String(accessToken).length} chars`);
+      console.log(`[CART-PROXY] ║ Is URL-encoded: ${String(accessToken).includes('%2C')}`);
+      console.log(`[CART-PROXY] ║ Contains user ID (1007002): ${String(accessToken).includes('1007002')}`);
+      console.log(`[CART-PROXY] ║ First 30 chars: ${String(accessToken).substring(0, 30)}`);
+      console.log(`[CART-PROXY] ║ Last 30 chars: ${String(accessToken).slice(-30)}`);
+      console.log(`[CART-PROXY] ╚════════════════════════════════════════`);
 
       console.log(`[CART-PROXY] Adding to cart: ${productId} x${quantity || 1}`);
 
