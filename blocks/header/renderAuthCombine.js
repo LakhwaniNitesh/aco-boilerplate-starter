@@ -8,6 +8,8 @@ import * as authApi from '@dropins/storefront-auth/api.js';
 import { events } from '@dropins/tools/event-bus.js';
 import { Button } from '@dropins/tools/components.js';
 import { getCookie } from '../../scripts/configs.js';
+// CRITICAL: Import HCL auth adapter to intercept drop-in auth calls
+import '../../blocks/header/hclAuthAdapter.js';
 import {
   CUSTOMER_ACCOUNT_PATH,
   CUSTOMER_FORGOTPASSWORD_PATH,
