@@ -162,26 +162,30 @@ class HCLClient {
 
   /**
    * Add product to cart
+   * 
+   * HCL Commerce expects minimal fields in the request body
+   * Only partNumber and quantity are required
    */
   async addToCart(accessToken, partNumber, quantity = 1) {
     try {
-      const catalogId = process.env.HCL_CATALOG_ID || '10001';
+      console.log(`[DEBUG] Adding to cart: partNumber=${partNumber}, qty=${quantity}`);
       
-      console.log(`[DEBUG] Adding to cart: partNumber=${partNumber}, qty=${quantity}, catalogId=${catalogId}, storeId=${this.storeId}`);
+      // HCL Commerce API expects this exact structure for add to cart
+      const requestBody = {
+        body: [
+          {
+            partNumber,
+            quantity,
+          },
+        ],
+      };
+      
+      console.log(`[DEBUG] Cart request body: ${JSON.stringify(requestBody)}`);
       
       return await this.request(
         'POST',
         `${this.baseUrl}/cart?langId=1&responseFormat=json`,
-        {
-          body: [
-            {
-              catalogId,
-              partNumber,
-              quantity,
-              storeId: this.storeId,
-            },
-          ],
-        },
+        requestBody,
         accessToken
       );
     } catch (error) {
