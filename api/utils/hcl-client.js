@@ -46,16 +46,11 @@ class HCLClient {
     return new Promise((resolve, reject) => {
       const url = new URL(path.startsWith('http') ? path : this.baseUrl + path);
       
-      // If token is URL-encoded (contains %2C, %2F, etc), decode it for Cookie header
-      const decodedToken = accessToken ? decodeURIComponent(accessToken) : null;
+      // WCToken and WCTrustedToken should be sent as SEPARATE HEADERS, NOT in Cookie
+      // They should remain URL-encoded (Postman shows them URL-encoded in the WCToken header)
+      const wcToken = accessToken; // Keep URL-encoded as received from frontend
       
-      // Build Cookie header with tokens AND any session cookies from previous responses
-      let cookieHeader = '';
-      if (decodedToken) {
-        cookieHeader = `WCToken=${decodedToken}; WCTrustedToken=${decodedToken}`;
-      }
-      
-      // Add any session cookies we've captured (JSESSIONID, WC_PERSISTENT, etc)
+      // Build only session cookies for the Cookie header
       // CRITICAL: Decode URL-encoded cookie values before sending to HCL
       const sessionCookieString = Object.entries(this.sessionCookies)
         .map(([key, value]) => {
@@ -72,54 +67,55 @@ class HCLClient {
         })
         .join('; ');
       
+      const headers = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Host: url.hostname,
+      };
+      
+      // Add WCToken and WCTrustedToken as SEPARATE HEADERS (URL-encoded, as Postman shows)
+      if (wcToken) {
+        headers['WCToken'] = wcToken;
+        headers['WCTrustedToken'] = wcToken;
+      }
+      
+      // Add session cookies to Cookie header (decoded)
       if (sessionCookieString) {
-        cookieHeader = cookieHeader ? `${cookieHeader}; ${sessionCookieString}` : sessionCookieString;
+        headers['Cookie'] = sessionCookieString;
       }
       
       const options = {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Host: url.hostname,
-          // Send WCToken as custom header (some HCL versions prefer this)
-          ...(decodedToken && { 'X-IBM-WCToken': decodedToken }),
-          ...(cookieHeader && { Cookie: cookieHeader }),
-        },
+        headers,
         agent,
       };
 
       console.log(`[DEBUG] ${method} ${url.toString()}`);
-      if (cookieHeader || decodedToken) {
-        console.log(`[DEBUG] Auth: Sending headers:`);
-        if (decodedToken) {
-          console.log(`[DEBUG]   X-IBM-WCToken: ${decodedToken.substring(0, 40)}...`);
-        }
-        if (cookieHeader) {
-          console.log(`[DEBUG]   Cookie: ${cookieHeader.substring(0, 100)}...`);
-        }
-      }
-      
-      if (decodedToken) {
-        console.log(`[DEBUG] ╔════════════════════════════════════════`);
-        console.log(`[DEBUG] ║ TOKEN BEING SENT TO HCL`);
-        console.log(`[DEBUG] ║ Received token: ${accessToken}`);
-        console.log(`[DEBUG] ║ After decode: ${decodedToken}`);
-        console.log(`[DEBUG] ║ First 30 chars: ${decodedToken.substring(0, 30)}`);
-        console.log(`[DEBUG] ║ Last 30 chars: ${decodedToken.slice(-30)}`);
-        console.log(`[DEBUG] ║ Length: ${decodedToken.length} chars`);
-        console.log(`[DEBUG] ║ Contains user ID: ${decodedToken.includes('1007002')}`);
-        console.log(`[DEBUG] ╚════════════════════════════════════════`);
+      console.log(`[DEBUG] Auth headers being sent:`);
+      if (wcToken) {
+        console.log(`[DEBUG]   WCToken: ${wcToken.substring(0, 40)}...`);
+        console.log(`[DEBUG]   WCTrustedToken: ${wcToken.substring(0, 40)}...`);
       }
       if (sessionCookieString) {
-        console.log(`[DEBUG] Session cookies: ${sessionCookieString.substring(0, 80)}`);
+        console.log(`[DEBUG]   Cookie: ${sessionCookieString.substring(0, 80)}...`);
       }
       
-      // DEBUG: Log complete Cookie header being sent
-      if (cookieHeader) {
+      if (wcToken) {
         console.log(`[DEBUG] ╔════════════════════════════════════════`);
-        console.log(`[DEBUG] ║ COMPLETE COOKIE HEADER BEING SENT`);
-        console.log(`[DEBUG] ║ ${cookieHeader}`);
+        console.log(`[DEBUG] ║ TOKEN BEING SENT (AS HEADERS, URL-ENCODED)`);
+        console.log(`[DEBUG] ║ WCToken header: ${wcToken.substring(0, 50)}...`);
+        console.log(`[DEBUG] ║ First 30 chars: ${wcToken.substring(0, 30)}`);
+        console.log(`[DEBUG] ║ Last 30 chars: ${wcToken.slice(-30)}`);
+        console.log(`[DEBUG] ║ Length: ${wcToken.length} chars`);
+        console.log(`[DEBUG] ║ Contains user ID (1007002): ${wcToken.includes('1007002')}`);
+        console.log(`[DEBUG] ║ Is URL-encoded: ${wcToken.includes('%')}`);
+        console.log(`[DEBUG] ╚════════════════════════════════════════`);
+      }
+      
+      if (sessionCookieString) {
+        console.log(`[DEBUG] ╔════════════════════════════════════════`);
+        console.log(`[DEBUG] ║ SESSION COOKIES BEING SENT (DECODED)`);
+        console.log(`[DEBUG] ║ ${sessionCookieString}`);
         console.log(`[DEBUG] ║ Session cookies object:`, JSON.stringify(this.sessionCookies));
         console.log(`[DEBUG] ╚════════════════════════════════════════`);
       }
