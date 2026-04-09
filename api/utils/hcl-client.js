@@ -97,20 +97,22 @@ class HCLClient {
         }
         if (cookieHeader) {
           console.log(`[DEBUG]   Cookie: ${cookieHeader.substring(0, 100)}...`);
-        if (decodedToken) {
-          console.log(`[DEBUG] ╔════════════════════════════════════════`);
-          console.log(`[DEBUG] ║ TOKEN BEING SENT TO HCL`);
-          console.log(`[DEBUG] ║ Received token: ${accessToken}`);
-          console.log(`[DEBUG] ║ After decode: ${decodedToken}`);
-          console.log(`[DEBUG] ║ First 30 chars: ${decodedToken.substring(0, 30)}`);
-          console.log(`[DEBUG] ║ Last 30 chars: ${decodedToken.slice(-30)}`);
-          console.log(`[DEBUG] ║ Length: ${decodedToken.length} chars`);
-          console.log(`[DEBUG] ║ Contains user ID: ${decodedToken.includes('1007002')}`);
-          console.log(`[DEBUG] ╚════════════════════════════════════════`);
         }
-        if (sessionCookieString) {
-          console.log(`[DEBUG] Session cookies: ${sessionCookieString.substring(0, 80)}`);
-        }
+      }
+      
+      if (decodedToken) {
+        console.log(`[DEBUG] ╔════════════════════════════════════════`);
+        console.log(`[DEBUG] ║ TOKEN BEING SENT TO HCL`);
+        console.log(`[DEBUG] ║ Received token: ${accessToken}`);
+        console.log(`[DEBUG] ║ After decode: ${decodedToken}`);
+        console.log(`[DEBUG] ║ First 30 chars: ${decodedToken.substring(0, 30)}`);
+        console.log(`[DEBUG] ║ Last 30 chars: ${decodedToken.slice(-30)}`);
+        console.log(`[DEBUG] ║ Length: ${decodedToken.length} chars`);
+        console.log(`[DEBUG] ║ Contains user ID: ${decodedToken.includes('1007002')}`);
+        console.log(`[DEBUG] ╚════════════════════════════════════════`);
+      }
+      if (sessionCookieString) {
+        console.log(`[DEBUG] Session cookies: ${sessionCookieString.substring(0, 80)}`);
       }
       
       // DEBUG: Log complete Cookie header being sent
