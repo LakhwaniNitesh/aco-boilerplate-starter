@@ -454,53 +454,40 @@ class HCLClient {
    */
   async removeFromCart(accessToken, orderId, itemId, trustedToken = null) {
     try {
-      // Step 1: Get current cart to see all items
-      console.log(
-        `[HCL-CLIENT] Step 1: Fetching current cart to identify items to keep...`,
-      );
-      const currentCart = await this.request(
-        "GET",
-        `${this.baseUrl}/cart/@self?responseFormat=json`,
-        null,
-        accessToken,
-        trustedToken,
-      );
+      // CRITICAL: HCL Commerce uses PUT /cart/@self/delete_order_item
+      // This is NOT a RESTful DELETE - it's a PUT with a JSON body
+      // The endpoint expects these exact fields (from Postman):
+      // - calculateOrder: "1" (tells HCL to recalculate order totals)
+      // - calculationUsage: "-1,-2,-5,-6,-7" (calculation flags)
+      // - catalogId: the catalog ID
+      // - check: "*n" (validation check)
+      // - langId: "-1" (language)
+      // - orderId: "." (current/active cart)
+      // - orderItemId: the item to remove
+      // - storeId: the store ID
+      const deleteUrl = `${this.baseUrl}/cart/@self/delete_order_item`;
 
-      // Step 2: Build orderItem array with all items EXCEPT the one to remove
-      // HCL Commerce doesn't have a DELETE endpoint - removal is done by PUTting
-      // the updated cart with the item excluded
-      const itemsToKeep = (currentCart.orderItem || []).filter(
-        (item) => String(item.orderItemId) !== String(itemId),
-      );
-
-      console.log(
-        `[HCL-CLIENT] Step 2: Found ${currentCart.orderItem?.length || 0} items total`,
-      );
-      console.log(`[HCL-CLIENT] Removing item ${itemId}, keeping ${itemsToKeep.length} items`);
-
-      // Step 3: Prepare request body with remaining items
       const requestBody = {
-        orderId: ".",
-        x_calculatedOrder: "0",
-        orderItem: itemsToKeep.map((item) => ({
-          orderItemId: item.orderItemId,
-          quantity: String(item.quantity),
-          partNumber: item.partNumber,
-        })),
-        x_inventoryValidation: true,
+        calculateOrder: "1",
+        calculationUsage: "-1,-2,-5,-6,-7",
+        catalogId: "3074457345616692369", // Standard catalog ID
+        check: "*n",
+        langId: "-1",
+        orderId: ".", // Dot represents current/active cart
+        orderItemId: itemId, // The item to remove
+        storeId: this.storeId,
       };
 
+      console.log(`[HCL-CLIENT] Removing item ${itemId} from cart ${orderId}`);
+      console.log(`[HCL-CLIENT] PUT URL: ${deleteUrl}`);
       console.log(
-        `[HCL-CLIENT] Step 3: Sending PUT request to update cart with ${itemsToKeep.length} items`,
-      );
-      console.log(
-        `[HCL-CLIENT] PUT URL: ${this.baseUrl}/cart?langId=1&responseFormat=json`,
+        `[HCL-CLIENT] Request body:`,
+        JSON.stringify(requestBody, null, 2),
       );
 
-      // Step 4: Update cart by PUT with remaining items
       const response = await this.request(
         "PUT",
-        `${this.baseUrl}/cart?langId=1&responseFormat=json`,
+        deleteUrl,
         requestBody,
         accessToken,
         trustedToken,
