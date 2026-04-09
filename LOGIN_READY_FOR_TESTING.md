@@ -12,19 +12,25 @@
 ## All Fixes Applied (This Session)
 
 ### Fix 1: Missing /wcs/resources Endpoint Prefix
+
 **Commit:** `bd20962`
+
 - Issue: Endpoint was `/store/{id}/loginidentity` (wrong)
 - Fixed to: `/wcs/resources/store/{id}/loginidentity` (correct)
 - Result: Endpoint now recognized by HCL server
 
-### Fix 2: Add Host Header for Virtual Host Routing  
+### Fix 2: Add Host Header for Virtual Host Routing
+
 **Commit:** `da2aa15`
+
 - Issue: HCL needs Host header to identify virtual host
 - Fixed: Added `Host` header to all requests
 - Result: Server routes requests correctly
 
 ### Fix 3: Case-Sensitive Token Property ⚠️ **CRITICAL FIX**
+
 **Commit:** `d2e1c43`
+
 - Issue: Code looked for `wcToken` (lowercase), HCL returns `WCToken` (uppercase)
 - Fixed: Check `responseBody.WCToken` first, then fallbacks
 - Result: ✅ **Token now extracted successfully from response**
@@ -34,21 +40,25 @@
 ## What's Working Now
 
 ✅ **Backend Communication**
+
 - Backend can reach HCL Commerce server
 - HTTPS with self-signed certificates accepted
 - Correct endpoint detected and called
 
 ✅ **Authentication**
+
 - HCL server returns 201 (Created) on successful login
 - Response includes WCToken, userId, WCTrustedToken
 - Token is properly extracted and formatted
 
 ✅ **Response Parsing**
+
 - Successful HCL response (201) recognized
 - Token found in response body
 - Success response returned to frontend
 
 ✅ **Frontend Integration Ready**
+
 - Backend returns proper JSON response
 - Frontend can store token in sessionStorage
 - Frontend can update UI with logged-in user name
@@ -60,6 +70,7 @@
 ### Quick Start (3 Terminals)
 
 **Terminal 1: Backend**
+
 ```powershell
 cd "path\to\aco-boilerplate-starter"
 npm run dev:backend
@@ -67,12 +78,14 @@ npm run dev:backend
 ```
 
 **Terminal 2: Frontend**
+
 ```powershell
 npm run dev:frontend
 # Listens on http://localhost:3000
 ```
 
 **Terminal 3: Proxy**
+
 ```powershell
 npm run dev:proxy
 # Listens on http://localhost:8080
@@ -96,6 +109,7 @@ npm run dev:proxy
 ### Verify Success
 
 **Browser Console (F12 → Network Tab):**
+
 ```
 POST http://localhost:8080/api/hcl/login
 Status: 200 OK
@@ -110,6 +124,7 @@ Response Preview:
 ```
 
 **Backend Console:**
+
 ```
 [AUTH-CONTROLLER] Login attempt for user: auroraadobetest
 [INFO] [HCL-REST-AUTH] Trying endpoint: https://20.40.52.251/wcs/resources/store/715842834/loginidentity
@@ -123,6 +138,7 @@ Response Preview:
 ## Complete Endpoint Details
 
 ### Request
+
 ```
 POST https://20.40.52.251/wcs/resources/store/715842834/loginidentity
 Host: 20.40.52.251
@@ -136,6 +152,7 @@ Accept: application/json
 ```
 
 ### Response (201 Created)
+
 ```json
 {
   "personalizationID": "1759785414597-1",
@@ -150,21 +167,23 @@ Accept: application/json
 
 ## Commit History (This Session)
 
-| Order | Commit | Message | Type |
-|-------|--------|---------|------|
-| 1 | `da2aa15` | Add Host header to requests | HTTP Header Fix |
-| 2 | `bd20962` | Add /wcs/resources prefix to endpoint | Path Fix |
-| 3 | `d2e1c43` | Check for WCToken with uppercase W | **Token Extraction** ⚠️ |
-| 4 | `7527f1c` | Add token extraction fix documentation | Documentation |
+| Order | Commit    | Message                                | Type                    |
+| ----- | --------- | -------------------------------------- | ----------------------- |
+| 1     | `da2aa15` | Add Host header to requests            | HTTP Header Fix         |
+| 2     | `bd20962` | Add /wcs/resources prefix to endpoint  | Path Fix                |
+| 3     | `d2e1c43` | Check for WCToken with uppercase W     | **Token Extraction** ⚠️ |
+| 4     | `7527f1c` | Add token extraction fix documentation | Documentation           |
 
 ---
 
 ## Files Modified
 
 ### Source Code
+
 - `api/utils/hcl-rest-auth.js` - Core login logic with all fixes
 
 ### Documentation Created
+
 - `HCL_LOGIN_FIX_COMPLETE.md` - Complete fix documentation
 - `HCL_TOKEN_EXTRACTION_FIX.md` - Detailed token bug analysis
 - `HCL_COMMERCE_INTEGRATION_PLAN.md` - Architecture overview
@@ -185,6 +204,7 @@ Accept: application/json
 ### Q: What if I see "Login failed with status 404"?
 
 **A:** This shouldn't happen anymore. If it does:
+
 1. Check backend logs for detailed error
 2. Verify proxy is running on port 8080
 3. Verify all three services are started
@@ -193,9 +213,10 @@ Accept: application/json
 ### Q: How is the token stored?
 
 **A:** Token is stored in browser's `sessionStorage` (browser storage that clears on close). You can verify with:
+
 ```javascript
 // In browser console:
-sessionStorage.getItem('wcToken')
+sessionStorage.getItem("wcToken");
 ```
 
 ---
@@ -203,17 +224,20 @@ sessionStorage.getItem('wcToken')
 ## What's Next
 
 ### Immediate (Already Ready)
+
 ✅ Test login in browser  
 ✅ Verify account name appears in header  
-✅ Check network requests work  
+✅ Check network requests work
 
 ### Phase 2 (Next)
+
 - [ ] Test logout functionality
 - [ ] Test cart operations (requires wcToken in requests)
 - [ ] Test checkout flow
 - [ ] Test session persistence on page reload
 
 ### Phase 3 (Later)
+
 - [ ] Implement "Remember Me" functionality
 - [ ] Add password reset flow
 - [ ] Add registration/signup flow
@@ -226,6 +250,7 @@ sessionStorage.getItem('wcToken')
 ### Scenario: Login still fails with 404
 
 **Solution:**
+
 1. Check all 3 services running:
    - Backend: http://localhost:3001 (should show HCL Commerce banner)
    - Frontend: http://localhost:3000 (should show login modal)
@@ -244,6 +269,7 @@ sessionStorage.getItem('wcToken')
 ### Scenario: Token not stored in sessionStorage
 
 **Solution:**
+
 1. Check browser console for JavaScript errors
 2. Verify response has `success: true`
 3. Check Network tab to see full response
@@ -280,27 +306,29 @@ sessionStorage.getItem('wcToken')
 
 ## Success Criteria - ALL MET ✅
 
-| Criteria | Status | Notes |
-|----------|--------|-------|
-| Endpoint found by HCL | ✅ | Uses `/wcs/resources/` prefix |
-| Virtual host routing | ✅ | Host header included |
-| Token extraction | ✅ | Checks `WCToken` (uppercase) |
-| Response parsing | ✅ | Handles 201 Created status |
-| Frontend integration | ✅ | Returns JSON to store token |
-| No CORS errors | ✅ | Proxy handles routing |
-| No SSL errors | ✅ | Accepts self-signed certs |
-| Credentials verified | ✅ | auroraadobetest/passw0rd works |
+| Criteria              | Status | Notes                          |
+| --------------------- | ------ | ------------------------------ |
+| Endpoint found by HCL | ✅     | Uses `/wcs/resources/` prefix  |
+| Virtual host routing  | ✅     | Host header included           |
+| Token extraction      | ✅     | Checks `WCToken` (uppercase)   |
+| Response parsing      | ✅     | Handles 201 Created status     |
+| Frontend integration  | ✅     | Returns JSON to store token    |
+| No CORS errors        | ✅     | Proxy handles routing          |
+| No SSL errors         | ✅     | Accepts self-signed certs      |
+| Credentials verified  | ✅     | auroraadobetest/passw0rd works |
 
 ---
 
 ## Summary
 
 ### What Was Fixed
+
 1. ✅ Endpoint path (added `/wcs/resources`)
 2. ✅ Virtual host routing (added Host header)
 3. ✅ Token extraction (fixed case sensitivity - **WCToken**)
 
 ### What Works Now
+
 1. ✅ Backend reaches HCL server
 2. ✅ Server authenticates user
 3. ✅ Token extracted from response
@@ -308,9 +336,11 @@ sessionStorage.getItem('wcToken')
 5. ✅ Frontend ready to store token
 
 ### Status
+
 **🎉 READY FOR TESTING** - All fixes deployed and tested
 
 ### Next Step
+
 **👉 Open browser and test login:** http://localhost:8080
 
 ---
@@ -323,6 +353,7 @@ sessionStorage.getItem('wcToken')
 **Status:** ✅ FIXED AND TESTED
 
 For questions or issues:
+
 1. Check backend logs for authentication details
 2. Check browser Network tab for response
 3. Refer to `HCL_TOKEN_EXTRACTION_FIX.md` for details

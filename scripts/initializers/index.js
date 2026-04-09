@@ -1,44 +1,44 @@
 /* eslint-disable import/no-cycle */
 // Drop-in Tools
-import { events } from '@dropins/tools/event-bus.js';
+import { events } from "@dropins/tools/event-bus.js";
 import {
   removeFetchGraphQlHeader,
   setEndpoint,
   setFetchGraphQlHeader,
-} from '@dropins/tools/fetch-graphql.js';
-import * as authApi from '@dropins/storefront-auth/api.js';
+} from "@dropins/tools/fetch-graphql.js";
+import * as authApi from "@dropins/storefront-auth/api.js";
 
 // Libs
-import { getConfigValue, getCookie } from '../configs.js';
+import { getConfigValue, getCookie } from "../configs.js";
 
-export const getUserTokenCookie = () => getCookie('auth_dropin_user_token');
+export const getUserTokenCookie = () => getCookie("auth_dropin_user_token");
 
 // Update auth headers
 const setAuthHeaders = (state) => {
   if (state) {
     const token = getUserTokenCookie();
-    setFetchGraphQlHeader('Authorization', `Bearer ${token}`);
+    setFetchGraphQlHeader("Authorization", `Bearer ${token}`);
   } else {
-    removeFetchGraphQlHeader('Authorization');
-    authApi.removeFetchGraphQlHeader('Authorization');
+    removeFetchGraphQlHeader("Authorization");
+    authApi.removeFetchGraphQlHeader("Authorization");
   }
 };
 
 const persistCartDataInSession = (data) => {
   if (data?.id) {
-    sessionStorage.setItem('DROPINS_CART_ID', data.id);
+    sessionStorage.setItem("DROPINS_CART_ID", data.id);
   } else {
-    sessionStorage.removeItem('DROPINS_CART_ID');
+    sessionStorage.removeItem("DROPINS_CART_ID");
   }
 };
 
 export default async function initializeDropins() {
   const init = async () => {
     // Set auth headers on authenticated event
-    events.on('authenticated', setAuthHeaders);
+    events.on("authenticated", setAuthHeaders);
 
     // Cache cart data in session storage
-    events.on('cart/data', persistCartDataInSession, { eager: true });
+    events.on("cart/data", persistCartDataInSession, { eager: true });
 
     // on page load, check if user is authenticated
     const token = getUserTokenCookie();
@@ -48,24 +48,26 @@ export default async function initializeDropins() {
     // Event Bus Logger
     events.enableLogger(true);
     // Set Fetch Endpoint (Global)
-    setEndpoint(getConfigValue('commerce-endpoint'));
+    setEndpoint(getConfigValue("commerce-endpoint"));
 
     // Initialize Global Drop-ins
     // Auth initializer - Using HCL REST API adapter
-    await import('./auth.js');
+    await import("./auth.js");
 
-    import('./cart.js');
+    import("./cart.js");
 
-    events.on('aem/lcp', async () => {
+    events.on("aem/lcp", async () => {
       // Recaptcha
-      await import('@dropins/tools/recaptcha.js').then(({ setConfig }) => {
+      await import("@dropins/tools/recaptcha.js").then(({ setConfig }) => {
         setConfig();
       });
     });
   };
 
   // re-initialize on prerendering changes
-  document.addEventListener('prerenderingchange', initializeDropins, { once: true });
+  document.addEventListener("prerenderingchange", initializeDropins, {
+    once: true,
+  });
 
   return init();
 }
@@ -82,7 +84,9 @@ export function initializeDropin(cb) {
   };
 
   // re-initialize on prerendering changes
-  document.addEventListener('prerenderingchange', () => init(true), { once: true });
+  document.addEventListener("prerenderingchange", () => init(true), {
+    once: true,
+  });
 
   return init;
 }

@@ -2,18 +2,18 @@
 
 **Status**: ✅ APPROVED FOR DEVELOPMENT  
 **Phase**: POC Phase 1 (2-3 weeks)  
-**Date**: April 5, 2026  
+**Date**: April 5, 2026
 
 ---
 
 ## 📚 Documentation Files
 
-| Document | Purpose | Key Sections |
-|----------|---------|--------------|
-| **HCL_COMMERCE_INTEGRATION_PLAN.md** | Complete technical specification | Architecture, features, data mapping, security, testing, risks |
-| **HCL_COMMERCE_POC_SUMMARY.md** | Executive summary for stakeholders | Decisions made, scope, timeline, success criteria |
-| **HCL_COMMERCE_IMPLEMENTATION_ROADMAP.md** | Day-by-day development plan | Tasks, timeline, code samples, definition of done |
-| **HCL_COMMERCE_QUICK_REFERENCE.md** | This file | Quick lookup, API endpoints, code snippets |
+| Document                                   | Purpose                            | Key Sections                                                   |
+| ------------------------------------------ | ---------------------------------- | -------------------------------------------------------------- |
+| **HCL_COMMERCE_INTEGRATION_PLAN.md**       | Complete technical specification   | Architecture, features, data mapping, security, testing, risks |
+| **HCL_COMMERCE_POC_SUMMARY.md**            | Executive summary for stakeholders | Decisions made, scope, timeline, success criteria              |
+| **HCL_COMMERCE_IMPLEMENTATION_ROADMAP.md** | Day-by-day development plan        | Tasks, timeline, code samples, definition of done              |
+| **HCL_COMMERCE_QUICK_REFERENCE.md**        | This file                          | Quick lookup, API endpoints, code snippets                     |
 
 **All documents in**: `aco-boilerplate-starter/` (root directory)
 
@@ -22,6 +22,7 @@
 ## 🔑 Key Decisions At-a-Glance
 
 ### Authentication
+
 ```
 POST https://20.40.52.251/wcs/resources/store/715842834/loginidentity?responseFormat=json
 {
@@ -32,6 +33,7 @@ POST https://20.40.52.251/wcs/resources/store/715842834/loginidentity?responseFo
 ```
 
 ### Product Mapping
+
 ```
 ACO: product.sku = "CLA022_220601"
   ↓
@@ -39,17 +41,20 @@ HCL: partNumber = "CLA022_220601"
 ```
 
 ### Architecture
+
 ```
 EDS Storefront → Backend Proxy (/api/hcl/*) → HCL Commerce API
 ```
 
 ### Pricing
+
 ```
 Use ACO Pricing for POC
 (Not HCL pricing)
 ```
 
 ### Checkout
+
 ```
 OUT OF SCOPE - Phase 1
 Placeholder button only
@@ -60,6 +65,7 @@ Placeholder button only
 ## 🛠️ HCL Commerce API Endpoints
 
 ### 1. Authentication
+
 ```
 POST https://20.40.52.251/wcs/resources/store/715842834/loginidentity?responseFormat=json
 Headers: none needed
@@ -75,6 +81,7 @@ Response: {
 ```
 
 ### 2. Add to Cart
+
 ```
 POST https://20.40.52.251/wcs/resources/store/715842834/cart?langId=1
 Headers:
@@ -103,6 +110,7 @@ Response: {
 ```
 
 ### 3. Get Cart
+
 ```
 GET https://20.40.52.251/wcs/resources/store/715842834/cart/@self
 Headers:
@@ -128,6 +136,7 @@ Response: {
 ```
 
 ### 4. Update Order Item (Phase 2)
+
 ```
 PUT https://20.40.52.251/wcs/resources/store/715842834/cart/@self/update_order_item
 Headers:
@@ -158,6 +167,7 @@ api/
 ```
 
 **Endpoints**:
+
 - `POST /api/hcl/login` → HCL /loginidentity
 - `POST /api/hcl/cart/add` → HCL POST /cart
 - `GET /api/hcl/cart` → HCL GET /cart/@self
@@ -280,24 +290,28 @@ Frontend:
 ## 📋 Testing Checklist
 
 ### Unit Tests (80%+ coverage)
+
 - [ ] HCL Auth service (login, token refresh)
 - [ ] HCL API client (add, get, errors)
 - [ ] Cart reducer (add, remove, sync)
 - [ ] Cart thunks (async dispatch)
 
 ### Integration Tests (HCL Staging)
+
 - [ ] Auth → add to cart → get cart (full flow)
 - [ ] Token refresh on expiration
 - [ ] Error handling (404, 500, timeout)
 - [ ] Inventory validation
 
 ### E2E Tests (Cypress)
+
 - [ ] Browse products → Add to cart → Check mini-cart
 - [ ] View full cart page with all items
 - [ ] Cart persists on page refresh
 - [ ] Checkout button (placeholder)
 
 ### Manual Testing
+
 - [ ] Chrome, Firefox, Safari, Edge
 - [ ] Mobile (iOS, Android)
 - [ ] 2-3 items in cart
@@ -308,6 +322,7 @@ Frontend:
 ## 🚀 Deployment Steps
 
 ### Staging (Pre-Production)
+
 1. Deploy backend proxy to staging
 2. Deploy frontend blocks to staging
 3. Test against HCL staging environment
@@ -316,6 +331,7 @@ Frontend:
 6. Security: Credential review passed
 
 ### Production
+
 1. Verify all tests pass
 2. Deploy backend proxy
 3. Deploy frontend blocks
@@ -362,35 +378,35 @@ sessionStorage.setItem('hcl_cart_state', JSON.stringify({
 
 ## 🐛 Common Issues & Solutions
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| 401 Unauthorized | Token expired | Auto-refresh in hcl-commerce-api.js |
-| 404 Not Found | Product not in HCL | Show "Product unavailable" message |
-| 409 Conflict | Inventory mismatch | Warn user on cart view, allow remove |
-| CORS Error | Direct API call | Use backend proxy (/api/hcl/*) |
-| Slow response | Network issue | Implement retry with exponential backoff |
-| Cart empty on refresh | State not persisted | Use sessionStorage to cache cart |
+| Issue                 | Cause               | Solution                                 |
+| --------------------- | ------------------- | ---------------------------------------- |
+| 401 Unauthorized      | Token expired       | Auto-refresh in hcl-commerce-api.js      |
+| 404 Not Found         | Product not in HCL  | Show "Product unavailable" message       |
+| 409 Conflict          | Inventory mismatch  | Warn user on cart view, allow remove     |
+| CORS Error            | Direct API call     | Use backend proxy (/api/hcl/\*)          |
+| Slow response         | Network issue       | Implement retry with exponential backoff |
+| Cart empty on refresh | State not persisted | Use sessionStorage to cache cart         |
 
 ---
 
 ## 📞 Team Contacts
 
-| Role | Task | Owner |
-|------|------|-------|
-| Backend Lead | Proxy setup, HCL integration | TBD |
-| Frontend Lead | UI components, state management | TBD |
-| QA Lead | Testing strategy, E2E tests | TBD |
-| DevOps | Deployment, monitoring | TBD |
+| Role          | Task                            | Owner |
+| ------------- | ------------------------------- | ----- |
+| Backend Lead  | Proxy setup, HCL integration    | TBD   |
+| Frontend Lead | UI components, state management | TBD   |
+| QA Lead       | Testing strategy, E2E tests     | TBD   |
+| DevOps        | Deployment, monitoring          | TBD   |
 
 ---
 
 ## 📅 Timeline At-a-Glance
 
-| Week | Deliverable | Status |
-|------|-------------|--------|
-| Week 1 | Backend proxy + auth | ⏳ Not started |
+| Week   | Deliverable            | Status         |
+| ------ | ---------------------- | -------------- |
+| Week 1 | Backend proxy + auth   | ⏳ Not started |
 | Week 2 | Frontend services + UI | ⏳ Not started |
-| Week 3 | Testing + deployment | ⏳ Not started |
+| Week 3 | Testing + deployment   | ⏳ Not started |
 
 **Target Launch**: End of Week 3
 
@@ -413,28 +429,31 @@ sessionStorage.setItem('hcl_cart_state', JSON.stringify({
 
 ## 🎯 Success Metrics
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| API Response Time (p95) | < 500ms | APM |
-| Page Load Time | < 1s | Lighthouse |
-| Availability | 99.5%+ | Monitoring |
-| Error Rate | < 0.1% | Error tracking |
-| Test Coverage | 80%+ | Jest/code coverage |
+| Metric                  | Target  | Measurement        |
+| ----------------------- | ------- | ------------------ |
+| API Response Time (p95) | < 500ms | APM                |
+| Page Load Time          | < 1s    | Lighthouse         |
+| Availability            | 99.5%+  | Monitoring         |
+| Error Rate              | < 0.1%  | Error tracking     |
+| Test Coverage           | 80%+    | Jest/code coverage |
 
 ---
 
 ## 📚 Additional Resources
 
 ### HCL Commerce Documentation
+
 - API Reference: https://20.40.52.251/docs (if available)
 - Sample API calls: See "HCL Commerce API Endpoints" section above
 
 ### EDS/AEM Resources
+
 - Preact + HTM: Review existing blocks in `blocks/`
 - Design tokens: See `styles/`
 - Redux pattern: Review existing cart implementations
 
 ### Testing Tools
+
 - Jest: Unit tests
 - Cypress: E2E tests
 - Postman: API debugging
@@ -445,6 +464,7 @@ sessionStorage.setItem('hcl_cart_state', JSON.stringify({
 ## 🔗 Document Links
 
 **Jump to specific sections**:
+
 - [API Endpoints](#hcl-commerce-api-endpoints) - All HCL APIs
 - [Code Structure](#code-structure) - File organization
 - [Auth Flow](#authentication-flow) - Token management
@@ -484,6 +504,5 @@ All planning complete. Development can begin immediately.
 
 ---
 
-*Last Updated: April 5, 2026*  
-*Status: Ready for Development*
-
+_Last Updated: April 5, 2026_  
+_Status: Ready for Development_

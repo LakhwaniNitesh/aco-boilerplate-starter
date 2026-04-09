@@ -1,14 +1,14 @@
 /**
  * HCL Commerce Auth Adapter
- * 
+ *
  * Intercepts drop-in auth API calls and routes them to HCL REST API
  * instead of the default Adobe Commerce GraphQL API.
- * 
+ *
  * Uses event-based interception pattern (proper for ES modules)
  * instead of trying to mutate imported modules (which is forbidden).
  */
 
-import { events } from '@dropins/tools/event-bus.js';
+import { events } from "@dropins/tools/event-bus.js";
 
 /**
  * Intercept authentication via event bus
@@ -26,51 +26,92 @@ let isAuthInProgress = false;
  * Monkey-patch fetch to intercept auth API calls
  * This is the proper way to intercept in ES modules
  */
-window.fetch = async function(...args) {
+window.fetch = async function (...args) {
   const [resource, config] = args;
-  
+
   // Check if this is a call to our /api/hcl/login endpoint
-  const isHclLoginRequest = typeof resource === 'string' && 
-                            resource.includes('/api/hcl/login') && 
-                            config?.method === 'POST';
-  
+  const isHclLoginRequest =
+    typeof resource === "string" &&
+    resource.includes("/api/hcl/login") &&
+    config?.method === "POST";
+
   if (isHclLoginRequest) {
-    console.log('[HCL-AUTH-ADAPTER] Intercepted /api/hcl/login request');
-    
+    console.log("[HCL-AUTH-ADAPTER] Intercepted /api/hcl/login request");
+
     // Call original fetch to hit the backend
     const response = await originalFetch.apply(window, args);
-    
+
     // Clone the response so we can read it and still return it
     const responseClone = response.clone();
-    
+
     try {
       const responseData = await response.json();
-      console.log('[HCL-AUTH-ADAPTER] /api/hcl/login response received');
-      console.log('[HCL-AUTH-ADAPTER] Response has sessionCookies:', !!responseData.sessionCookies);
-      
+      console.log("[HCL-AUTH-ADAPTER] /api/hcl/login response received");
+      console.log(
+        "[HCL-AUTH-ADAPTER] Response has sessionCookies:",
+        !!responseData.sessionCookies,
+      );
+
       // CRITICAL: If response has sessionCookies, store them immediately
       if (responseData.sessionCookies) {
-        console.log('[HCL-AUTH-ADAPTER] ✓ Found sessionCookies in response, storing to sessionStorage');
+        console.log(
+          "[HCL-AUTH-ADAPTER] ✓ Found sessionCookies in response, storing to sessionStorage",
+        );
+        const expiresIn = responseData.expiresIn || 3600; // Default 1 hour
         const hclAuthData = {
-          token: responseData.token || responseData.accessToken || responseData.wcToken,
+          token:
+            responseData.token ||
+            responseData.accessToken ||
+            responseData.wcToken,
+          trustedToken:
+            responseData.trustedToken || responseData.wcTrustedToken, // CRITICAL: Store trusted token
           userId: responseData.userId,
           sessionCookies: responseData.sessionCookies,
+          expiresIn: expiresIn,
+          expiry: Date.now() + expiresIn * 1000, // CRITICAL: Calculate expiry timestamp
           storedAt: Date.now(),
         };
-        console.log('[HCL-AUTH-ADAPTER] Full auth data:', JSON.stringify(hclAuthData, null, 2));
-        sessionStorage.setItem('hcl_auth', JSON.stringify(hclAuthData));
-        
+        console.log(
+          "[HCL-AUTH-ADAPTER] Full auth data:",
+          JSON.stringify(hclAuthData, null, 2),
+        );
+        console.log(
+          "[HCL-AUTH-ADAPTER] Storing tokens: token=" +
+            (hclAuthData.token ? "✓" : "✗") +
+            ", trustedToken=" +
+            (hclAuthData.trustedToken ? "✓" : "✗") +
+            ", expiry=" +
+            (hclAuthData.expiry ? "✓" : "✗"),
+        );
+        sessionStorage.setItem("hcl_auth", JSON.stringify(hclAuthData));
+
         // Verify storage
-        const stored = sessionStorage.getItem('hcl_auth');
-        console.log('[HCL-AUTH-ADAPTER] ✓ Verification - stored to sessionStorage:', !!stored);
+        const stored = JSON.parse(sessionStorage.getItem("hcl_auth"));
+        console.log(
+          "[HCL-AUTH-ADAPTER] ✓ Verification - stored to sessionStorage:",
+          !!stored,
+        );
+        console.log(
+          "[HCL-AUTH-ADAPTER] ✓ trustedToken in sessionStorage?",
+          !!stored.trustedToken,
+        );
+        console.log(
+          "[HCL-AUTH-ADAPTER] ✓ expiry in sessionStorage?",
+          !!stored.expiry,
+        );
       } else {
-        console.warn('[HCL-AUTH-ADAPTER] ⚠ No sessionCookies found in response');
-        console.log('[HCL-AUTH-ADAPTER] Response keys:', Object.keys(responseData));
+        console.warn(
+          "[HCL-AUTH-ADAPTER] ⚠ No sessionCookies found in response",
+        );
+        console.log(
+          "[HCL-AUTH-ADAPTER] Response keys:",
+          Object.keys(responseData),
+        );
       }
     } catch (e) {
-      console.warn('[HCL-AUTH-ADAPTER] Error parsing response:', e);
+      console.warn("[HCL-AUTH-ADAPTER] Error parsing response:", e);
     }
-    
+
     // Return the original response (not the clone)
     return responseClone;
   }

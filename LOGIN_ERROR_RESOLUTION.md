@@ -7,6 +7,7 @@ Your error message **"Tenant not found or not accessible"** indicates one of the
 ### **Issue #1: HCL Commerce VM is Unreachable** ⚠️ MOST LIKELY
 
 **Evidence:**
+
 ```
 Error: Unable to connect to the remote server
 URL: https://20.40.52.251/store/715842834/loginidentity
@@ -15,6 +16,7 @@ URL: https://20.40.52.251/store/715842834/loginidentity
 **Status:** The backend cannot reach the HCL VM at `https://20.40.52.251`
 
 **Causes:**
+
 - HCL VM is offline or not running
 - Network connectivity issue between client and HCL VM
 - Firewall blocking access
@@ -44,6 +46,7 @@ node api/server.js
 Go to: `http://localhost:3000/customer/login`
 
 Use test credentials:
+
 - **Username:** `auroraadobetest`
 - **Password:** `passw0rd`
 
@@ -98,35 +101,42 @@ Should show your HCL configuration and test endpoints.
 We've added several enhancements to help you debug this:
 
 ### 1. Better Error Handling
+
 - Code now tries multiple endpoint paths automatically
 - Detailed error messages show what went wrong
 - Fallback endpoints for different HCL versions
 
 ### 2. Diagnostic Endpoint
+
 ```
 GET http://localhost:3001/api/hcl/auth/diagnose
 ```
 
 Shows:
+
 - Current HCL configuration
 - Authentication mode (MOCK vs REAL)
 - Login endpoints being tried
 - Instructions for fixing issues
 
 ### 3. Test Script
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File test-hcl-login.ps1
 ```
 
 Tests HCL connectivity directly and shows:
+
 - Network connectivity status
 - HCL API response
 - Detailed error messages
 
 ### 4. Troubleshooting Guide
+
 File: `HCL_TROUBLESHOOTING.md`
 
 Comprehensive guide covering:
+
 - Root cause analysis
 - Solutions for each scenario
 - Development workflows
@@ -137,12 +147,14 @@ Comprehensive guide covering:
 ## 📋 Recommended Next Steps
 
 ### **For Local Development (No HCL VM):**
+
 1. ✅ Set `USE_REAL_HCL_AUTH=false` in `.env`
 2. ✅ Test login with mock credentials (`auroraadobetest` / `passw0rd`)
 3. ✅ Verify login form works and stores token in sessionStorage
 4. ✅ Continue development with mock auth
 
 ### **For Real HCL Testing:**
+
 1. ⏳ Verify HCL VM is online: `Test-Connection 20.40.52.251`
 2. ⏳ Confirm Store ID (`715842834`) exists in HCL
 3. ⏳ Confirm user (`auroraadobetest`) exists in HCL
@@ -183,11 +195,13 @@ Frontend: Render "Welcome, {displayName}"
 ## 🐛 Debugging Tips
 
 ### Check Current Auth Mode
+
 ```bash
 curl http://localhost:3001/api/hcl/auth/diagnose
 ```
 
 ### Check Backend Logs
+
 ```
 [AUTH-CONTROLLER] Login attempt for user: auroraadobetest
 [AUTH-CONTROLLER] Using MOCK authentication (development mode)
@@ -195,6 +209,7 @@ curl http://localhost:3001/api/hcl/auth/diagnose
 ```
 
 ### Check Browser Console (F12)
+
 ```
 [LOGIN] Attempting login with: {username: 'auroraadobetest', ...}
 [LOGIN] Response status: 200
@@ -202,6 +217,7 @@ curl http://localhost:3001/api/hcl/auth/diagnose
 ```
 
 ### Check SessionStorage (DevTools → Application → Session Storage)
+
 ```
 hcl_wcToken: "mock-token-123"
 hcl_userId: "user-123"
@@ -224,12 +240,12 @@ Three commits made to fix this issue:
 
 ## ✨ Summary
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| HCL VM unreachable | Network/offline | Use mock auth or verify VM online |
-| Store ID not found | Wrong/missing store ID | Verify in HCL, update in `.env` |
-| User not found | User doesn't exist | Create user in HCL Commerce |
-| Wrong endpoint | Version mismatch | Code tries multiple endpoints automatically |
+| Issue              | Cause                  | Solution                                    |
+| ------------------ | ---------------------- | ------------------------------------------- |
+| HCL VM unreachable | Network/offline        | Use mock auth or verify VM online           |
+| Store ID not found | Wrong/missing store ID | Verify in HCL, update in `.env`             |
+| User not found     | User doesn't exist     | Create user in HCL Commerce                 |
+| Wrong endpoint     | Version mismatch       | Code tries multiple endpoints automatically |
 
 **Quick Start:** Set `USE_REAL_HCL_AUTH=false` and test with mock credentials.
 

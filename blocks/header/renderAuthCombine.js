@@ -1,42 +1,42 @@
 /* eslint-disable implicit-arrow-linebreak */
 /* eslint-disable import/no-unresolved */
 /* eslint-disable import/no-extraneous-dependencies */
-import { render as authRenderer } from '@dropins/storefront-auth/render.js';
-import { AuthCombine } from '@dropins/storefront-auth/containers/AuthCombine.js';
-import { SuccessNotification } from '@dropins/storefront-auth/containers/SuccessNotification.js';
-import * as authApi from '@dropins/storefront-auth/api.js';
-import { events } from '@dropins/tools/event-bus.js';
-import { Button } from '@dropins/tools/components.js';
-import { getCookie } from '../../scripts/configs.js';
+import { render as authRenderer } from "@dropins/storefront-auth/render.js";
+import { AuthCombine } from "@dropins/storefront-auth/containers/AuthCombine.js";
+import { SuccessNotification } from "@dropins/storefront-auth/containers/SuccessNotification.js";
+import * as authApi from "@dropins/storefront-auth/api.js";
+import { events } from "@dropins/tools/event-bus.js";
+import { Button } from "@dropins/tools/components.js";
+import { getCookie } from "../../scripts/configs.js";
 // CRITICAL: Import HCL auth adapter to intercept drop-in auth calls
-import './hclAuthAdapter.js';
+import "./hclAuthAdapter.js";
 import {
   CUSTOMER_ACCOUNT_PATH,
   CUSTOMER_FORGOTPASSWORD_PATH,
   CUSTOMER_LOGIN_PATH,
-} from '../../scripts/constants.js';
-import { rootLink } from '../../scripts/scripts.js';
+} from "../../scripts/constants.js";
+import { rootLink } from "../../scripts/scripts.js";
 
 const signInFormConfig = {
   renderSignUpLink: true,
   routeForgotPassword: () => rootLink(CUSTOMER_FORGOTPASSWORD_PATH),
   slots: {
     SuccessNotification: (ctx) => {
-      const userName = ctx?.isSuccessful?.userName || '';
+      const userName = ctx?.isSuccessful?.userName || "";
 
-      const elem = document.createElement('div');
+      const elem = document.createElement("div");
 
       authRenderer.render(SuccessNotification, {
         labels: {
           headingText: `Welcome ${userName}!`,
-          messageText: 'You have successfully logged in.',
+          messageText: "You have successfully logged in.",
         },
         slots: {
           SuccessNotificationActions: (innerCtx) => {
-            const primaryBtn = document.createElement('div');
+            const primaryBtn = document.createElement("div");
 
             authRenderer.render(Button, {
-              children: 'My Account',
+              children: "My Account",
 
               onClick: () => {
                 window.location.href = rootLink(CUSTOMER_ACCOUNT_PATH);
@@ -45,17 +45,17 @@ const signInFormConfig = {
 
             innerCtx.appendChild(primaryBtn);
 
-            const secondaryButton = document.createElement('div');
-            secondaryButton.style.display = 'flex';
-            secondaryButton.style.justifyContent = 'center';
-            secondaryButton.style.marginTop = 'var(--spacing-xsmall)';
+            const secondaryButton = document.createElement("div");
+            secondaryButton.style.display = "flex";
+            secondaryButton.style.justifyContent = "center";
+            secondaryButton.style.marginTop = "var(--spacing-xsmall)";
 
             authRenderer.render(Button, {
-              children: 'Logout',
-              variant: 'tertiary',
+              children: "Logout",
+              variant: "tertiary",
               onClick: async () => {
                 await authApi.revokeCustomerToken();
-                window.location.href = rootLink('/');
+                window.location.href = rootLink("/");
               },
             })(secondaryButton);
 
@@ -75,19 +75,19 @@ const signUpFormConfig = {
   isAutoSignInEnabled: false,
   slots: {
     SuccessNotification: (ctx) => {
-      const elem = document.createElement('div');
+      const elem = document.createElement("div");
 
       authRenderer.render(SuccessNotification, {
         labels: {
-          headingText: 'Your account has been successfully created!',
-          messageText: 'You can login using sign-in page now.',
+          headingText: "Your account has been successfully created!",
+          messageText: "You can login using sign-in page now.",
         },
         slots: {
           SuccessNotificationActions: (innerCtx) => {
-            const primaryBtn = document.createElement('div');
+            const primaryBtn = document.createElement("div");
 
             authRenderer.render(Button, {
-              children: 'Sign in',
+              children: "Sign in",
 
               onClick: () => {
                 window.location.href = rootLink(CUSTOMER_LOGIN_PATH);
@@ -96,16 +96,16 @@ const signUpFormConfig = {
 
             innerCtx.appendChild(primaryBtn);
 
-            const secondaryButton = document.createElement('div');
-            secondaryButton.style.display = 'flex';
-            secondaryButton.style.justifyContent = 'center';
-            secondaryButton.style.marginTop = 'var(--spacing-xsmall)';
+            const secondaryButton = document.createElement("div");
+            secondaryButton.style.display = "flex";
+            secondaryButton.style.justifyContent = "center";
+            secondaryButton.style.marginTop = "var(--spacing-xsmall)";
 
             authRenderer.render(Button, {
-              children: 'Home',
-              variant: 'tertiary',
+              children: "Home",
+              variant: "tertiary",
               onClick: () => {
-                window.location.href = rootLink('/');
+                window.location.href = rootLink("/");
               },
             })(secondaryButton);
 
@@ -125,32 +125,32 @@ const resetPasswordFormConfig = {
 
 const onHeaderLinkClick = (element) => {
   const viewportMeta = document.querySelector('meta[name="viewport"]');
-  const originalViewportContent = viewportMeta.getAttribute('content');
+  const originalViewportContent = viewportMeta.getAttribute("content");
 
-  if (getCookie('auth_dropin_firstname')) {
+  if (getCookie("auth_dropin_firstname")) {
     window.location.href = rootLink(CUSTOMER_ACCOUNT_PATH);
     return;
   }
-  const signInModal = document.createElement('div');
-  document.body.style.overflow = 'hidden';
+  const signInModal = document.createElement("div");
+  document.body.style.overflow = "hidden";
   viewportMeta.setAttribute(
-    'content',
-    'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no',
+    "content",
+    "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
   );
 
-  signInModal.setAttribute('id', 'auth-combine-modal');
-  signInModal.classList.add('auth-combine-modal-overlay');
+  signInModal.setAttribute("id", "auth-combine-modal");
+  signInModal.classList.add("auth-combine-modal-overlay");
 
   const trapFocus = (event) => {
     if (!signInModal) return;
 
     const key = event.key.toLowerCase();
 
-    if (key === 'escape') {
+    if (key === "escape") {
       event.preventDefault();
       signInModal.click();
       element?.focus();
-      window.removeEventListener('keydown', trapFocus);
+      window.removeEventListener("keydown", trapFocus);
       return;
     }
 
@@ -164,16 +164,16 @@ const onHeaderLinkClick = (element) => {
     const lastElement = focusableElements[focusableElements.length - 1];
 
     if (!signInModal.dataset.focusInitialized) {
-      signInModal.dataset.focusInitialized = 'true';
+      signInModal.dataset.focusInitialized = "true";
       requestAnimationFrame(() => firstElement.focus(), 10);
     }
 
-    if (key === 'tab' && event.shiftKey) {
+    if (key === "tab" && event.shiftKey) {
       if (document.activeElement === firstElement) {
         event.preventDefault();
         lastElement.focus();
       }
-    } else if (key === 'tab') {
+    } else if (key === "tab") {
       if (document.activeElement === lastElement) {
         event.preventDefault();
         firstElement.focus();
@@ -184,17 +184,17 @@ const onHeaderLinkClick = (element) => {
     }
   };
 
-  window.addEventListener('keydown', trapFocus);
+  window.addEventListener("keydown", trapFocus);
 
   signInModal.onclick = () => {
     signInModal.remove();
-    document.body.style.overflow = 'auto';
-    viewportMeta.setAttribute('content', originalViewportContent);
-    window.removeEventListener('keydown', trapFocus);
+    document.body.style.overflow = "auto";
+    viewportMeta.setAttribute("content", originalViewportContent);
+    window.removeEventListener("keydown", trapFocus);
   };
 
-  const signInForm = document.createElement('div');
-  signInForm.setAttribute('id', 'auth-combine-wrapper');
+  const signInForm = document.createElement("div");
+  signInForm.setAttribute("id", "auth-combine-wrapper");
   signInForm.onclick = (event) => {
     event.stopPropagation();
   };
@@ -210,45 +210,52 @@ const onHeaderLinkClick = (element) => {
 };
 
 const renderAuthCombine = (navSections, toggleMenu) => {
-  if (getCookie('auth_dropin_firstname')) return;
+  if (getCookie("auth_dropin_firstname")) return;
 
   // Defensive check: ensure navSections exists and has the expected structure
   if (!navSections) {
-    console.warn('[RENDER-AUTH-COMBINE] navSections is null or undefined');
+    console.warn("[RENDER-AUTH-COMBINE] navSections is null or undefined");
     return;
   }
 
-  const navListEl = navSections.querySelector('.default-content-wrapper > ul');
+  const navListEl = navSections.querySelector(".default-content-wrapper > ul");
 
   // If the expected nav structure doesn't exist, skip rendering
   if (!navListEl) {
-    console.warn('[RENDER-AUTH-COMBINE] Could not find .default-content-wrapper > ul in navSections');
+    console.warn(
+      "[RENDER-AUTH-COMBINE] Could not find .default-content-wrapper > ul in navSections",
+    );
     return;
   }
 
   const listItems = navListEl.querySelectorAll(
-    '.default-content-wrapper > ul > li',
+    ".default-content-wrapper > ul > li",
   );
 
   const accountLi = Array.from(listItems).find((li) =>
-    li.textContent.includes('Account'));
+    li.textContent.includes("Account"),
+  );
 
   if (accountLi) {
-    const accountLiItems = accountLi.querySelectorAll('ul > li');
+    const accountLiItems = accountLi.querySelectorAll("ul > li");
     const authCombineLink = accountLiItems[accountLiItems.length - 1];
 
-    authCombineLink.classList.add('authCombineNavElement');
-    const text = authCombineLink.textContent || '';
+    authCombineLink.classList.add("authCombineNavElement");
+    const text = authCombineLink.textContent || "";
     authCombineLink.innerHTML = `<a href="#">${text}</a>`;
-    authCombineLink.addEventListener('click', (event) => {
+    authCombineLink.addEventListener("click", (event) => {
       event.preventDefault();
       onHeaderLinkClick(accountLi);
 
       function getPopupElements() {
-        const headerBlock = document.querySelector('.header.block');
-        const headerLoginButton = document.querySelector('#header-login-button');
-        const popupElement = document.querySelector('#popup-menu');
-        const popupMenuContainer = document.querySelector('.popupMenuContainer');
+        const headerBlock = document.querySelector(".header.block");
+        const headerLoginButton = document.querySelector(
+          "#header-login-button",
+        );
+        const popupElement = document.querySelector("#popup-menu");
+        const popupMenuContainer = document.querySelector(
+          ".popupMenuContainer",
+        );
 
         return {
           headerBlock,
@@ -258,36 +265,37 @@ const renderAuthCombine = (navSections, toggleMenu) => {
         };
       }
 
-      events.on('authenticated', (isAuthenticated) => {
+      events.on("authenticated", (isAuthenticated) => {
         const authCombineNavElement = document.querySelector(
-          '.authCombineNavElement',
+          ".authCombineNavElement",
         );
         if (isAuthenticated) {
-          const { headerLoginButton, popupElement, popupMenuContainer } = getPopupElements();
+          const { headerLoginButton, popupElement, popupMenuContainer } =
+            getPopupElements();
 
           if (
-            !authCombineNavElement
-          || !headerLoginButton
-          || !popupElement
-          || !popupMenuContainer
+            !authCombineNavElement ||
+            !headerLoginButton ||
+            !popupElement ||
+            !popupMenuContainer
           ) {
             return;
           }
 
-          authCombineNavElement.style.display = 'none';
-          popupMenuContainer.innerHTML = '';
-          popupElement.style.minWidth = '250px';
+          authCombineNavElement.style.display = "none";
+          popupMenuContainer.innerHTML = "";
+          popupElement.style.minWidth = "250px";
           if (headerLoginButton) {
-            const spanElementText = headerLoginButton.querySelector('span');
+            const spanElementText = headerLoginButton.querySelector("span");
             spanElementText.textContent = `Hi, ${getCookie(
-              'auth_dropin_firstname',
+              "auth_dropin_firstname",
             )}`;
           }
           popupMenuContainer.insertAdjacentHTML(
-            'afterend',
+            "afterend",
             `<ul class="popupMenuUrlList">
               <li><a href="${rootLink(CUSTOMER_ACCOUNT_PATH)}">My Account</a></li>
-              <li><a href="${rootLink('/products/hollister-backyard-sweatshirt/MH05')}">Product page</a></li>
+              <li><a href="${rootLink("/products/hollister-backyard-sweatshirt/MH05")}">Product page</a></li>
               <li><button class="logoutButton">Logout</button></li>
             </ul>`,
           );

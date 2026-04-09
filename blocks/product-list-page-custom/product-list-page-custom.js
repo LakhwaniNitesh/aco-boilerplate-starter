@@ -1,18 +1,39 @@
 import {
-  h, Component, Fragment, render, createRef,
-} from '@dropins/tools/preact.js';
-import htm from '../../scripts/htm.js';
-import ProductList from './ProductList.js';
-import FacetList from './FacetList.js';
-import { readBlockConfig, sampleRUM } from '../../scripts/aem.js';
-import { priceFieldsFragment, performCatalogServiceQuery } from '../../scripts/commerce.js';
-import { rootLink } from '../../scripts/scripts.js';
+  h,
+  Component,
+  Fragment,
+  render,
+  createRef,
+} from "@dropins/tools/preact.js";
+import htm from "../../scripts/htm.js";
+import ProductList from "./ProductList.js";
+import FacetList from "./FacetList.js";
+import { readBlockConfig, sampleRUM } from "../../scripts/aem.js";
+import {
+  priceFieldsFragment,
+  performCatalogServiceQuery,
+} from "../../scripts/commerce.js";
+import { rootLink } from "../../scripts/scripts.js";
 
 const html = htm.bind(h);
 
 // You can get this list dynamically via attributeMetadata query
-export const ALLOWED_FILTER_PARAMETERS = ['page', 'pageSize', 'sort', 'sortDirection', 'q', 'price', 'size', 'color_family', 'activity', 'color', 'gender'];
-const isMobile = window.matchMedia('only screen and (max-width: 900px)').matches;
+export const ALLOWED_FILTER_PARAMETERS = [
+  "page",
+  "pageSize",
+  "sort",
+  "sortDirection",
+  "q",
+  "price",
+  "size",
+  "color_family",
+  "activity",
+  "color",
+  "gender",
+];
+const isMobile = window.matchMedia(
+  "only screen and (max-width: 900px)",
+).matches;
 
 const PAGE_SIZE_DESKTOP = 12;
 const PAGE_SIZE_MOBILE = 6;
@@ -20,8 +41,8 @@ const DEFAULT_PARAMS = {
   basePageSize: isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP,
   page: 1,
   pageSize: isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP,
-  sort: 'position',
-  sortDirection: 'asc',
+  sort: "position",
+  sortDirection: "asc",
 };
 
 export const productSearchQuery = (addCategory = false) => `query ProductSearch(
@@ -30,13 +51,17 @@ export const productSearchQuery = (addCategory = false) => `query ProductSearch(
   $phrase: String = ""
   $sort: [ProductSearchSortInput!] = []
   $filter: [SearchClauseInput!] = []
-  ${addCategory ? '$categoryId: String!' : ''}
+  ${addCategory ? "$categoryId: String!" : ""}
 ) {
-  ${addCategory ? `categories(ids: [$categoryId]) {
+  ${
+    addCategory
+      ? `categories(ids: [$categoryId]) {
       name
       urlKey
       urlPath
-  }` : ''}
+  }`
+      : ""
+  }
   productSearch(
       current_page: $currentPage
       page_size: $pageSize
@@ -109,18 +134,20 @@ async function loadCategory(state) {
     const variables = {
       pageSize: state.currentPageSize,
       currentPage: state.currentPage,
-      sort: [{
-        attribute: state.sort,
-        direction: state.sortDirection === 'desc' ? 'DESC' : 'ASC',
-      }],
+      sort: [
+        {
+          attribute: state.sort,
+          direction: state.sortDirection === "desc" ? "DESC" : "ASC",
+        },
+      ],
     };
 
-    variables.phrase = state.type === 'search' ? state.searchTerm : '';
+    variables.phrase = state.type === "search" ? state.searchTerm : "";
 
     if (Object.keys(state.filters).length > 0) {
       variables.filter = [];
       Object.keys(state.filters).forEach((key) => {
-        if (key === 'price') {
+        if (key === "price") {
           const [from, to] = state.filters[key];
           if (from && to) {
             variables.filter.push({ attribute: key, range: { from, to } });
@@ -133,28 +160,38 @@ async function loadCategory(state) {
       });
     }
 
-    if (state.type === 'category' && state.category.id) {
+    if (state.type === "category" && state.category.id) {
       variables.categoryId = state.category.id;
       variables.filter = variables.filter || [];
       if (state.category.urlPath) {
-        variables.filter.push({ attribute: 'categoryPath', eq: state.category.urlPath });
+        variables.filter.push({
+          attribute: "categoryPath",
+          eq: state.category.urlPath,
+        });
       } else if (state.category.id) {
-        variables.filter.push({ attribute: 'categoryIds', eq: state.category.id });
+        variables.filter.push({
+          attribute: "categoryIds",
+          eq: state.category.id,
+        });
       }
     }
 
     window.adobeDataLayer.push((dl) => {
       const requestId = crypto.randomUUID();
-      window.sessionStorage.setItem('searchRequestId', requestId);
-      const searchInputContext = dl.getState('searchInputContext') ?? { units: [] };
-      const searchUnitId = 'livesearch-plp';
+      window.sessionStorage.setItem("searchRequestId", requestId);
+      const searchInputContext = dl.getState("searchInputContext") ?? {
+        units: [],
+      };
+      const searchUnitId = "livesearch-plp";
       const unit = {
         searchUnitId,
         searchRequestId: requestId,
-        queryTypes: ['products', 'suggestions'],
+        queryTypes: ["products", "suggestions"],
         ...variables,
       };
-      const index = searchInputContext.units.findIndex((u) => u.searchUnitId === searchUnitId);
+      const index = searchInputContext.units.findIndex(
+        (u) => u.searchUnitId === searchUnitId,
+      );
       if (index < 0) {
         searchInputContext.units.push(unit);
       } else {
@@ -162,10 +199,16 @@ async function loadCategory(state) {
       }
       dl.push({ searchInputContext });
       // TODO: Remove eventInfo once collector is updated
-      dl.push({ event: 'search-request-sent', eventInfo: { ...dl.getState(), searchUnitId } });
+      dl.push({
+        event: "search-request-sent",
+        eventInfo: { ...dl.getState(), searchUnitId },
+      });
     });
 
-    const response = await performCatalogServiceQuery(productSearchQuery(state.type === 'category'), variables);
+    const response = await performCatalogServiceQuery(
+      productSearchQuery(state.type === "category"),
+      variables,
+    );
 
     // Parse response into state
     return {
@@ -176,11 +219,13 @@ async function loadCategory(state) {
           .filter((product) => product !== null),
         total: response.productSearch.total_count,
       },
-      category: { ...state.category, ...response.categories?.[0] ?? {} },
-      facets: response.productSearch.facets.filter((facet) => facet.attribute !== 'categories'),
+      category: { ...state.category, ...(response.categories?.[0] ?? {}) },
+      facets: response.productSearch.facets.filter(
+        (facet) => facet.attribute !== "categories",
+      ),
     };
   } catch (e) {
-    console.error('Error loading products', e);
+    console.error("Error loading products", e);
     return {
       pages: 1,
       products: {
@@ -196,7 +241,7 @@ function parseQueryParams() {
   const params = new URLSearchParams(window.location.search);
   const newState = {
     filters: {
-      inStock: ['true'],
+      inStock: ["true"],
     },
   };
   params.forEach((value, key) => {
@@ -204,20 +249,20 @@ function parseQueryParams() {
       return;
     }
 
-    if (key === 'page') {
+    if (key === "page") {
       newState.currentPage = parseInt(value, 10) || 1;
-    } else if (key === 'pageSize') {
+    } else if (key === "pageSize") {
       newState.currentPageSize = parseInt(value, 10) || 12;
-    } else if (key === 'sort') {
+    } else if (key === "sort") {
       newState.sort = value;
-    } else if (key === 'sortDirection') {
-      newState.sortDirection = value === 'desc' ? 'desc' : 'asc';
-    } else if (key === 'q') {
+    } else if (key === "sortDirection") {
+      newState.sortDirection = value === "desc" ? "desc" : "asc";
+    } else if (key === "q") {
       newState.searchTerm = value;
-    } else if (key === 'price') {
-      newState.filters[key] = value.split(',').map((v) => parseInt(v, 10) || 0);
+    } else if (key === "price") {
+      newState.filters[key] = value.split(",").map((v) => parseInt(v, 10) || 0);
     } else {
-      newState.filters[key] = value.split(',');
+      newState.filters[key] = value.split(",");
     }
   });
   return newState;
@@ -231,9 +276,9 @@ export async function preloadCategory(category) {
     category,
     basePageSize: DEFAULT_PARAMS.basePageSize,
     currentPageSize: DEFAULT_PARAMS.pageSize,
-    locale: 'en-US',
-    currency: 'USD',
-    type: 'category',
+    locale: "en-US",
+    currency: "USD",
+    type: "category",
     sort: DEFAULT_PARAMS.sort,
     sortDirection: DEFAULT_PARAMS.sortDirection,
     ...queryParams,
@@ -248,50 +293,97 @@ function Pagination(props) {
   return html`<div class="pagination">
     <div>
       <label for="select-pagesize">Show:</label>
-      <select id="select-pagesize" name="pageSize" value=${props.currentPageSize} onChange=${(e) => props.onPageSizeChange?.(parseInt(e.target.value, 10))}>
-        ${props.pageSizeOptions.map((size) => html`<option value=${size}>${size} Items</option>`)}
+      <select
+        id="select-pagesize"
+        name="pageSize"
+        value=${props.currentPageSize}
+        onChange=${(e) =>
+          props.onPageSizeChange?.(parseInt(e.target.value, 10))}
+      >
+        ${props.pageSizeOptions.map(
+          (size) => html`<option value=${size}>${size} Items</option>`,
+        )}
       </select>
     </div>
     <div>
       <label for="select-page">Page:</label>
-      <select id="select-page" name="page" value=${props.currentPage} onChange=${(e) => props.onPageChange?.(parseInt(e.target.value, 10))}>
-        ${Array(props.pages).fill(0).map((_, i) => html`<option value=${i + 1}>${i + 1}</option>`)}
+      <select
+        id="select-page"
+        name="page"
+        value=${props.currentPage}
+        onChange=${(e) => props.onPageChange?.(parseInt(e.target.value, 10))}
+      >
+        ${Array(props.pages)
+          .fill(0)
+          .map((_, i) => html`<option value=${i + 1}>${i + 1}</option>`)}
       </select>
       <span>of ${props.pages}</span>
     </div>
     <div>
-      ${props.currentPage > 1 ? html`<button class="previous" onClick=${() => props.onPageChange?.(props.currentPage - 1)}>Previous</button>` : ''}
-      ${props.currentPage < props.pages ? html`<button class="next" onClick=${() => props.onPageChange?.(props.currentPage + 1)}>Next</button>` : ''}
+      ${props.currentPage > 1
+        ? html`<button
+            class="previous"
+            onClick=${() => props.onPageChange?.(props.currentPage - 1)}
+          >
+            Previous
+          </button>`
+        : ""}
+      ${props.currentPage < props.pages
+        ? html`<button
+            class="next"
+            onClick=${() => props.onPageChange?.(props.currentPage + 1)}
+          >
+            Next
+          </button>`
+        : ""}
     </div>
   </div>`;
 }
 
 function Sort(props) {
-  const {
-    type, disabled, sortMenuRef, onSort,
-  } = props;
+  const { type, disabled, sortMenuRef, onSort } = props;
   const options = [
-    { label: 'Price: High to Low', value: 'price-desc' },
-    { label: 'Price: Low to High', value: 'price-asc' },
-    { label: 'Product Name', value: 'name-asc' },
-    { label: 'Relevance', value: type === 'category' ? 'position-asc' : 'relevance-desc' },
+    { label: "Price: High to Low", value: "price-desc" },
+    { label: "Price: Low to High", value: "price-asc" },
+    { label: "Product Name", value: "name-asc" },
+    {
+      label: "Relevance",
+      value: type === "category" ? "position-asc" : "relevance-desc",
+    },
   ];
 
-  const currentSort = options.find((option) => option.value === `${props.currentSort}-${props.sortDirection}`) || options[3];
+  const currentSort =
+    options.find(
+      (option) =>
+        option.value === `${props.currentSort}-${props.sortDirection}`,
+    ) || options[3];
 
   return html`<div class="sort" disabled=${disabled}>
     <button disabled=${disabled}>Sort By: ${currentSort.label}</button>
     <div class="overlay" ref=${sortMenuRef}>
-      <button class="close" onClick=${() => sortMenuRef.current.classList.toggle('active')}>Close</button>
+      <button
+        class="close"
+        onClick=${() => sortMenuRef.current.classList.toggle("active")}
+      >
+        Close
+      </button>
       <ul>
-        ${options.map((option) => html`<li>
-          <a href="#" class="${currentSort.value === option.value ? 'active' : ''}" onClick=${(e) => {
-  sortMenuRef.current.classList.toggle('active');
-  const [sort, direction = 'asc'] = option.value.split('-');
-  onSort?.(sort, direction);
-  e.preventDefault();
-}}>${option.label}</a>
-        </li>`)}
+        ${options.map(
+          (option) =>
+            html`<li>
+              <a
+                href="#"
+                class="${currentSort.value === option.value ? "active" : ""}"
+                onClick=${(e) => {
+                  sortMenuRef.current.classList.toggle("active");
+                  const [sort, direction = "asc"] = option.value.split("-");
+                  onSort?.(sort, direction);
+                  e.preventDefault();
+                }}
+                >${option.label}</a
+              >
+            </li>`,
+        )}
       </ul>
     </div>
   </div>`;
@@ -299,11 +391,7 @@ function Sort(props) {
 
 class ProductListPage extends Component {
   constructor(props) {
-    const {
-      type,
-      category,
-      urlpath,
-    } = props;
+    const { type, category, urlpath } = props;
     super();
 
     // Detect if this is a search page or category page
@@ -311,7 +399,7 @@ class ProductListPage extends Component {
     if (!pageType) {
       // If type is not provided, infer from URL
       const searchParams = new URLSearchParams(window.location.search);
-      pageType = searchParams.has('q') ? 'search' : 'category';
+      pageType = searchParams.has("q") ? "search" : "category";
     }
 
     this.facetMenuRef = createRef();
@@ -320,18 +408,23 @@ class ProductListPage extends Component {
 
     const queryParams = parseQueryParams();
 
-    let headline = 'Search Results';
-    let sort = 'relevance';
-    let sortDirection = 'desc';
-    if (pageType === 'category') {
+    let headline = "Search Results";
+    let sort = "relevance";
+    let sortDirection = "desc";
+    if (pageType === "category") {
       // Get from H1
-      headline = document.querySelector('.default-content-wrapper > h1')?.innerText;
-      sort = 'position';
-      sortDirection = 'asc';
+      headline = document.querySelector(
+        ".default-content-wrapper > h1",
+      )?.innerText;
+      sort = "position";
+      sortDirection = "asc";
     }
 
-    if (pageType === 'search') {
-      sampleRUM('search', { source: '.search-input', target: queryParams.searchTerm });
+    if (pageType === "search") {
+      sampleRUM("search", {
+        source: ".search-input",
+        target: queryParams.searchTerm,
+      });
     }
 
     this.state = {
@@ -374,13 +467,15 @@ class ProductListPage extends Component {
         return;
       }
 
-      if (params[key] === DEFAULT_PARAMS[key]
-        && !new URLSearchParams(window.location.search).has(key)) {
+      if (
+        params[key] === DEFAULT_PARAMS[key] &&
+        !new URLSearchParams(window.location.search).has(key)
+      ) {
         return;
       }
 
       if (Array.isArray(params[key]) && params[key].length > 0) {
-        newParams.set(key, params[key].join(','));
+        newParams.set(key, params[key].join(","));
       } else if (!Array.isArray(params[key]) && params[key]) {
         newParams.set(key, params[key]);
       }
@@ -395,7 +490,11 @@ class ProductListPage extends Component {
     });
 
     if (newParams.toString() !== curentParams.toString()) {
-      window.history.pushState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+      window.history.pushState(
+        {},
+        "",
+        `${window.location.pathname}?${newParams.toString()}`,
+      );
     }
   };
 
@@ -409,18 +508,26 @@ class ProductListPage extends Component {
 
     if (this.state.loading === false) {
       window.adobeDataLayer.push((dl) => {
-        const searchResultsContext = dl.getState('searchResultsContext') ?? { units: [] };
-        const searchRequestId = window.sessionStorage.getItem('searchRequestId');
-        const searchUnitId = 'livesearch-plp';
+        const searchResultsContext = dl.getState("searchResultsContext") ?? {
+          units: [],
+        };
+        const searchRequestId =
+          window.sessionStorage.getItem("searchRequestId");
+        const searchUnitId = "livesearch-plp";
         const searchResultUnit = {
           searchUnitId,
           searchRequestId,
           products: this.state.products.items.map((p, index) => ({
             name: p.name,
             sku: p.sku,
-            url: new URL(rootLink(`/products/${p.urlKey}/${p.sku}`), window.location).toString(),
-            imageUrl: p.images?.length ? p.images[0].url : '',
-            price: p.price?.final?.amount?.value ?? p.priceRange?.minimum?.final?.amount?.value,
+            url: new URL(
+              rootLink(`/products/${p.urlKey}/${p.sku}`),
+              window.location,
+            ).toString(),
+            imageUrl: p.images?.length ? p.images[0].url : "",
+            price:
+              p.price?.final?.amount?.value ??
+              p.priceRange?.minimum?.final?.amount?.value,
             rank: index,
           })),
           categories: [],
@@ -429,7 +536,9 @@ class ProductListPage extends Component {
           perPage: this.state.currentPageSize,
           facets: this.state.facets,
         };
-        const index = searchResultsContext.units.findIndex((u) => u.searchUnitId === searchUnitId);
+        const index = searchResultsContext.units.findIndex(
+          (u) => u.searchUnitId === searchUnitId,
+        );
         if (index < 0) {
           searchResultsContext.units.push(searchResultUnit);
         } else {
@@ -437,10 +546,16 @@ class ProductListPage extends Component {
         }
         dl.push({ searchResultsContext });
         // TODO: Remove eventInfo once collector is updated
-        dl.push({ event: 'search-response-received', eventInfo: { ...dl.getState(), searchUnitId } });
-        if (this.props.type === 'search') {
+        dl.push({
+          event: "search-response-received",
+          eventInfo: { ...dl.getState(), searchUnitId },
+        });
+        if (this.props.type === "search") {
           // TODO: Remove eventInfo once collector is updated
-          dl.push({ event: 'search-results-view', eventInfo: { ...dl.getState(), searchUnitId } });
+          dl.push({
+            event: "search-results-view",
+            eventInfo: { ...dl.getState(), searchUnitId },
+          });
         } else {
           dl.push({
             categoryContext: {
@@ -450,7 +565,10 @@ class ProductListPage extends Component {
             },
           });
           // TODO: Remove eventInfo once collector is updated
-          dl.push({ event: 'category-results-view', eventInfo: { ...dl.getState(), searchUnitId } });
+          dl.push({
+            event: "category-results-view",
+            eventInfo: { ...dl.getState(), searchUnitId },
+          });
         }
       });
     }
@@ -472,12 +590,20 @@ class ProductListPage extends Component {
     }
 
     // Special optimization for mobile
-    if ('IntersectionObserver' in window && isMobile && this.state.products.items.length === 6 && this.state.products.total > 6) {
+    if (
+      "IntersectionObserver" in window &&
+      isMobile &&
+      this.state.products.items.length === 6 &&
+      this.state.products.total > 6
+    ) {
       const scrollToBottomObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             // Load products with real page size
-            this.setState({ currentPageSize: PAGE_SIZE_DESKTOP, basePageSize: PAGE_SIZE_DESKTOP });
+            this.setState({
+              currentPageSize: PAGE_SIZE_DESKTOP,
+              basePageSize: PAGE_SIZE_DESKTOP,
+            });
             scrollToBottomObserver.unobserve(entry.target);
           }
         });
@@ -501,14 +627,23 @@ class ProductListPage extends Component {
     });
 
     // Load new products if filters, pagination or sort have changed
-    const diff = Object.keys(Object.keys(prevState).reduce((acc, key) => {
-      if (prevState[key] !== this.state[key]) {
-        acc[key] = this.state[key];
-      }
-      return acc;
-    }, {}));
+    const diff = Object.keys(
+      Object.keys(prevState).reduce((acc, key) => {
+        if (prevState[key] !== this.state[key]) {
+          acc[key] = this.state[key];
+        }
+        return acc;
+      }, {}),
+    );
 
-    const keysToCheck = ['filters', 'sort', 'sortDirection', 'searchTerm', 'currentPageSize', 'currentPage'];
+    const keysToCheck = [
+      "filters",
+      "sort",
+      "sortDirection",
+      "searchTerm",
+      "currentPageSize",
+      "currentPage",
+    ];
     if (keysToCheck.some((key) => diff.includes(key))) {
       this.loadProducts();
     }
@@ -517,7 +652,7 @@ class ProductListPage extends Component {
   onPageChange(page) {
     this.setState({ currentPage: page });
     this.paginationClick = true;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   handleFilterChange(filters) {
@@ -552,7 +687,7 @@ class ProductListPage extends Component {
     <div class="products">
       <div class="title">
         <h1>${state.category.name}</h1>
-        ${!state.loading && html`<span>(${state.products.total} ${state.products.total === 1 ? 'Product' : 'Products'})</span>`}
+        ${!state.loading && html`<span>(${state.products.total} ${state.products.total === 1 ? "Product" : "Products"})</span>`}
         <${Sort}
           disabled=${state.loading}
           currentSort=${state.sort}
@@ -562,8 +697,8 @@ class ProductListPage extends Component {
           sortMenuRef=${this.sortMenuRef} />
       </div>
       <div class="mobile-menu">
-        <button disabled=${state.loading} id="toggle-filters" onClick=${() => this.facetMenuRef.current.classList.toggle('active')}>Filters</button>
-        <button disabled=${state.loading} id="toggle-sortby" onClick=${() => this.sortMenuRef.current.classList.toggle('active')}>Sort By</button>
+        <button disabled=${state.loading} id="toggle-filters" onClick=${() => this.facetMenuRef.current.classList.toggle("active")}>Filters</button>
+        <button disabled=${state.loading} id="toggle-sortby" onClick=${() => this.sortMenuRef.current.classList.toggle("active")}>Sort By</button>
       </div>
       <${ProductList}
         products=${state.products}
@@ -586,12 +721,16 @@ class ProductListPage extends Component {
 export default async function decorate(block) {
   const config = readBlockConfig(block);
 
-  block.textContent = '';
+  block.textContent = "";
   block.dataset.category = config.category;
   block.dataset.urlpath = config.urlpath;
 
   return new Promise((resolve) => {
-    const app = html`<${ProductListPage} ...${config} block=${block} resolve=${resolve} />`;
+    const app = html`<${ProductListPage}
+      ...${config}
+      block=${block}
+      resolve=${resolve}
+    />`;
     render(app, block);
   });
 }

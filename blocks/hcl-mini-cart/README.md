@@ -32,11 +32,11 @@ This block is included in the `blocks/hcl-mini-cart/` directory. No additional i
 
 Configure the Mini-Cart block via authoring UI or JSON. Supported options:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `show-heading` | boolean | `true` | Display "Your Cart" header above the mini-cart |
-| `max-items` | number | `3` | Maximum number of items to display before "X more items" indicator |
-| `hide-empty` | boolean | `false` | If `true`, hides entire mini-cart when cart is empty |
+| Option         | Type    | Default | Description                                                        |
+| -------------- | ------- | ------- | ------------------------------------------------------------------ |
+| `show-heading` | boolean | `true`  | Display "Your Cart" header above the mini-cart                     |
+| `max-items`    | number  | `3`     | Maximum number of items to display before "X more items" indicator |
+| `hide-empty`   | boolean | `false` | If `true`, hides entire mini-cart when cart is empty               |
 
 ### Example Configuration (JSON)
 
@@ -64,6 +64,7 @@ Configure the Mini-Cart block via authoring UI or JSON. Supported options:
 ### Basic Usage
 
 Add the block to a page via the authoring interface. The block will automatically:
+
 1. Initialize the CartStore
 2. Fetch current cart contents
 3. Subscribe to real-time updates
@@ -126,14 +127,14 @@ The Mini-Cart uses CSS variables for easy theme customization:
 
 ```css
 /* Colors */
---text-color: #000;              /* Primary text color */
---text-secondary: #666;          /* Secondary text color */
---bg-color: #fff;                /* Background color */
---border-color: #e0e0e0;         /* Border color */
---badge-bg: #e63946;             /* Badge background */
---badge-color: #fff;             /* Badge text color */
---price-color: #e63946;          /* Price text color */
---link-color: #0066cc;           /* Link color */
+--text-color: #000; /* Primary text color */
+--text-secondary: #666; /* Secondary text color */
+--bg-color: #fff; /* Background color */
+--border-color: #e0e0e0; /* Border color */
+--badge-bg: #e63946; /* Badge background */
+--badge-color: #fff; /* Badge text color */
+--price-color: #e63946; /* Price text color */
+--link-color: #0066cc; /* Link color */
 
 /* Dark Mode */
 --text-color-dark: #fff;
@@ -177,6 +178,7 @@ Override default styles in your theme's main CSS file:
 ## Integration with CartStore
 
 The Mini-Cart automatically subscribes to CartStore changes. When users:
+
 - Add items via "Add to Cart" button
 - Update quantities
 - Remove items
@@ -187,12 +189,13 @@ The Mini-Cart updates instantly without page reload.
 ### Hook Used Internally
 
 ```javascript
-import { useCart } from '../cart-manager.js';
+import { useCart } from "../cart-manager.js";
 
 const cart = useCart(); // Subscribe to cart changes
 ```
 
 The component listens to:
+
 - `cart.items[]` - Array of cart items
 - `cart.totalPrice` - Formatted total price
 - `cart.itemCount` - Total number of items
@@ -202,6 +205,7 @@ The component listens to:
 ### Network Errors
 
 If fetching cart data fails:
+
 1. Block displays empty state
 2. Error logged to console
 3. Retry automatically on next CartStore subscription update
@@ -209,6 +213,7 @@ If fetching cart data fails:
 ### Authentication Errors
 
 If user is not authenticated:
+
 1. CartStore returns empty cart
 2. Block displays empty state
 3. "View Cart" link available (authentication required on cart page)
@@ -242,6 +247,7 @@ If user is not authenticated:
 Located at: `test/blocks/hcl-mini-cart.test.js`
 
 Test coverage includes:
+
 - Block initialization
 - Configuration parsing
 - CartStore subscription
@@ -255,6 +261,7 @@ Test coverage includes:
 Located at: `test/integration/hcl-mini-cart.integration.test.js`
 
 Test coverage includes:
+
 - Real CartStore integration
 - Item add/remove updates
 - Quantity change reflection
@@ -284,6 +291,7 @@ Test coverage includes:
 **Symptom**: Items added but mini-cart doesn't reflect changes
 
 **Solution**:
+
 1. Check browser console for errors
 2. Verify CartStore is initialized
 3. Verify backend `/cart/get` endpoint is responding
@@ -294,6 +302,7 @@ Test coverage includes:
 **Symptom**: Mini-cart shows item count but items list empty
 
 **Solution**:
+
 1. Check that backend returns items in response
 2. Verify item data structure matches expected format
 3. Check browser console for parsing errors
@@ -303,6 +312,7 @@ Test coverage includes:
 **Symptom**: Styling looks wrong or broken
 
 **Solution**:
+
 1. Verify CSS file loaded in browser DevTools
 2. Check CSS variable overrides in parent styles
 3. Verify no conflicting global styles
@@ -334,6 +344,7 @@ blocks/hcl-mini-cart/
 ## Version History
 
 ### v1.0.0 (Initial Release)
+
 - Real-time cart display
 - Configuration options
 - Responsive design
@@ -347,6 +358,7 @@ See LICENSE file in project root.
 ## Support
 
 For issues, feature requests, or questions:
+
 1. Check this README
 2. Review test files for usage examples
 3. Check browser console for error messages

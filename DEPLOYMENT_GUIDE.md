@@ -3,6 +3,7 @@
 ## Overview
 
 This guide covers deploying the HCL Commerce integration to staging and production environments. The deployment includes:
+
 - Backend proxy server (Express.js on port 3001)
 - Frontend blocks and components
 - Service layer (CartStore, authentication, API client)
@@ -68,6 +69,7 @@ npm run validate:env
 ### 3. Database Configuration (if needed)
 
 For session persistence, configure supported backend:
+
 - **Recommended**: Redis for session caching
 - **Alternative**: In-memory (development only)
 - **File-based**: SQLite (development/testing)
@@ -77,6 +79,7 @@ For session persistence, configure supported backend:
 ## Pre-Deployment Checklist
 
 ### Code Quality
+
 - [ ] All tests passing (`npm test`)
 - [ ] No linting errors (`npm run lint`)
 - [ ] 80%+ code coverage achieved
@@ -84,6 +87,7 @@ For session persistence, configure supported backend:
 - [ ] Build successful (`npm run build`)
 
 ### Documentation
+
 - [ ] README.md updated
 - [ ] Environment variables documented
 - [ ] Deployment procedures documented
@@ -91,6 +95,7 @@ For session persistence, configure supported backend:
 - [ ] Known issues logged
 
 ### Security
+
 - [ ] No hardcoded credentials in code
 - [ ] Environment variables for all secrets
 - [ ] HTTPS enforced in production
@@ -99,6 +104,7 @@ For session persistence, configure supported backend:
 - [ ] Error messages don't expose sensitive info
 
 ### Performance
+
 - [ ] Bundle size acceptable
 - [ ] Load test passing (100 concurrent requests)
 - [ ] Cache headers configured
@@ -106,6 +112,7 @@ For session persistence, configure supported backend:
 - [ ] CDN integration tested (if applicable)
 
 ### Git Repository
+
 - [ ] All changes committed
 - [ ] Branch clean (no uncommitted changes)
 - [ ] Tag created for release (format: `v1.0.0`)
@@ -186,6 +193,7 @@ curl http://localhost:3001/health
 #### Option C: Cloud Platform (AWS, Azure, GCP)
 
 **AWS Lambda + API Gateway**:
+
 ```bash
 # Deploy using AWS CDK or Serverless Framework
 npm install -g serverless
@@ -193,6 +201,7 @@ serverless deploy --stage production
 ```
 
 **Azure App Service**:
+
 ```bash
 # Deploy using Azure CLI
 az webapp up --resource-group myResourceGroup \
@@ -277,6 +286,7 @@ npm run load-test
 ### Step 7: Smoke Tests
 
 Navigate through production site and verify:
+
 - [ ] Homepage loads
 - [ ] Product pages load
 - [ ] Add to cart works
@@ -308,6 +318,7 @@ npm run logging:setup
 ### Log Aggregation
 
 Configure log aggregation service:
+
 - **ELK Stack** (Elasticsearch, Logstash, Kibana)
 - **Splunk**
 - **CloudWatch** (AWS)
@@ -473,11 +484,13 @@ pm2 restart aco-storefront --update-env
 ```javascript
 // In Express middleware
 app.use(compression());
-app.set('etag', 'strong');
-app.use(express.static('public', {
-  maxAge: '1d',
-  etag: false
-}));
+app.set("etag", "strong");
+app.use(
+  express.static("public", {
+    maxAge: "1d",
+    etag: false,
+  }),
+);
 ```
 
 ### Database Connection Pooling
@@ -489,7 +502,7 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
 });
 ```
 
@@ -497,10 +510,10 @@ const pool = mysql.createPool({
 
 ```javascript
 // Setup Redis for session/data caching
-const redis = require('redis');
+const redis = require("redis");
 const client = redis.createClient({
   host: process.env.REDIS_HOST,
-  port: process.env.REDIS_PORT
+  port: process.env.REDIS_PORT,
 });
 ```
 
@@ -523,10 +536,13 @@ curl -I https://your-storefront.com
 ```javascript
 // Add security headers
 app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains",
+  );
   next();
 });
 ```
@@ -535,12 +551,12 @@ app.use((req, res, next) => {
 
 ```javascript
 // Implement rate limiting
-const rateLimit = require('express-rate-limit');
+const rateLimit = require("express-rate-limit");
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
 });
-app.use('/api/', limiter);
+app.use("/api/", limiter);
 ```
 
 ---
@@ -620,6 +636,6 @@ npm run dev                # Start in development mode
 
 **Document Version**: 1.0.0  
 **Last Updated**: Current Date  
-**Maintained By**: Development Team  
+**Maintained By**: Development Team
 
 For questions or issues, contact: devops@your-company.com

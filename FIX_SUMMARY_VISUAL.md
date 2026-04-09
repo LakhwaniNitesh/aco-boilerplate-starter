@@ -62,7 +62,7 @@ Timeline of what happened:
      }
    }
    export const hclClient = new HCLClient()  // ✅ create but don't init
-   
+
 3. IN server.js:
    dotenv.config()  // ✅ load env first
    hclClient.initialize()  // ✅ THEN initialize
@@ -84,13 +84,13 @@ User happy ✅
 
 ## 📊 COMPARISON TABLE
 
-| Component | Before | After |
-|-----------|--------|-------|
-| `HCL_HOST` | undefined ❌ | https://20.40.52.251 ✅ |
-| `HCL_STORE_ID` | undefined ❌ | 715842834 ✅ |
-| Cart URL | invalid ❌ | valid ✅ |
-| Add to cart | fails ❌ | works ✅ |
-| Error status | 500 ❌ | 201 ✅ |
+| Component      | Before       | After                   |
+| -------------- | ------------ | ----------------------- |
+| `HCL_HOST`     | undefined ❌ | https://20.40.52.251 ✅ |
+| `HCL_STORE_ID` | undefined ❌ | 715842834 ✅            |
+| Cart URL       | invalid ❌   | valid ✅                |
+| Add to cart    | fails ❌     | works ✅                |
+| Error status   | 500 ❌       | 201 ✅                  |
 
 ## 🧪 TEST IT
 
@@ -109,48 +109,50 @@ Expected: ✅ CART WORKFLOW TEST PASSED
 
 ## 📦 WHAT WAS CHANGED
 
-| File | Change |
-|------|--------|
-| `api/utils/hcl-client.js` | Added `initialize()` method |
-| `api/server.js` | Call `hclClient.initialize()` after dotenv |
+| File                      | Change                                     |
+| ------------------------- | ------------------------------------------ |
+| `api/utils/hcl-client.js` | Added `initialize()` method                |
+| `api/server.js`           | Call `hclClient.initialize()` after dotenv |
 
 **That's it!** Two small changes fixed the entire issue.
 
 ## 🎯 KEY LESSON
 
 ### ❌ WRONG Pattern
+
 ```javascript
 class MyService {
   constructor() {
-    this.apiKey = process.env.API_KEY  // Read in constructor
+    this.apiKey = process.env.API_KEY; // Read in constructor
   }
 }
-const service = new MyService()  // Instantiate immediately
+const service = new MyService(); // Instantiate immediately
 ```
 
 ### ✅ RIGHT Pattern
+
 ```javascript
 class MyService {
   initialize() {
-    this.apiKey = process.env.API_KEY  // Read in method
+    this.apiKey = process.env.API_KEY; // Read in method
   }
 }
-const service = new MyService()  // Create instance
+const service = new MyService(); // Create instance
 // Later, after env setup:
-service.initialize()  // Initialize
+service.initialize(); // Initialize
 ```
 
 **Rule:** Never read environment variables in constructors. Use an `initialize()` method instead.
 
 ## ✅ STATUS
 
-| Item | Status |
-|------|--------|
-| Bug Fixed | ✅ |
-| Code Committed | ✅ |
-| Documentation | ✅ |
-| Tests Created | ✅ |
-| Ready to Use | ✅ |
+| Item           | Status |
+| -------------- | ------ |
+| Bug Fixed      | ✅     |
+| Code Committed | ✅     |
+| Documentation  | ✅     |
+| Tests Created  | ✅     |
+| Ready to Use   | ✅     |
 
 ## 🚀 Next Steps
 
@@ -165,6 +167,7 @@ service.initialize()  // Initialize
 **Bottom Line:** Environment initialization order matters. Load env vars BEFORE reading them.
 
 **Commits:**
+
 - `5c5cd8a` - Core fix
 - `d70a978` - Detailed docs
 - `2628658` - Quick guide

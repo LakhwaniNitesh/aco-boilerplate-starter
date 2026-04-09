@@ -499,10 +499,14 @@ async function loadPage() {
 (async () => {
   try {
     // Only attempt to load for local development or when adapter is available
-    await import('./blocks/header/hclAuthAdapter.js');
-    console.log('[scripts.js] HCL auth adapter loaded');
+    // Correct path: ../blocks/header/hclAuthAdapter.js (go up from scripts/ to root, then into blocks/)
+    await import("../blocks/header/hclAuthAdapter.js");
+    console.log("[scripts.js] HCL auth adapter loaded");
   } catch (e) {
-    console.debug('[scripts.js] HCL auth adapter not available (remote mode):', e.message);
+    console.debug(
+      "[scripts.js] HCL auth adapter not available (remote mode):",
+      e.message,
+    );
   }
 })();
 

@@ -3,18 +3,22 @@
 ## 🚀 Start Here: Run Tests in 2 Minutes
 
 ### Step 1: Start the Backend Server
+
 Open a terminal and run:
+
 ```bash
 npm run start:proxy
 ```
 
 You should see:
+
 ```
 ✓ Server running on http://localhost:3001
 ✓ Health check: http://localhost:3001/health
 ```
 
 ### Step 2: Run Tests (New Terminal Window)
+
 ```bash
 # Run all tests
 node api/test-cart.mjs
@@ -29,22 +33,26 @@ node api/test-cart.mjs 4    # Phase 4: Error Handling
 ## 📋 What Gets Tested
 
 ### Phase 1: Connectivity ✅
+
 - Server is running
 - Health endpoint responds
 - Basic HTTP connectivity
 
 **Expected Output:**
+
 ```
 ✓ Server is running and healthy
 ℹ Environment: development
 ```
 
 ### Phase 2: Authentication
+
 - Login with valid credentials → Returns token
 - Login with invalid credentials → Shows error
 - Token stored properly
 
 **Expected Output:**
+
 ```
 ✓ Login successful
 ℹ Token received: eyJhbGciOiJ...
@@ -52,11 +60,13 @@ node api/test-cart.mjs 4    # Phase 4: Error Handling
 ```
 
 ### Phase 3: Cart Operations
+
 - Add product → Cart updated
 - Get cart → Returns all items
 - Clear cart → All items removed
 
 **Expected Output:**
+
 ```
 ✓ Product added to cart
 ℹ Cart total: $100.00
@@ -65,11 +75,13 @@ node api/test-cart.mjs 4    # Phase 4: Error Handling
 ```
 
 ### Phase 4: Error Handling
+
 - Missing required fields → Error shown
 - Invalid quantity → Handled gracefully
 - Timeout scenarios → Timeout error
 
 **Expected Output:**
+
 ```
 ✓ Correctly rejected invalid request
 ℹ Error: Missing required field: partNumber
@@ -100,7 +112,9 @@ Next Steps:
 ## 🔧 Troubleshooting
 
 ### Error: "Cannot reach server"
+
 **Solution:**
+
 1. Check if server is running: `npm run start:proxy`
 2. Verify port 3001 is free:
    ```bash
@@ -112,7 +126,9 @@ Next Steps:
    ```
 
 ### Error: "Login failed"
+
 **Solution:**
+
 1. Check credentials in test file (auroraadobetest / passw0rd)
 2. Verify HCL Commerce is accessible
 3. Check environment variables:
@@ -121,7 +137,9 @@ Next Steps:
    ```
 
 ### Error: "Add to cart failed"
+
 **Solution:**
+
 1. Verify backend is running
 2. Check server logs for error messages
 3. Test Phase 1 first to verify connectivity
@@ -131,11 +149,13 @@ Next Steps:
 If you prefer manual testing, use curl:
 
 ### Health Check
+
 ```bash
 curl http://localhost:3001/health
 ```
 
 ### Login
+
 ```bash
 curl -X POST http://localhost:3001/api/hcl/login \
   -H "Content-Type: application/json" \
@@ -143,6 +163,7 @@ curl -X POST http://localhost:3001/api/hcl/login \
 ```
 
 ### Add to Cart
+
 ```bash
 curl -X POST http://localhost:3001/api/hcl/cart/add \
   -H "Content-Type: application/json" \
@@ -156,11 +177,13 @@ curl -X POST http://localhost:3001/api/hcl/cart/add \
 ```
 
 ### Get Cart
+
 ```bash
 curl "http://localhost:3001/api/hcl/cart?accessToken=your-token-here"
 ```
 
 ### Clear Cart
+
 ```bash
 curl -X DELETE http://localhost:3001/api/hcl/cart/clear
 ```

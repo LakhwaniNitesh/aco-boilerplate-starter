@@ -9,6 +9,7 @@ Network shows: **500 error** with URL like `undefined/wcs/resources/store/undefi
 ## 🟢 Root Cause
 
 HCL Client environment variables (`HCL_HOST`, `HCL_STORE_ID`) were undefined because:
+
 - Client was initialized **before** `.env` file was loaded
 - Environment variables were not available at module import time
 
@@ -35,14 +36,16 @@ npm run dev:backend
 ## 🧪 Test the Fix
 
 ### Option 1: Manual Testing
+
 1. Start all three services:
+
    ```bash
    # Terminal 1
    npm run dev:backend
-   
+
    # Terminal 2
    npm run dev:frontend
-   
+
    # Terminal 3
    npm run dev:proxy
    ```
@@ -52,6 +55,7 @@ npm run dev:backend
 4. Expected: Product adds successfully to cart
 
 ### Option 2: Run Test Script
+
 ```bash
 # Start backend first
 npm run dev:backend
@@ -61,6 +65,7 @@ node test-cart-endpoint.js
 ```
 
 Expected output:
+
 ```
 ✅ Status: 200
 ✅ Success: true
@@ -71,6 +76,7 @@ Expected output:
 ## 🔧 If Still Not Working
 
 ### Check 1: Backend Logs
+
 ```bash
 # Look for:
 [INFO] HCL Client initialized successfully
@@ -78,10 +84,12 @@ Expected output:
 ```
 
 If you DON'T see these messages:
+
 - ❌ Fix not applied
 - ❌ Run: `git pull origin hcl-integration`
 
 ### Check 2: Environment Variables
+
 ```bash
 # Verify .env file exists and has values
 cat .env | grep HCL_
@@ -93,7 +101,9 @@ HCL_CATALOG_ID=10001
 ```
 
 ### Check 3: Network Request
+
 Browser DevTools → Network tab:
+
 1. Look for request to `http://localhost:3001/api/hcl/cart/add`
 2. Check Response tab
 3. Should show:
@@ -108,6 +118,7 @@ Browser DevTools → Network tab:
    ```
 
 ### Check 4: Backend Console
+
 ```bash
 # Should show:
 [CART-PROXY] Adding to cart: CLA022_220101 x1
@@ -117,12 +128,13 @@ Browser DevTools → Network tab:
 ## 📝 What Was Wrong
 
 ### Before Fix
+
 ```javascript
 // hcl-client.js instantiated at import time
 class HCLClient {
   constructor() {
-    this.host = process.env.HCL_HOST;  // ❌ undefined!
-    this.storeId = process.env.HCL_STORE_ID;  // ❌ undefined!
+    this.host = process.env.HCL_HOST; // ❌ undefined!
+    this.storeId = process.env.HCL_STORE_ID; // ❌ undefined!
     this.baseUrl = `${this.host}/wcs/resources/store/${this.storeId}`;
     // Result: "undefined/wcs/resources/store/undefined"
   }
@@ -130,6 +142,7 @@ class HCLClient {
 ```
 
 ### After Fix
+
 ```javascript
 // hcl-client.js defers initialization
 class HCLClient {
@@ -137,16 +150,16 @@ class HCLClient {
     this.host = null;
     this.storeId = null;
   }
-  
+
   initialize() {
-    this.host = process.env.HCL_HOST;  // ✅ Now available!
-    this.storeId = process.env.HCL_STORE_ID;  // ✅ Now available!
+    this.host = process.env.HCL_HOST; // ✅ Now available!
+    this.storeId = process.env.HCL_STORE_ID; // ✅ Now available!
     this.baseUrl = `${this.host}/wcs/resources/store/${this.storeId}`;
   }
 }
 
 // In server.js, called AFTER dotenv.config():
-hclClient.initialize();  // ✅ Env vars loaded by this point
+hclClient.initialize(); // ✅ Env vars loaded by this point
 ```
 
 ## 🎯 Quick Checklist

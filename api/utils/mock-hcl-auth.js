@@ -1,16 +1,16 @@
 /**
  * Mock HCL Authentication for Development
- * 
+ *
  * Provides fake authentication when HCL Commerce is not accessible.
  * Use for local testing, development, and staging environments.
- * 
+ *
  * In production, use real HCL Commerce authentication.
  */
 
 export const mockHCLAuth = {
   /**
    * Mock user database for development
-   * 
+   *
    * Test credentials provided:
    * - auroraadobetest / passw0rd
    * - adobetest1 / passw0rd
@@ -18,28 +18,28 @@ export const mockHCLAuth = {
    */
   mockUsers: {
     auroraadobetest: {
-      password: 'passw0rd',
-      userId: 'user-123',
-      email: 'aurora@example.com',
-      firstName: 'Aurora',
-      lastName: 'Test',
-      displayName: 'Aurora Test User',
+      password: "passw0rd",
+      userId: "user-123",
+      email: "aurora@example.com",
+      firstName: "Aurora",
+      lastName: "Test",
+      displayName: "Aurora Test User",
     },
     adobetest1: {
-      password: 'passw0rd',
-      userId: 'user-456',
-      email: 'adobetest1@example.com',
-      firstName: 'Adobe',
-      lastName: 'Test 1',
-      displayName: 'Adobe Test 1',
+      password: "passw0rd",
+      userId: "user-456",
+      email: "adobetest1@example.com",
+      firstName: "Adobe",
+      lastName: "Test 1",
+      displayName: "Adobe Test 1",
     },
     adobetest2: {
-      password: 'passw0rd',
-      userId: 'user-789',
-      email: 'adobetest2@example.com',
-      firstName: 'Adobe',
-      lastName: 'Test 2',
-      displayName: 'Adobe Test 2',
+      password: "passw0rd",
+      userId: "user-789",
+      email: "adobetest2@example.com",
+      firstName: "Adobe",
+      lastName: "Test 2",
+      displayName: "Adobe Test 2",
     },
   },
 
@@ -53,19 +53,27 @@ export const mockHCLAuth = {
    * NOT a real JWT, just looks like one for testing
    */
   generateToken(userId, username) {
-    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
+    const header = Buffer.from(
+      JSON.stringify({ alg: "HS256", typ: "JWT" }),
+    ).toString("base64");
     const payload = Buffer.from(
       JSON.stringify({
         sub: userId,
         username: username,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 1500, // 25 minutes
-      })
-    ).toString('base64');
-    const signature = Buffer.from('mock-signature-' + Date.now()).toString('base64');
+      }),
+    ).toString("base64");
+    const signature = Buffer.from("mock-signature-" + Date.now()).toString(
+      "base64",
+    );
 
     const token = `${header}.${payload}.${signature}`;
-    this.tokens.set(token, { userId, username, expiresAt: Date.now() + 1500 * 1000 });
+    this.tokens.set(token, {
+      userId,
+      username,
+      expiresAt: Date.now() + 1500 * 1000,
+    });
 
     return token;
   },
@@ -76,7 +84,7 @@ export const mockHCLAuth = {
    */
   login(username, password) {
     if (!username || !password) {
-      const error = new Error('Missing username or password');
+      const error = new Error("Missing username or password");
       error.status = 400;
       throw error;
     }
@@ -84,13 +92,13 @@ export const mockHCLAuth = {
     const user = this.mockUsers[username];
 
     if (!user) {
-      const error = new Error('User not found');
+      const error = new Error("User not found");
       error.status = 401;
       throw error;
     }
 
     if (user.password !== password) {
-      const error = new Error('Invalid password');
+      const error = new Error("Invalid password");
       error.status = 401;
       throw error;
     }
@@ -116,7 +124,7 @@ export const mockHCLAuth = {
    */
   validateToken(token) {
     if (!token) {
-      const error = new Error('Token is required');
+      const error = new Error("Token is required");
       error.status = 401;
       throw error;
     }
@@ -124,19 +132,21 @@ export const mockHCLAuth = {
     const tokenData = this.tokens.get(token);
 
     if (!tokenData) {
-      const error = new Error('Token not found or invalid');
+      const error = new Error("Token not found or invalid");
       error.status = 401;
       throw error;
     }
 
     if (tokenData.expiresAt < Date.now()) {
       this.tokens.delete(token);
-      const error = new Error('Token has expired');
+      const error = new Error("Token has expired");
       error.status = 401;
       throw error;
     }
 
-    console.log(`[MOCK-AUTH] ✓ Token validated for user: ${tokenData.username}`);
+    console.log(
+      `[MOCK-AUTH] ✓ Token validated for user: ${tokenData.username}`,
+    );
 
     return tokenData;
   },
@@ -147,7 +157,7 @@ export const mockHCLAuth = {
   logout(token) {
     if (this.tokens.has(token)) {
       this.tokens.delete(token);
-      console.log('[MOCK-AUTH] ✓ Logout successful');
+      console.log("[MOCK-AUTH] ✓ Logout successful");
       return { success: true };
     }
 
@@ -158,7 +168,7 @@ export const mockHCLAuth = {
    * Get available mock users (for testing)
    */
   getAvailableUsers() {
-    return Object.keys(this.mockUsers).map(username => ({
+    return Object.keys(this.mockUsers).map((username) => ({
       username,
       password: this.mockUsers[username].password,
       email: this.mockUsers[username].email,

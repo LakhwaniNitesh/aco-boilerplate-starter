@@ -1,16 +1,16 @@
 /**
  * Development Proxy Server for AEM Edge Delivery Services
- * 
+ *
  * This server acts as a middleware between the AEM CLI dev server and the backend
  * It intercepts /api/hcl/* requests and forwards them to localhost:3001
  * All other traffic goes through to the AEM CLI on port 3000
  */
 
-import http from 'http';
-import httpProxy from 'http-proxy';
+import http from "http";
+import httpProxy from "http-proxy";
 
-const HCL_BACKEND_URL = 'http://localhost:3001';
-const AEM_CLI_URL = 'http://localhost:3000';
+const HCL_BACKEND_URL = "http://localhost:3001";
+const AEM_CLI_URL = "http://localhost:3000";
 const PROXY_PORT = 8080;
 
 // Create proxy instances
@@ -25,17 +25,19 @@ const aemProxy = httpProxy.createProxyServer({
 });
 
 // Error handling for HCL proxy
-hclProxy.on('error', (err, req, res) => {
-  console.error('[HCL-PROXY] Error:', err.message);
-  res.writeHead(502, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Bad Gateway - HCL backend unavailable' }));
+hclProxy.on("error", (err, req, res) => {
+  console.error("[HCL-PROXY] Error:", err.message);
+  res.writeHead(502, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: "Bad Gateway - HCL backend unavailable" }));
 });
 
 // Error handling for AEM proxy
-aemProxy.on('error', (err, req, res) => {
-  console.error('[AEM-PROXY] Error:', err.message);
-  res.writeHead(502, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Bad Gateway - AEM dev server unavailable' }));
+aemProxy.on("error", (err, req, res) => {
+  console.error("[AEM-PROXY] Error:", err.message);
+  res.writeHead(502, { "Content-Type": "application/json" });
+  res.end(
+    JSON.stringify({ error: "Bad Gateway - AEM dev server unavailable" }),
+  );
 });
 
 // Create the proxy server
@@ -43,7 +45,7 @@ const proxyServer = http.createServer((req, res) => {
   console.log(`[PROXY] ${req.method} ${req.url}`);
 
   // Route HCL API calls to backend
-  if (req.url.startsWith('/api/hcl')) {
+  if (req.url.startsWith("/api/hcl")) {
     console.log(`[PROXY] → HCL Backend (${HCL_BACKEND_URL})`);
     hclProxy.web(req, res, { target: HCL_BACKEND_URL });
   }
@@ -55,8 +57,8 @@ const proxyServer = http.createServer((req, res) => {
 });
 
 // Handle WebSocket upgrade events
-proxyServer.on('upgrade', (req, socket, head) => {
-  if (req.url.startsWith('/api/hcl')) {
+proxyServer.on("upgrade", (req, socket, head) => {
+  if (req.url.startsWith("/api/hcl")) {
     hclProxy.ws(req, socket, head, { target: HCL_BACKEND_URL });
   } else {
     aemProxy.ws(req, socket, head, { target: AEM_CLI_URL });

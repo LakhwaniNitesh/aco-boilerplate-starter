@@ -31,8 +31,9 @@
  * }
  */
 
-import { hclAuthService } from './hcl-commerce-auth.js';
-import { hclCommerceAPI } from './hcl-commerce-api.js';
+import { hclAuthService } from "./hcl-commerce-auth.js";
+import { hclCommerceAPI } from "./hcl-commerce-api.js";
+import { updateCartState } from "./simple-cart-state.js";
 
 // Initial state
 const initialState = {
@@ -63,25 +64,25 @@ const initialState = {
 // Action types
 export const ACTIONS = {
   // Cart actions
-  SET_CART: 'SET_CART',
-  ADD_ITEM: 'ADD_ITEM',
-  REMOVE_ITEM: 'REMOVE_ITEM',
-  UPDATE_ITEM: 'UPDATE_ITEM',
-  CLEAR_CART: 'CLEAR_CART',
+  SET_CART: "SET_CART",
+  ADD_ITEM: "ADD_ITEM",
+  REMOVE_ITEM: "REMOVE_ITEM",
+  UPDATE_ITEM: "UPDATE_ITEM",
+  CLEAR_CART: "CLEAR_CART",
 
   // Auth actions
-  LOGIN: 'LOGIN',
-  LOGOUT: 'LOGOUT',
-  SET_AUTH: 'SET_AUTH',
+  LOGIN: "LOGIN",
+  LOGOUT: "LOGOUT",
+  SET_AUTH: "SET_AUTH",
 
   // Loading/Error
-  SET_LOADING: 'SET_LOADING',
-  SET_ERROR: 'SET_ERROR',
-  CLEAR_ERROR: 'CLEAR_ERROR',
+  SET_LOADING: "SET_LOADING",
+  SET_ERROR: "SET_ERROR",
+  CLEAR_ERROR: "CLEAR_ERROR",
 
   // UI actions
-  TOGGLE_MINI_CART: 'TOGGLE_MINI_CART',
-  SET_ADD_TO_CART_LOADING: 'SET_ADD_TO_CART_LOADING',
+  TOGGLE_MINI_CART: "TOGGLE_MINI_CART",
+  SET_ADD_TO_CART_LOADING: "SET_ADD_TO_CART_LOADING",
 };
 
 /**
@@ -125,7 +126,7 @@ export function cartReducer(state = initialState, action) {
         cart: {
           ...state.cart,
           items: state.cart.items.filter(
-            (item) => item.id !== action.payload.itemId
+            (item) => item.id !== action.payload.itemId,
           ),
           isEmpty:
             state.cart.items.filter((item) => item.id !== action.payload.itemId)
@@ -141,7 +142,7 @@ export function cartReducer(state = initialState, action) {
           items: state.cart.items.map((item) =>
             item.id === action.payload.itemId
               ? { ...item, quantity: action.payload.quantity }
-              : item
+              : item,
           ),
         },
       };
@@ -271,6 +272,30 @@ class CartStore {
     this.dispatch({ type: ACTIONS.SET_LOADING, payload: true });
     try {
       const result = await hclCommerceAPI.getCart();
+
+      // CRITICAL: Sync with simple-cart-state so mini-cart gets updated
+      if (result && result.cart) {
+        const normalizedCart = {
+          cartId: result.cart.cartId || result.cart.orderId,
+          items: (result.cart.orderItem || result.cart.items || []).map(
+            (item) => ({
+              partNumber: item.partNumber || "",
+              sku: item.sku || item.partNumber || "",
+              quantity: item.quantity || 1,
+              price: item.price || item.unitPrice || 0,
+              name: item.name || item.partNumber || "Product",
+              orderItemId: item.orderItemId || null,
+            }),
+          ),
+          total: result.cart.totalProductPrice || 0,
+        };
+        console.log(
+          "[CART-MANAGER] Syncing to simple-cart-state:",
+          normalizedCart,
+        );
+        updateCartState(normalizedCart);
+      }
+
       this.dispatch({
         type: ACTIONS.SET_CART,
         payload: {
@@ -302,6 +327,30 @@ class CartStore {
 
     try {
       const result = await hclCommerceAPI.addToCart(partNumber, quantity);
+
+      // CRITICAL: Sync with simple-cart-state so mini-cart gets updated
+      if (result && result.cart) {
+        const normalizedCart = {
+          cartId: result.cart.cartId || result.cart.orderId,
+          items: (result.cart.orderItem || result.cart.items || []).map(
+            (item) => ({
+              partNumber: item.partNumber || "",
+              sku: item.sku || item.partNumber || "",
+              quantity: item.quantity || 1,
+              price: item.price || item.unitPrice || 0,
+              name: item.name || item.partNumber || "Product",
+              orderItemId: item.orderItemId || null,
+            }),
+          ),
+          total: result.cart.totalProductPrice || 0,
+        };
+        console.log(
+          "[CART-MANAGER] Syncing to simple-cart-state:",
+          normalizedCart,
+        );
+        updateCartState(normalizedCart);
+      }
+
       await this.loadCart(); // Refresh cart
       return result;
     } catch (error) {
@@ -348,9 +397,9 @@ export const cartStore = new CartStore();
  *   const [state, dispatch] = useCartState();
  */
 export function useCartState() {
-  const [state, setState] = window.React?.useState(
-    cartStore.getState()
-  ) || [cartStore.getState()];
+  const [state, setState] = window.React?.useState(cartStore.getState()) || [
+    cartStore.getState(),
+  ];
 
   window.React?.useEffect?.(() => {
     const unsubscribe = cartStore.subscribe((newState) => {

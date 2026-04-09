@@ -8,9 +8,10 @@
 
 ## Problem Summary
 
-When attempting to add products to cart from the frontend, the backend was returning **HTTP 500 Internal Server Error** with the message "Failed to add product to cart". 
+When attempting to add products to cart from the frontend, the backend was returning **HTTP 500 Internal Server Error** with the message "Failed to add product to cart".
 
 ### Error Details
+
 ```
 {
   success: false,
@@ -26,6 +27,7 @@ When attempting to add products to cart from the frontend, the backend was retur
 ### Root Cause
 
 The issue was that the backend endpoints were expecting the `WCToken` (authentication token) to be passed in **only one specific way** - either:
+
 - In the request **body** (for POST requests)
 - In **query parameters** (for GET requests)
 
@@ -52,25 +54,27 @@ This approach maintains **backward compatibility** while supporting **multiple a
 ### **Code Changes**
 
 #### Before: Single Source (Body/Query Only)
+
 ```javascript
 const { accessToken } = req.body; // Only checked request body
 
 if (!accessToken) {
   return res.status(401).json({
     success: false,
-    error: 'Missing required field: accessToken',
+    error: "Missing required field: accessToken",
   });
 }
 ```
 
 #### After: Multiple Sources (Headers + Body/Query)
+
 ```javascript
 // Accept token from EITHER headers OR request body/query
 let accessToken = req.body.accessToken || req.query.accessToken;
 
 // Check Authorization header first
 if (!accessToken && req.headers.authorization) {
-  accessToken = req.headers.authorization.replace(/^Bearer\s+/, '');
+  accessToken = req.headers.authorization.replace(/^Bearer\s+/, "");
 }
 
 // Check for WCToken in headers
@@ -89,7 +93,8 @@ if (!accessToken && req.headers.cookie) {
 if (!accessToken) {
   return res.status(401).json({
     success: false,
-    error: 'Missing required field: accessToken (in body, Authorization header, WCToken header, or Cookie)',
+    error:
+      "Missing required field: accessToken (in body, Authorization header, WCToken header, or Cookie)",
   });
 }
 ```
@@ -98,13 +103,13 @@ if (!accessToken) {
 
 All four cart operation endpoints now support multiple token sources:
 
-| Endpoint | Method | Token Sources |
-|----------|--------|----------------|
-| `/api/hcl/cart/add` | POST | Body, Authorization, WCToken, Cookie headers |
-| `/api/hcl/cart` | GET | Query, Authorization, WCToken, Cookie headers |
+| Endpoint                 | Method | Token Sources                                 |
+| ------------------------ | ------ | --------------------------------------------- |
+| `/api/hcl/cart/add`      | POST   | Body, Authorization, WCToken, Cookie headers  |
+| `/api/hcl/cart`          | GET    | Query, Authorization, WCToken, Cookie headers |
 | `/api/hcl/cart/item/:id` | DELETE | Query, Authorization, WCToken, Cookie headers |
-| `/api/hcl/cart/item` | PUT | Body, Authorization, WCToken, Cookie headers |
-| `/api/hcl/cart/clear` | DELETE | Query, Authorization, WCToken, Cookie headers |
+| `/api/hcl/cart/item`     | PUT    | Body, Authorization, WCToken, Cookie headers  |
+| `/api/hcl/cart/clear`    | DELETE | Query, Authorization, WCToken, Cookie headers |
 
 ---
 
@@ -113,6 +118,7 @@ All four cart operation endpoints now support multiple token sources:
 ### **Option 1: Frontend Testing (Browser)**
 
 1. Start all services:
+
 ```bash
 npm run dev:backend    # Terminal 1
 npm run dev:frontend   # Terminal 2
@@ -132,6 +138,7 @@ npm run dev:proxy      # Terminal 3
 6. **Expected Result:** Product adds successfully, toast message appears, mini-cart updates
 
 7. **Check Backend Logs:** Should see:
+
 ```
 [CART-PROXY] Request received
 [CART-PROXY]   Body: partNumber=CLA022_220101, sku=undefined, quantity=1
@@ -155,6 +162,7 @@ npm run dev:proxy      # Terminal 3
    - `Content-Type`: `application/json`
 
 3. **Body (raw JSON):**
+
 ```json
 {
   "body": [
@@ -181,6 +189,7 @@ npm run dev:proxy      # Terminal 3
    - `Content-Type`: `application/json`
 
 3. **Body (raw JSON):**
+
 ```json
 {
   "partNumber": "CLA022_220101",
@@ -191,6 +200,7 @@ npm run dev:proxy      # Terminal 3
 4. **Expected Result:** `200 OK` with normalized cart data
 
 5. **Alternative - Body Auth:**
+
 ```json
 {
   "partNumber": "CLA022_220101",
@@ -261,7 +271,7 @@ let accessToken = req.body.accessToken || req.query.accessToken;
 // 2. Check Authorization header (RESTful standard)
 //    Supports both "Bearer <token>" and just "<token>"
 if (!accessToken && req.headers.authorization) {
-  accessToken = req.headers.authorization.replace(/^Bearer\s+/, '');
+  accessToken = req.headers.authorization.replace(/^Bearer\s+/, "");
 }
 
 // 3. Check WCToken header (HCL standard)
@@ -280,7 +290,7 @@ if (!accessToken && req.headers.cookie) {
 
 // 5. If still no token, return 401
 if (!accessToken) {
-  return res.status(401).json({ error: 'Missing accessToken' });
+  return res.status(401).json({ error: "Missing accessToken" });
 }
 ```
 
@@ -314,12 +324,12 @@ Backend now logs detailed information for each request:
 
 ### **Common Issues & Solutions**
 
-| Issue | Solution |
-|-------|----------|
-| `401 Unauthorized` from backend | Verify token is being sent in one of the 4 supported formats |
-| `500 Internal Server Error` | Check backend logs for `[ERROR]` messages showing HCL API response |
-| Token not found | Try sending in different header format (Authorization vs WCToken vs Cookie) |
-| Invalid token format | Ensure no extra spaces or prefix when sending bearer token |
+| Issue                           | Solution                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| `401 Unauthorized` from backend | Verify token is being sent in one of the 4 supported formats                |
+| `500 Internal Server Error`     | Check backend logs for `[ERROR]` messages showing HCL API response          |
+| Token not found                 | Try sending in different header format (Authorization vs WCToken vs Cookie) |
+| Invalid token format            | Ensure no extra spaces or prefix when sending bearer token                  |
 
 ---
 
@@ -346,7 +356,8 @@ Backend now logs detailed information for each request:
 
 ## Security Considerations
 
-✅ **No security downside:** 
+✅ **No security downside:**
+
 - Same token validation happens regardless of source
 - Token is still sent securely to HCL in Cookie header
 - Multiple authentication methods don't weaken security

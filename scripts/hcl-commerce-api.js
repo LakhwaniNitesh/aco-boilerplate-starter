@@ -11,12 +11,12 @@
  * All calls go through backend proxy for security and CORS handling
  */
 
-import { hclAuthService } from './hcl-commerce-auth.js';
+import { hclAuthService } from "./hcl-commerce-auth.js";
 
 class HCLCommerceAPI {
   constructor() {
-    this.baseUrl = window.location.origin || 'http://localhost:3000';
-    this.proxyPrefix = '/api/hcl';
+    this.baseUrl = window.location.origin || "http://localhost:3000";
+    this.proxyPrefix = "/api/hcl";
   }
 
   /**
@@ -25,7 +25,7 @@ class HCLCommerceAPI {
   async request(method, endpoint, body = null) {
     const token = hclAuthService.getToken();
     if (!token) {
-      throw new Error('Not authenticated - please login first');
+      throw new Error("Not authenticated - please login first");
     }
 
     const url = `${this.baseUrl}${this.proxyPrefix}${endpoint}`;
@@ -33,39 +33,71 @@ class HCLCommerceAPI {
     const options = {
       method,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      credentials: 'include',
+      credentials: "include",
     };
 
     // Add token and session cookies to request body
     if (body) {
+      const trustedToken = hclAuthService.getTrustedToken();
+
+      console.log("[HCL-API] PREPARING CART REQUEST", {
+        hasAccessToken: !!token,
+        accessTokenSample: token ? token.substring(0, 30) : "MISSING",
+        hasTrustedToken: !!trustedToken,
+        trustedTokenSample: trustedToken
+          ? trustedToken.substring(0, 30)
+          : "MISSING",
+      });
+
       const requestBody = {
         ...body,
         accessToken: token,
+        trustedToken: trustedToken, // CRITICAL: Include trusted token separately
       };
-      
+
       // Get session cookies from auth service
       const sessionCookies = hclAuthService.getSessionCookies();
       const cookieKeys = sessionCookies ? Object.keys(sessionCookies) : [];
-      
-      console.log('[HCL-API] Session cookies from auth service:', {
+
+      console.log("[HCL-API] Session cookies from auth service:", {
         hasCookies: !!sessionCookies,
         cookieCount: cookieKeys.length,
         keys: cookieKeys,
         value: sessionCookies,
       });
-      
+
       if (cookieKeys.length > 0) {
         requestBody.sessionCookies = sessionCookies;
-        console.log(`[HCL-API] ✓ Including ${cookieKeys.length} session cookies in request`);
+        console.log(
+          `[HCL-API] ✓ Including ${cookieKeys.length} session cookies in request`,
+        );
       } else {
-        console.warn('[HCL-API] ⚠ No session cookies available to include (empty or null)');
+        console.warn(
+          "[HCL-API] ⚠ No session cookies available to include (empty or null)",
+        );
       }
-      
+
+      console.log("[HCL-API] FINAL REQUEST BODY BEING SENT:", {
+        hasPartNumber: !!requestBody.partNumber,
+        hasAccessToken: !!requestBody.accessToken,
+        hasTrustedToken: !!requestBody.trustedToken,
+        accessTokenSample: requestBody.accessToken
+          ? requestBody.accessToken.substring(0, 30)
+          : "MISSING",
+        trustedTokenSample: requestBody.trustedToken
+          ? requestBody.trustedToken.substring(0, 30)
+          : "MISSING",
+        hasSessionCookies: !!requestBody.sessionCookies,
+        sessionCookieCount: requestBody.sessionCookies
+          ? Object.keys(requestBody.sessionCookies).length
+          : 0,
+      });
+
       options.body = JSON.stringify(requestBody);
-    } else if (method === 'GET') {
-      const separator = endpoint.includes('?') ? '&' : '?';
+    } else if (method === "GET") {
+      const separator = endpoint.includes("?") ? "&" : "?";
       url = `${url}${separator}accessToken=${encodeURIComponent(token)}`;
     }
 
@@ -74,9 +106,7 @@ class HCLCommerceAPI {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(
-          error.error?.message || `HTTP ${response.status}`
-        );
+        throw new Error(error.error?.message || `HTTP ${response.status}`);
       }
 
       return await response.json();
@@ -91,7 +121,7 @@ class HCLCommerceAPI {
    */
   async addToCart(partNumber, quantity = 1) {
     try {
-      const result = await this.request('POST', '/cart/add', {
+      const result = await this.request("POST", "/cart/add", {
         partNumber,
         quantity,
       });
@@ -104,7 +134,7 @@ class HCLCommerceAPI {
       };
     } catch (error) {
       throw {
-        operation: 'addToCart',
+        operation: "addToCart",
         partNumber,
         quantity,
         error: error.message,
@@ -117,7 +147,7 @@ class HCLCommerceAPI {
    */
   async getCart() {
     try {
-      const result = await this.request('GET', '/cart');
+      const result = await this.request("GET", "/cart");
 
       return {
         success: true,
@@ -128,7 +158,7 @@ class HCLCommerceAPI {
       };
     } catch (error) {
       throw {
-        operation: 'getCart',
+        operation: "getCart",
         error: error.message,
       };
     }
@@ -140,8 +170,8 @@ class HCLCommerceAPI {
   async removeFromCart(orderId, itemId) {
     try {
       const result = await this.request(
-        'DELETE',
-        `/cart/item/${orderId}/${itemId}`
+        "DELETE",
+        `/cart/item/${orderId}/${itemId}`,
       );
 
       return {
@@ -152,7 +182,7 @@ class HCLCommerceAPI {
       };
     } catch (error) {
       throw {
-        operation: 'removeFromCart',
+        operation: "removeFromCart",
         orderId,
         itemId,
         error: error.message,
@@ -165,7 +195,7 @@ class HCLCommerceAPI {
    */
   async updateCartItem(orderId, itemId, quantity) {
     try {
-      const result = await this.request('PUT', '/cart/item', {
+      const result = await this.request("PUT", "/cart/item", {
         orderId,
         itemId,
         quantity,
@@ -179,7 +209,7 @@ class HCLCommerceAPI {
       };
     } catch (error) {
       throw {
-        operation: 'updateCartItem',
+        operation: "updateCartItem",
         orderId,
         itemId,
         quantity,
@@ -203,11 +233,11 @@ class HCLCommerceAPI {
 
       return {
         success: true,
-        message: 'Cart cleared',
+        message: "Cart cleared",
       };
     } catch (error) {
       throw {
-        operation: 'clearCart',
+        operation: "clearCart",
         error: error.message,
       };
     }
@@ -238,7 +268,7 @@ class HCLCommerceAPI {
       return summary;
     } catch (error) {
       throw {
-        operation: 'getCartSummary',
+        operation: "getCartSummary",
         error: error.message,
       };
     }
@@ -283,7 +313,7 @@ export function useHCLCart() {
         return { success: false, error: err };
       }
     },
-    [fetchCart]
+    [fetchCart],
   );
 
   const removeItem = window.React?.useCallback?.(
@@ -297,7 +327,7 @@ export function useHCLCart() {
         return { success: false, error: err };
       }
     },
-    [fetchCart]
+    [fetchCart],
   );
 
   // Load cart on mount

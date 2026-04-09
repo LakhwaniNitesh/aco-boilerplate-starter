@@ -17,29 +17,31 @@ const listeners = new Set();
  * Called after every API operation (add, remove, update)
  */
 export function updateCartState(newCart) {
-  console.log('[CART-STATE] Updating from HCL Commerce:', newCart);
-  
+  console.log("[CART-STATE] Updating from HCL Commerce:", newCart);
+
   cartState = {
     cartId: newCart.cartId || null,
-    items: (newCart.items || []).map(item => ({
-      partNumber: item.partNumber || '',
-      sku: item.sku || '',
+    items: (newCart.items || []).map((item) => ({
+      partNumber: item.partNumber || "",
+      sku: item.sku || "",
       quantity: item.quantity || 1,
       price: item.price || 0,
-      name: item.name || 'Product',
+      name: item.name || "Product",
       orderItemId: item.orderItemId || null,
     })),
     total: newCart.total || 0,
   };
 
-  console.log(`[CART-STATE] Updated in memory: ${cartState.items.length} items, Total: $${cartState.total.toFixed(2)}`);
+  console.log(
+    `[CART-STATE] Updated in memory: ${cartState.items.length} items, Total: $${cartState.total.toFixed(2)}`,
+  );
 
   // Notify all listeners (mini-cart, cart page, etc.)
-  listeners.forEach(listener => {
+  listeners.forEach((listener) => {
     try {
       listener(cartState);
     } catch (error) {
-      console.error('[CART-STATE] Error calling listener:', error);
+      console.error("[CART-STATE] Error calling listener:", error);
     }
   });
 }
@@ -57,25 +59,34 @@ export function getCartState() {
  */
 export function subscribeToCart(listener) {
   listeners.add(listener);
-  console.log(`[CART-STATE] Listener added, total listeners: ${listeners.size}`);
+  console.log(
+    `[CART-STATE] Listener added, total listeners: ${listeners.size}`,
+  );
 
   // Return unsubscribe function
   return () => {
     listeners.delete(listener);
-    console.log(`[CART-STATE] Listener removed, total listeners: ${listeners.size}`);
+    console.log(
+      `[CART-STATE] Listener removed, total listeners: ${listeners.size}`,
+    );
   };
 }
 
 /**
  * Fetch cart from HCL Commerce via backend proxy
  * Used on page load to sync with HCL Commerce
+ * CRITICAL: Both accessToken (WCToken) and trustedToken (WCTrustedToken) are required
  */
-export async function fetchCartFromHCL(accessToken) {
+export async function fetchCartFromHCL(accessToken, trustedToken) {
   try {
-    console.log('[CART-STATE] Fetching cart from HCL via backend proxy...');
-    
-    const response = await fetch(`/api/hcl/cart?accessToken=${encodeURIComponent(accessToken)}`);
-    
+    console.log(
+      "[CART-STATE] Fetching cart from HCL via backend proxy with both tokens...",
+    );
+
+    const response = await fetch(
+      `/api/hcl/cart?accessToken=${encodeURIComponent(accessToken)}&trustedToken=${encodeURIComponent(trustedToken)}`,
+    );
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
@@ -86,10 +97,10 @@ export async function fetchCartFromHCL(accessToken) {
       updateCartState(data.cart);
       return data.cart;
     } else {
-      throw new Error(data.error || 'Failed to fetch cart');
+      throw new Error(data.error || "Failed to fetch cart");
     }
   } catch (error) {
-    console.error('[CART-STATE] Error fetching cart from HCL:', error.message);
+    console.error("[CART-STATE] Error fetching cart from HCL:", error.message);
     throw error;
   }
 }
@@ -98,6 +109,6 @@ export async function fetchCartFromHCL(accessToken) {
  * Clear cart state (for logout or explicit clear)
  */
 export function clearCartState() {
-  console.log('[CART-STATE] Clearing cart state');
+  console.log("[CART-STATE] Clearing cart state");
   updateCartState({ cartId: null, items: [], total: 0 });
 }

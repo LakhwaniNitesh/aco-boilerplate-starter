@@ -5,6 +5,7 @@
 ### Architecture Shift: File-Based → HCL Commerce REST APIs
 
 **Before:**
+
 ```
 Frontend → Backend (File Storage) → localStorage
          ↘ Mini-cart reads localStorage
@@ -13,6 +14,7 @@ Frontend → Backend (File Storage) → localStorage
 ```
 
 **After (Following Adobe Commerce Pattern):**
+
 ```
 Frontend → Backend Proxy → HCL Commerce REST APIs ← Single Source of Truth
          ↓ (fetchCartFromHCL)
@@ -26,9 +28,11 @@ Frontend → Backend Proxy → HCL Commerce REST APIs ← Single Source of Truth
 ## Implementation Details
 
 ### 1. Backend Controller (`api/controllers/hcl-cart-controller.js`)
+
 **Status:** ✅ Migrated
 
 **Changes:**
+
 - Removed file-based storage logic (`loadCart()`, `saveCart()`)
 - Added normalization function `normalizeHCLCart()` to standardize HCL responses
 - All endpoints now proxy to HCL Commerce REST APIs:
@@ -39,6 +43,7 @@ Frontend → Backend Proxy → HCL Commerce REST APIs ← Single Source of Truth
   - `PUT /api/hcl/cart/item` → Calls `hclClient.updateCartItem()`
 
 **Key Pattern:** All responses normalized to standard format:
+
 ```javascript
 {
   cartId: string,
@@ -57,9 +62,11 @@ Frontend → Backend Proxy → HCL Commerce REST APIs ← Single Source of Truth
 ```
 
 ### 2. Cart State Manager (`scripts/simple-cart-state.js`)
+
 **Status:** ✅ Completely Rewritten
 
 **Changes:**
+
 - Removed localStorage persistence (no longer needed)
 - Added `fetchCartFromHCL(accessToken)` function to sync from HCL
 - Kept same public API for compatibility:
@@ -71,9 +78,11 @@ Frontend → Backend Proxy → HCL Commerce REST APIs ← Single Source of Truth
 **Key Difference:** Now sources data from HCL Commerce, not localStorage
 
 ### 3. Mini-Cart Block (`blocks/commerce-mini-cart/commerce-mini-cart.js`)
+
 **Status:** ✅ Updated
 
 **Changes:**
+
 - Added `syncCartFromHCL()` function to fetch cart on page load
 - Removed localStorage restore logic
 - Clear button now calls `/api/hcl/cart/clear` with token instead of file deletion
@@ -81,17 +90,21 @@ Frontend → Backend Proxy → HCL Commerce REST APIs ← Single Source of Truth
 - Token retrieval from sessionStorage or localStorage
 
 ### 4. Cart Page Block (`blocks/commerce-cart/commerce-cart.js`)
+
 **Status:** ✅ Updated
 
 **Changes:**
+
 - Fetch cart from HCL on page load using `fetchCartFromHCL()`
 - Fallback to memory state if fetch fails
 - Same rendering logic (no UI changes needed)
 
 ### 5. Add-to-Cart Button (`blocks/product-details/product-details.js`)
+
 **Status:** ✅ Updated
 
 **Changes:**
+
 - Now requires `accessToken` to be available (authentication required)
 - Sends token with add-to-cart request to `/api/hcl/cart/add`
 - Backend proxy forwards to HCL Commerce REST API
@@ -101,6 +114,7 @@ Frontend → Backend Proxy → HCL Commerce REST APIs ← Single Source of Truth
 ## Flow Diagram
 
 ### Add to Cart Flow
+
 ```
 User clicks "Add to Cart"
         ↓
@@ -126,6 +140,7 @@ Mini-cart re-renders with new total
 ```
 
 ### Page Load Flow
+
 ```
 Mini-Cart Block decorates
         ↓
@@ -163,17 +178,21 @@ DELETE /api/hcl/cart/clear
 ## Authentication Flow
 
 **Required for cart operations:**
+
 1. User authenticates via login form
 2. accessToken stored in sessionStorage (or localStorage)
 3. Token passed with every cart operation
 4. Backend validates and uses token with HCL API
 
 **Token Sources (Priority Order):**
+
 ```javascript
 const getAccessToken = () => {
   try {
-    return sessionStorage.getItem('hcl-access-token') 
-        || localStorage.getItem('hcl-access-token');
+    return (
+      sessionStorage.getItem("hcl-access-token") ||
+      localStorage.getItem("hcl-access-token")
+    );
   } catch (e) {
     return null;
   }
@@ -185,16 +204,19 @@ const getAccessToken = () => {
 ### What Happens When...
 
 **HCL Commerce is unreachable:**
+
 - Add-to-cart fails with error message
 - Mini-cart shows empty state
 - User must retry or refresh page
 
 **No authentication token:**
+
 - Add-to-cart throws error: "Not authenticated. Please log in first."
 - Mini-cart shows empty state on load
 - Cart page shows empty state
 
 **Network timeout:**
+
 - Backend returns 500 error
 - Frontend displays "Failed to add product to cart"
 - User can retry
@@ -213,6 +235,7 @@ const getAccessToken = () => {
 ## Environment Configuration
 
 **Required environment variables (already set):**
+
 ```
 HCL_HOST=https://vm-ip:port
 HCL_STORE_ID=xxxxx
@@ -264,11 +287,13 @@ HCL_PASSWORD=xxxxx
 ## Rollback
 
 If needed to revert to previous approach:
+
 ```bash
 git revert 36ba0a2
 ```
 
 This restores:
+
 - File-based cart storage
 - localStorage persistence
 - Original simple-cart-state.js

@@ -3,6 +3,7 @@
 ## Problem
 
 When running `npm run dev:backend`, received:
+
 ```
 SyntaxError: Unexpected identifier '_tryLoginEndpoint'
 ```
@@ -60,11 +61,13 @@ async _tryLoginEndpoint(username, password, endpoint) {
 ## Next Steps
 
 ✅ Backend is running and ready
+
 - Endpoints active and listening on port 3001
 - Environment variables loaded successfully
 - All required configuration present
 
 You can now:
+
 1. Start frontend: `npm run dev:frontend`
 2. Start proxy: `npm run dev:proxy`
 3. Open browser: `http://localhost:8080`

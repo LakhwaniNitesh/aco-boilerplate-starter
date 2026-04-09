@@ -1,4 +1,4 @@
-import { readBlockConfig } from '../../scripts/aem.js';
+import { readBlockConfig } from "../../scripts/aem.js";
 
 /**
  * HCL Cart Page Block
@@ -6,12 +6,12 @@ import { readBlockConfig } from '../../scripts/aem.js';
  */
 
 async function renderCartItems(container, cart) {
-  const itemsContainer = document.createElement('div');
-  itemsContainer.className = 'hcl-cart-items-container';
+  const itemsContainer = document.createElement("div");
+  itemsContainer.className = "hcl-cart-items-container";
 
   if (!cart.items || cart.items.length === 0) {
-    const emptyState = document.createElement('div');
-    emptyState.className = 'hcl-cart-empty-state';
+    const emptyState = document.createElement("div");
+    emptyState.className = "hcl-cart-empty-state";
     emptyState.innerHTML = `
       <div class="hcl-cart-empty-icon">🛒</div>
       <h2>Your cart is empty</h2>
@@ -23,8 +23,8 @@ async function renderCartItems(container, cart) {
   }
 
   // Items table header
-  const table = document.createElement('table');
-  table.className = 'hcl-cart-items-table';
+  const table = document.createElement("table");
+  table.className = "hcl-cart-items-table";
   table.innerHTML = `
     <thead>
       <tr>
@@ -40,10 +40,10 @@ async function renderCartItems(container, cart) {
   itemsContainer.appendChild(table);
 
   // Add items to table
-  const tbody = table.querySelector('tbody');
+  const tbody = table.querySelector("tbody");
   cart.items.forEach((item, index) => {
-    const row = document.createElement('tr');
-    row.className = 'hcl-cart-item-row';
+    const row = document.createElement("tr");
+    row.className = "hcl-cart-item-row";
     row.dataset.itemId = item.id;
 
     const itemPrice = parseFloat(item.price) || 0;
@@ -53,8 +53,8 @@ async function renderCartItems(container, cart) {
     row.innerHTML = `
       <td class="col-product">
         <div class="hcl-cart-item-info">
-          <div class="hcl-cart-item-name">${item.name || 'Unknown Product'}</div>
-          <div class="hcl-cart-item-sku">SKU: ${item.sku || 'N/A'}</div>
+          <div class="hcl-cart-item-name">${item.name || "Unknown Product"}</div>
+          <div class="hcl-cart-item-sku">SKU: ${item.sku || "N/A"}</div>
         </div>
       </td>
       <td class="col-price">$${itemPrice.toFixed(2)}</td>
@@ -81,31 +81,31 @@ async function renderCartItems(container, cart) {
     `;
 
     // Quantity change handlers
-    const qtyInput = row.querySelector('.qty-input');
-    const decreaseBtn = row.querySelector('.qty-decrease');
-    const increaseBtn = row.querySelector('.qty-increase');
+    const qtyInput = row.querySelector(".qty-input");
+    const decreaseBtn = row.querySelector(".qty-decrease");
+    const increaseBtn = row.querySelector(".qty-increase");
 
-    decreaseBtn.addEventListener('click', () => {
+    decreaseBtn.addEventListener("click", () => {
       const current = parseInt(qtyInput.value, 10) || 1;
       qtyInput.value = Math.max(1, current - 1);
       updateItemQuantity(item.id, qtyInput.value);
     });
 
-    increaseBtn.addEventListener('click', () => {
+    increaseBtn.addEventListener("click", () => {
       const current = parseInt(qtyInput.value, 10) || 1;
       qtyInput.value = current + 1;
       updateItemQuantity(item.id, qtyInput.value);
     });
 
-    qtyInput.addEventListener('change', () => {
+    qtyInput.addEventListener("change", () => {
       const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
       qtyInput.value = qty;
       updateItemQuantity(item.id, qty);
     });
 
     // Remove button
-    const removeBtn = row.querySelector('.hcl-cart-remove-btn');
-    removeBtn.addEventListener('click', () => {
+    const removeBtn = row.querySelector(".hcl-cart-remove-btn");
+    removeBtn.addEventListener("click", () => {
       removeFromCart(item.id);
     });
 
@@ -116,13 +116,13 @@ async function renderCartItems(container, cart) {
 }
 
 async function renderCartSummary(container, cart) {
-  const summaryContainer = document.createElement('div');
-  summaryContainer.className = 'hcl-cart-summary-container';
+  const summaryContainer = document.createElement("div");
+  summaryContainer.className = "hcl-cart-summary-container";
 
-  const subtotal = cart.totalPrice || '0.00';
-  const shipping = '0.00'; // Would come from shipping calculation
-  const tax = '0.00'; // Would come from tax calculation
-  const total = cart.totalPrice || '0.00';
+  const subtotal = cart.totalPrice || "0.00";
+  const shipping = "0.00"; // Would come from shipping calculation
+  const tax = "0.00"; // Would come from tax calculation
+  const total = cart.totalPrice || "0.00";
 
   summaryContainer.innerHTML = `
     <div class="hcl-cart-summary">
@@ -166,19 +166,23 @@ async function renderCartSummary(container, cart) {
   `;
 
   // Checkout button
-  const checkoutBtn = summaryContainer.querySelector('.hcl-cart-checkout-btn');
-  checkoutBtn.addEventListener('click', () => {
-    window.location.href = '/checkout';
+  const checkoutBtn = summaryContainer.querySelector(".hcl-cart-checkout-btn");
+  checkoutBtn.addEventListener("click", () => {
+    window.location.href = "/checkout";
   });
 
   // Apply coupon
-  const applyCouponBtn = summaryContainer.querySelector('.hcl-cart-apply-coupon-btn');
-  applyCouponBtn.addEventListener('click', () => {
-    const couponInput = summaryContainer.querySelector('.hcl-cart-coupon-input');
+  const applyCouponBtn = summaryContainer.querySelector(
+    ".hcl-cart-apply-coupon-btn",
+  );
+  applyCouponBtn.addEventListener("click", () => {
+    const couponInput = summaryContainer.querySelector(
+      ".hcl-cart-coupon-input",
+    );
     const couponCode = couponInput.value.trim();
     if (couponCode) {
       applyCoupon(couponCode);
-      couponInput.value = '';
+      couponInput.value = "";
     }
   });
 
@@ -187,7 +191,7 @@ async function renderCartSummary(container, cart) {
 
 async function updateItemQuantity(itemId, quantity) {
   try {
-    const { useAddToCart } = await import('../../scripts/cart-manager.js');
+    const { useAddToCart } = await import("../../scripts/cart-manager.js");
     const { updateCart } = useAddToCart();
 
     if (quantity <= 0) {
@@ -197,20 +201,20 @@ async function updateItemQuantity(itemId, quantity) {
 
     await updateCart(itemId, quantity);
   } catch (error) {
-    console.error('Error updating cart item:', error);
-    alert('Failed to update item quantity. Please try again.');
+    console.error("Error updating cart item:", error);
+    alert("Failed to update item quantity. Please try again.");
   }
 }
 
 async function removeFromCart(itemId) {
   try {
-    const { useAddToCart } = await import('../../scripts/cart-manager.js');
+    const { useAddToCart } = await import("../../scripts/cart-manager.js");
     const { removeItem } = useAddToCart();
 
     await removeItem(itemId);
   } catch (error) {
-    console.error('Error removing cart item:', error);
-    alert('Failed to remove item. Please try again.');
+    console.error("Error removing cart item:", error);
+    alert("Failed to remove item. Please try again.");
   }
 }
 
@@ -220,33 +224,33 @@ async function applyCoupon(couponCode) {
     // For now, show a placeholder message
     alert(`Coupon "${couponCode}" applied! (This is a placeholder)`);
   } catch (error) {
-    console.error('Error applying coupon:', error);
-    alert('Failed to apply coupon. Please try again.');
+    console.error("Error applying coupon:", error);
+    alert("Failed to apply coupon. Please try again.");
   }
 }
 
 async function fetchAndRenderCart(block) {
   try {
-    const { useCart } = await import('../../scripts/cart-manager.js');
+    const { useCart } = await import("../../scripts/cart-manager.js");
     const cart = useCart();
 
     // Clear block
-    block.innerHTML = '';
+    block.innerHTML = "";
 
     // Create main container
-    const mainContainer = document.createElement('div');
-    mainContainer.className = 'hcl-cart-page-container';
+    const mainContainer = document.createElement("div");
+    mainContainer.className = "hcl-cart-page-container";
 
     // Create two-column layout
-    const itemsColumn = document.createElement('div');
-    itemsColumn.className = 'hcl-cart-items-column';
+    const itemsColumn = document.createElement("div");
+    itemsColumn.className = "hcl-cart-items-column";
 
-    const summaryColumn = document.createElement('div');
-    summaryColumn.className = 'hcl-cart-summary-column';
+    const summaryColumn = document.createElement("div");
+    summaryColumn.className = "hcl-cart-summary-column";
 
     // Add breadcrumb
-    const breadcrumb = document.createElement('div');
-    breadcrumb.className = 'hcl-cart-breadcrumb';
+    const breadcrumb = document.createElement("div");
+    breadcrumb.className = "hcl-cart-breadcrumb";
     breadcrumb.innerHTML = `
       <a href="/">Home</a>
       <span>/</span>
@@ -255,9 +259,9 @@ async function fetchAndRenderCart(block) {
     itemsColumn.appendChild(breadcrumb);
 
     // Add page title
-    const title = document.createElement('h1');
-    title.className = 'hcl-cart-title';
-    title.textContent = 'Shopping Cart';
+    const title = document.createElement("h1");
+    title.className = "hcl-cart-title";
+    title.textContent = "Shopping Cart";
     itemsColumn.appendChild(title);
 
     // Render items and summary
@@ -276,13 +280,14 @@ async function fetchAndRenderCart(block) {
     // Cleanup on block removal
     block.dataset.unsubscribe = unsubscribe;
   } catch (error) {
-    console.error('Error rendering cart page:', error);
-    block.innerHTML = '<div class="hcl-cart-error">Failed to load cart. Please refresh the page.</div>';
+    console.error("Error rendering cart page:", error);
+    block.innerHTML =
+      '<div class="hcl-cart-error">Failed to load cart. Please refresh the page.</div>';
   }
 }
 
 export default async function decorate(block) {
-  block.classList.add('hcl-cart-page');
+  block.classList.add("hcl-cart-page");
   const config = readBlockConfig(block);
 
   // Initialize cart page

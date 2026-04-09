@@ -16,6 +16,7 @@ Layer 2 implements the **three critical frontend services** that enable EDS Stor
 3. **Cart State Management** - Redux-like centralized state with React hooks
 
 All services integrate seamlessly with:
+
 - ✅ EDS Drop-ins (Cart, Checkout, Account, Auth)
 - ✅ Custom blocks
 - ✅ React components with hooks
@@ -70,27 +71,32 @@ All services integrate seamlessly with:
 
 **Key Features**:
 
-| Feature | Implementation |
-|---------|-----------------|
-| **Login** | Calls `POST /api/hcl/login` via backend proxy |
-| **Token Storage** | sessionStorage (auto-cleared on browser close) |
-| **Token Lifecycle** | Tracks 25-minute expiry window |
-| **Auto-Refresh** | Schedules refresh 5 minutes before expiry |
-| **Logout** | Clears token, userId, expiry, timers |
-| **React Hooks** | `useHCLAuth()` - access auth state in components |
+| Feature             | Implementation                                   |
+| ------------------- | ------------------------------------------------ |
+| **Login**           | Calls `POST /api/hcl/login` via backend proxy    |
+| **Token Storage**   | sessionStorage (auto-cleared on browser close)   |
+| **Token Lifecycle** | Tracks 25-minute expiry window                   |
+| **Auto-Refresh**    | Schedules refresh 5 minutes before expiry        |
+| **Logout**          | Clears token, userId, expiry, timers             |
+| **React Hooks**     | `useHCLAuth()` - access auth state in components |
 
 **API**:
 
 ```javascript
-import { hclAuthService, useHCLAuth, hclLogin, hclLogout } from './hcl-commerce-auth.js';
+import {
+  hclAuthService,
+  useHCLAuth,
+  hclLogin,
+  hclLogout,
+} from "./hcl-commerce-auth.js";
 
 // Service methods
-await hclAuthService.login('user@example.com', 'password');
+await hclAuthService.login("user@example.com", "password");
 hclAuthService.logout();
-hclAuthService.getToken();          // Returns current token or null
+hclAuthService.getToken(); // Returns current token or null
 hclAuthService.getUserId();
 hclAuthService.isAuthenticated();
-hclAuthService.getTokenLifetime();  // Remaining seconds
+hclAuthService.getTokenLifetime(); // Remaining seconds
 
 // React hook
 const [isAuth, token] = useHCLAuth();
@@ -119,14 +125,14 @@ hclLogout();
 
 **Key Features**:
 
-| Operation | Endpoint | Returns |
-|-----------|----------|---------|
-| `addToCart(sku, qty)` | `POST /api/hcl/cart/add` | `{success, cartId, itemCount, cart}` |
-| `getCart()` | `GET /api/hcl/cart` | `{success, cartId, items[], itemCount, cart}` |
-| `removeFromCart(orderId, itemId)` | `DELETE /api/hcl/cart/item` | `{success, cartId, itemCount, cart}` |
-| `updateCartItem(orderId, itemId, qty)` | `PUT /api/hcl/cart/item` | `{success, cartId, itemCount, cart}` |
-| `getCartSummary()` | `GET /api/hcl/cart` | `{itemCount, items[], subtotal, tax, shipping, total}` |
-| `clearCart()` | Multiple `DELETE` calls | `{success, message}` |
+| Operation                              | Endpoint                    | Returns                                                |
+| -------------------------------------- | --------------------------- | ------------------------------------------------------ |
+| `addToCart(sku, qty)`                  | `POST /api/hcl/cart/add`    | `{success, cartId, itemCount, cart}`                   |
+| `getCart()`                            | `GET /api/hcl/cart`         | `{success, cartId, items[], itemCount, cart}`          |
+| `removeFromCart(orderId, itemId)`      | `DELETE /api/hcl/cart/item` | `{success, cartId, itemCount, cart}`                   |
+| `updateCartItem(orderId, itemId, qty)` | `PUT /api/hcl/cart/item`    | `{success, cartId, itemCount, cart}`                   |
+| `getCartSummary()`                     | `GET /api/hcl/cart`         | `{itemCount, items[], subtotal, tax, shipping, total}` |
+| `clearCart()`                          | Multiple `DELETE` calls     | `{success, message}`                                   |
 
 **Error Handling**:
 
@@ -180,18 +186,18 @@ const [cart, loading, error, { addItem, removeItem, fetchCart }] = useHCLCart();
 
 **Action Types**:
 
-| Action | Payload | Effect |
-|--------|---------|--------|
-| `SET_CART` | `{id, items, totals}` | Update cart from API |
-| `ADD_ITEM` | `{item}` | Add item to local state |
-| `REMOVE_ITEM` | `{itemId}` | Remove item from state |
-| `CLEAR_CART` | - | Empty cart |
-| `SET_AUTH` | `{userId, token}` | Set authenticated user |
-| `LOGOUT` | - | Clear auth + cart |
-| `SET_LOADING` | `boolean` | Toggle loading state |
-| `SET_ERROR` | `Error` | Set error message |
-| `TOGGLE_MINI_CART` | - | Show/hide mini-cart |
-| `SET_ADD_TO_CART_LOADING` | `{sku, loading}` | Loading indicator per product |
+| Action                    | Payload               | Effect                        |
+| ------------------------- | --------------------- | ----------------------------- |
+| `SET_CART`                | `{id, items, totals}` | Update cart from API          |
+| `ADD_ITEM`                | `{item}`              | Add item to local state       |
+| `REMOVE_ITEM`             | `{itemId}`            | Remove item from state        |
+| `CLEAR_CART`              | -                     | Empty cart                    |
+| `SET_AUTH`                | `{userId, token}`     | Set authenticated user        |
+| `LOGOUT`                  | -                     | Clear auth + cart             |
+| `SET_LOADING`             | `boolean`             | Toggle loading state          |
+| `SET_ERROR`               | `Error`               | Set error message             |
+| `TOGGLE_MINI_CART`        | -                     | Show/hide mini-cart           |
+| `SET_ADD_TO_CART_LOADING` | `{sku, loading}`      | Loading indicator per product |
 
 **Async Operations** (Thunks):
 
@@ -207,11 +213,11 @@ cartStore.toggleMiniCart();
 **React Hooks**:
 
 ```javascript
-const [state, dispatch] = useCartState();       // Full state + dispatch
-const cart = useCart();                         // Just cart object
-const auth = useAuth();                         // Just auth object
-const [error, clear] = useCartError();          // Error + clear function
-const addToCart = useAddToCart();               // Bound add function
+const [state, dispatch] = useCartState(); // Full state + dispatch
+const cart = useCart(); // Just cart object
+const auth = useAuth(); // Just auth object
+const [error, clear] = useCartError(); // Error + clear function
+const addToCart = useAddToCart(); // Bound add function
 ```
 
 ---
@@ -270,8 +276,8 @@ node api/test-auth-load.js
 
 ```javascript
 // Example: Add to Cart button in product block
-import { hclCommerceAPI } from './hcl-commerce-api.js';
-import { useAddToCart } from './cart-manager.js';
+import { hclCommerceAPI } from "./hcl-commerce-api.js";
+import { useAddToCart } from "./cart-manager.js";
 
 export function AddToCartButton({ sku, name }) {
   const addToCart = useAddToCart();
@@ -291,7 +297,7 @@ export function AddToCartButton({ sku, name }) {
 
   return (
     <button onClick={handleClick} disabled={loading}>
-      {loading ? 'Adding...' : 'Add to Cart'}
+      {loading ? "Adding..." : "Add to Cart"}
     </button>
   );
 }
@@ -301,7 +307,7 @@ export function AddToCartButton({ sku, name }) {
 
 ```javascript
 // Example: Initialize Cart drop-in with HCL data
-import { cartStore } from './cart-manager.js';
+import { cartStore } from "./cart-manager.js";
 
 const Cart = async () => {
   const state = cartStore.getState();
@@ -384,7 +390,7 @@ Button shows success message
 # Quick test
 node api/test-auth-load.js 5 20
 
-# Medium test  
+# Medium test
 node api/test-auth-load.js 10 50
 
 # Stress test
@@ -398,6 +404,7 @@ node api/test-auth-load.js 20 100
 ### Layer 3: UI Components (Days 7-15)
 
 Ready to start:
+
 - [ ] Add to Cart button block
 - [ ] Mini-cart header component
 - [ ] Cart page with item management
@@ -424,14 +431,14 @@ Ready to start:
 ### Example 1: Login in a Component
 
 ```javascript
-import { hclLogin } from './hcl-commerce-auth.js';
-import { useCartState } from './cart-manager.js';
+import { hclLogin } from "./hcl-commerce-auth.js";
+import { useCartState } from "./cart-manager.js";
 
 export function LoginForm() {
   const [, dispatch] = useCartState();
-  const [username, setUsername] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState('');
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -466,7 +473,7 @@ export function LoginForm() {
 ### Example 2: Mini-Cart Component
 
 ```javascript
-import { useCart, cartStore } from './cart-manager.js';
+import { useCart, cartStore } from "./cart-manager.js";
 
 export function MiniCart() {
   const cart = useCart();
@@ -488,9 +495,7 @@ export function MiniCart() {
               <span>{item.name}</span>
               <span>Qty: {item.quantity}</span>
               <button
-                onClick={() =>
-                  cartStore.removeFromCart(cart.id, item.id)
-                }
+                onClick={() => cartStore.removeFromCart(cart.id, item.id)}
               >
                 Remove
               </button>
@@ -508,13 +513,13 @@ export function MiniCart() {
 
 ## 🎯 Summary
 
-| Aspect | Status | Details |
-|--------|--------|---------|
-| **Implementation** | ✅ Complete | 3 services + load test tool |
-| **Integration** | ✅ Ready | React hooks, drop-in compatible |
-| **Testing** | ⏳ Next Phase | Unit, integration, E2E tests |
-| **Documentation** | ✅ Complete | API docs, code examples, architecture |
-| **Dependencies** | ✅ None | Vanilla JS, no new npm packages |
+| Aspect             | Status        | Details                               |
+| ------------------ | ------------- | ------------------------------------- |
+| **Implementation** | ✅ Complete   | 3 services + load test tool           |
+| **Integration**    | ✅ Ready      | React hooks, drop-in compatible       |
+| **Testing**        | ⏳ Next Phase | Unit, integration, E2E tests          |
+| **Documentation**  | ✅ Complete   | API docs, code examples, architecture |
+| **Dependencies**   | ✅ None       | Vanilla JS, no new npm packages       |
 
 ---
 

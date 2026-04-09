@@ -7,6 +7,7 @@
 **Browser:** Shows "Login failed with status 404"
 
 **Backend logs:**
+
 ```
 [DEBUG] Response status: 201  ← SUCCESS status code
 [ERROR] No wcToken in response  ← But code thinks it failed!
@@ -20,6 +21,7 @@
 ### The Bug (Case Sensitivity)
 
 The HCL Commerce server returns the token in this format:
+
 ```json
 {
   "WCToken": "1007002%2CEyUvdJq4PDhZ6LYGchqqJBA39jt4v3%2F...",
@@ -31,6 +33,7 @@ The HCL Commerce server returns the token in this format:
 **Notice:** The property name is `WCToken` (uppercase **W**)
 
 But the code was looking for:
+
 ```javascript
 const wcToken = responseBody.wcToken || ...  // ❌ lowercase 'w'
 ```
@@ -55,14 +58,21 @@ So the code was asking: "Is there a property called `wcToken`?" and the response
 **File:** `api/utils/hcl-rest-auth.js` (Line 239)
 
 ### Before (WRONG)
+
 ```javascript
-const wcToken = responseBody.wcToken || responseBody.token || responseBody.accessToken;
+const wcToken =
+  responseBody.wcToken || responseBody.token || responseBody.accessToken;
 ```
 
 ### After (CORRECT)
+
 ```javascript
 // HCL Commerce returns 'WCToken' (uppercase W), but also check common variations
-const wcToken = responseBody.WCToken || responseBody.wcToken || responseBody.token || responseBody.accessToken;
+const wcToken =
+  responseBody.WCToken ||
+  responseBody.wcToken ||
+  responseBody.token ||
+  responseBody.accessToken;
 ```
 
 **Key Change:** Added `responseBody.WCToken` (with uppercase W) as the first option to check.
@@ -72,6 +82,7 @@ const wcToken = responseBody.WCToken || responseBody.wcToken || responseBody.tok
 ## How It Works Now
 
 ### 1. HCL Server Returns (201 Created)
+
 ```json
 {
   "personalizationID": "1759785414597-1",
@@ -83,12 +94,14 @@ const wcToken = responseBody.WCToken || responseBody.wcToken || responseBody.tok
 ```
 
 ### 2. Code Extracts Token
+
 ```javascript
 // ✅ NOW finds 'WCToken' because we check uppercase first
-const wcToken = responseBody.WCToken  // ✅ FOUND!
+const wcToken = responseBody.WCToken; // ✅ FOUND!
 ```
 
 ### 3. Returns Success
+
 ```javascript
 return {
   success: true,
@@ -96,12 +109,13 @@ return {
   userId: "1007002",
   displayName: "auroraadobetest",
   // ... other fields
-}
+};
 ```
 
 ### 4. Frontend Stores Token
+
 ```javascript
-sessionStorage.setItem('wcToken', token);
+sessionStorage.setItem("wcToken", token);
 // Header updates with logged-in user
 ```
 
@@ -110,16 +124,19 @@ sessionStorage.setItem('wcToken', token);
 ## Testing the Fix
 
 ### Step 1: Start Backend
+
 ```powershell
 npm run dev:backend
 ```
 
 ### Step 2: Start Frontend
+
 ```powershell
 npm run dev:frontend
 ```
 
 ### Step 3: Start Proxy
+
 ```powershell
 npm run dev:proxy
 ```
@@ -136,6 +153,7 @@ npm run dev:proxy
 ### Expected Results
 
 ✅ **Successful Login:**
+
 - Modal closes
 - Page refreshes
 - Header shows account name: "auroraadobetest"
@@ -145,6 +163,7 @@ npm run dev:proxy
   - Response has `success: true`
 
 ❌ **If Still Fails:**
+
 - Check backend logs for the token extraction message
 - Verify response includes `WCToken` field
 - Check browser console for error details
@@ -232,25 +251,31 @@ fix: Check for WCToken with uppercase W in HCL response
 ## Key Learnings
 
 ### 1. **Case Sensitivity Matters**
+
 JavaScript treats `wcToken` and `WCToken` as completely different properties.
 
 ### 2. **Read API Response Carefully**
+
 Always check the exact case and spelling of fields in API responses.
 
 ### 3. **Debug with Logs**
+
 The backend logs included the full response body - that's how I spotted `WCToken`:
+
 ```
 [DEBUG] Response body: {"...","WCToken":"...","userId":"..."}
 ```
 
 ### 4. **Property Access Variations**
+
 When you don't control the API response format, check multiple variations:
+
 ```javascript
-const token = 
-  responseBody.WCToken ||      // Exact (HCL format)
-  responseBody.wcToken ||       // Common variation
-  responseBody.token ||         // Generic fallback
-  responseBody.accessToken;     // Another common name
+const token =
+  responseBody.WCToken || // Exact (HCL format)
+  responseBody.wcToken || // Common variation
+  responseBody.token || // Generic fallback
+  responseBody.accessToken; // Another common name
 ```
 
 ---
@@ -270,6 +295,7 @@ const token =
 ### Ready for Testing
 
 User can now:
+
 1. Start all three services (backend, frontend, proxy)
 2. Open browser and test login
 3. See successful login with account name in header

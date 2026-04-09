@@ -53,10 +53,10 @@ blocks/commerce-login/
 ```javascript
 /**
  * Commerce Login Block - Adobe EDS Storefront
- * 
+ *
  * Provides authentication UI for HCL Commerce wcToken management.
  * Implements login form and logout button with session persistence.
- * 
+ *
  * Features:
  * - Login with username/password
  * - Store wcToken in sessionStorage
@@ -64,11 +64,11 @@ blocks/commerce-login/
  * - Logout with token invalidation
  * - Error message display
  * - Custom events for other components
- * 
+ *
  * Usage in AEM:
  * Create a new page section with block type "commerce-login"
  * No configuration needed - uses sessionStorage automatically
- * 
+ *
  * Usage in HTML:
  * <div class="commerce-login"></div>
  */
@@ -77,9 +77,9 @@ export default async function decorate(block) {
   // ====================================
   // 1. CHECK IF USER IS ALREADY LOGGED IN
   // ====================================
-  
+
   const wcToken = getStoredToken();
-  
+
   if (wcToken && !isTokenExpired()) {
     // User has valid token - show logout UI
     renderLogoutUI(block);
@@ -97,9 +97,9 @@ export default async function decorate(block) {
  */
 function getStoredToken() {
   try {
-    return sessionStorage.getItem('hcl_wcToken');
+    return sessionStorage.getItem("hcl_wcToken");
   } catch (e) {
-    console.warn('[LOGIN-BLOCK] sessionStorage not available:', e);
+    console.warn("[LOGIN-BLOCK] sessionStorage not available:", e);
     return null;
   }
 }
@@ -109,13 +109,13 @@ function getStoredToken() {
  */
 function isTokenExpired() {
   try {
-    const expiresAt = parseInt(sessionStorage.getItem('hcl_tokenExpires'), 10);
+    const expiresAt = parseInt(sessionStorage.getItem("hcl_tokenExpires"), 10);
     if (!expiresAt || isNaN(expiresAt)) {
       return true; // No expiry set, consider expired
     }
     return Date.now() > expiresAt;
   } catch (e) {
-    console.warn('[LOGIN-BLOCK] Error checking expiry:', e);
+    console.warn("[LOGIN-BLOCK] Error checking expiry:", e);
     return true;
   }
 }
@@ -125,15 +125,15 @@ function isTokenExpired() {
  */
 function clearStoredToken() {
   try {
-    sessionStorage.removeItem('hcl_wcToken');
-    sessionStorage.removeItem('hcl_userId');
-    sessionStorage.removeItem('hcl_displayName');
-    sessionStorage.removeItem('hcl_firstName');
-    sessionStorage.removeItem('hcl_lastName');
-    sessionStorage.removeItem('hcl_email');
-    sessionStorage.removeItem('hcl_tokenExpires');
+    sessionStorage.removeItem("hcl_wcToken");
+    sessionStorage.removeItem("hcl_userId");
+    sessionStorage.removeItem("hcl_displayName");
+    sessionStorage.removeItem("hcl_firstName");
+    sessionStorage.removeItem("hcl_lastName");
+    sessionStorage.removeItem("hcl_email");
+    sessionStorage.removeItem("hcl_tokenExpires");
   } catch (e) {
-    console.warn('[LOGIN-BLOCK] Error clearing tokens:', e);
+    console.warn("[LOGIN-BLOCK] Error clearing tokens:", e);
   }
 }
 
@@ -142,18 +142,21 @@ function clearStoredToken() {
  */
 function storeAuthData(authResponse) {
   try {
-    sessionStorage.setItem('hcl_wcToken', authResponse.wcToken);
-    sessionStorage.setItem('hcl_userId', authResponse.userId);
-    sessionStorage.setItem('hcl_displayName', authResponse.displayName || authResponse.email);
-    sessionStorage.setItem('hcl_firstName', authResponse.firstName || '');
-    sessionStorage.setItem('hcl_lastName', authResponse.lastName || '');
-    sessionStorage.setItem('hcl_email', authResponse.email || '');
-    
+    sessionStorage.setItem("hcl_wcToken", authResponse.wcToken);
+    sessionStorage.setItem("hcl_userId", authResponse.userId);
+    sessionStorage.setItem(
+      "hcl_displayName",
+      authResponse.displayName || authResponse.email,
+    );
+    sessionStorage.setItem("hcl_firstName", authResponse.firstName || "");
+    sessionStorage.setItem("hcl_lastName", authResponse.lastName || "");
+    sessionStorage.setItem("hcl_email", authResponse.email || "");
+
     // Calculate expiry time (current time + expiresIn seconds)
-    const expiresAt = Date.now() + ((authResponse.expiresIn || 3600) * 1000);
-    sessionStorage.setItem('hcl_tokenExpires', expiresAt.toString());
+    const expiresAt = Date.now() + (authResponse.expiresIn || 3600) * 1000;
+    sessionStorage.setItem("hcl_tokenExpires", expiresAt.toString());
   } catch (e) {
-    console.error('[LOGIN-BLOCK] Error storing auth data:', e);
+    console.error("[LOGIN-BLOCK] Error storing auth data:", e);
   }
 }
 
@@ -161,7 +164,8 @@ function storeAuthData(authResponse) {
  * Dispatch custom event for other components to listen
  */
 function dispatchAuthEvent(eventType, data = {}) {
-  const eventName = eventType === 'login' ? 'hcl-user-logged-in' : 'hcl-user-logged-out';
+  const eventName =
+    eventType === "login" ? "hcl-user-logged-in" : "hcl-user-logged-out";
   const event = new CustomEvent(eventName, {
     detail: {
       timestamp: Date.now(),
@@ -246,46 +250,47 @@ function renderLoginUI(block) {
  * Attach event listeners to login form
  */
 function attachLoginFormListeners(block) {
-  const form = block.querySelector('#login-form');
-  const usernameInput = block.querySelector('#username-input');
-  const passwordInput = block.querySelector('#password-input');
-  const errorDiv = block.querySelector('#error-message');
-  const loadingDiv = block.querySelector('#loading-message');
-  const submitButton = block.querySelector('#login-button');
+  const form = block.querySelector("#login-form");
+  const usernameInput = block.querySelector("#username-input");
+  const passwordInput = block.querySelector("#password-input");
+  const errorDiv = block.querySelector("#error-message");
+  const loadingDiv = block.querySelector("#loading-message");
+  const submitButton = block.querySelector("#login-button");
 
   // Clear error on input
-  usernameInput.addEventListener('input', () => {
-    errorDiv.innerHTML = '';
+  usernameInput.addEventListener("input", () => {
+    errorDiv.innerHTML = "";
   });
-  passwordInput.addEventListener('input', () => {
-    errorDiv.innerHTML = '';
+  passwordInput.addEventListener("input", () => {
+    errorDiv.innerHTML = "";
   });
 
   // Form submission
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    
+
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
 
     // Basic validation
     if (!username || !password) {
-      errorDiv.innerHTML = '<span class="error-text">Please enter both username and password</span>';
+      errorDiv.innerHTML =
+        '<span class="error-text">Please enter both username and password</span>';
       return;
     }
 
     try {
       // Show loading state
       submitButton.disabled = true;
-      submitButton.classList.add('loading');
+      submitButton.classList.add("loading");
       loadingDiv.innerHTML = '<span class="loading-text">Signing in...</span>';
-      errorDiv.innerHTML = '';
+      errorDiv.innerHTML = "";
 
       // Call login endpoint
-      const response = await fetch('/api/hcl/login', {
-        method: 'POST',
+      const response = await fetch("/api/hcl/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
       });
@@ -294,20 +299,20 @@ function attachLoginFormListeners(block) {
 
       if (!data.success) {
         // Login failed
-        console.error('[LOGIN-BLOCK] Login failed:', data.error);
+        console.error("[LOGIN-BLOCK] Login failed:", data.error);
         errorDiv.innerHTML = `<span class="error-text">Error: ${data.error}</span>`;
         submitButton.disabled = false;
-        submitButton.classList.remove('loading');
-        loadingDiv.innerHTML = '';
+        submitButton.classList.remove("loading");
+        loadingDiv.innerHTML = "";
         return;
       }
 
       // Login successful - store token and update UI
       console.log(`[LOGIN-BLOCK] Login successful for: ${data.displayName}`);
       storeAuthData(data);
-      
+
       // Dispatch event
-      dispatchAuthEvent('login', {
+      dispatchAuthEvent("login", {
         userId: data.userId,
         displayName: data.displayName,
         email: data.email,
@@ -315,19 +320,18 @@ function attachLoginFormListeners(block) {
 
       // Clear form and reload UI
       form.reset();
-      loadingDiv.innerHTML = '';
-      
+      loadingDiv.innerHTML = "";
+
       // Small delay before rendering logout UI
       setTimeout(() => {
         renderLogoutUI(block.parentElement);
       }, 500);
-
     } catch (error) {
-      console.error('[LOGIN-BLOCK] Login error:', error);
+      console.error("[LOGIN-BLOCK] Login error:", error);
       errorDiv.innerHTML = `<span class="error-text">Error: ${error.message}</span>`;
       submitButton.disabled = false;
-      submitButton.classList.remove('loading');
-      loadingDiv.innerHTML = '';
+      submitButton.classList.remove("loading");
+      loadingDiv.innerHTML = "";
     }
   });
 
@@ -340,14 +344,14 @@ function attachLoginFormListeners(block) {
  * Shows when user is authenticated
  */
 function renderLogoutUI(parentElement) {
-  const displayName = sessionStorage.getItem('hcl_displayName') || 'User';
-  const email = sessionStorage.getItem('hcl_email') || '';
-  
+  const displayName = sessionStorage.getItem("hcl_displayName") || "User";
+  const email = sessionStorage.getItem("hcl_email") || "";
+
   // Find or create container if parentElement is the block
-  let container = parentElement.classList?.contains('commerce-login') 
-    ? parentElement 
-    : parentElement.querySelector('.commerce-login');
-  
+  let container = parentElement.classList?.contains("commerce-login")
+    ? parentElement
+    : parentElement.querySelector(".commerce-login");
+
   if (!container) {
     container = parentElement;
   }
@@ -358,7 +362,7 @@ function renderLogoutUI(parentElement) {
         <div class="user-greeting">
           <p class="greeting-text">Welcome back!</p>
           <p class="user-name">${escapeHtml(displayName)}</p>
-          ${email ? `<p class="user-email">${escapeHtml(email)}</p>` : ''}
+          ${email ? `<p class="user-email">${escapeHtml(email)}</p>` : ""}
         </div>
         
         <button class="btn btn-secondary btn-logout" id="logout-button">
@@ -376,42 +380,41 @@ function renderLogoutUI(parentElement) {
  * Attach event listener to logout button
  */
 function attachLogoutListener(container) {
-  const logoutButton = container.querySelector('#logout-button');
+  const logoutButton = container.querySelector("#logout-button");
 
-  logoutButton.addEventListener('click', async () => {
+  logoutButton.addEventListener("click", async () => {
     try {
       logoutButton.disabled = true;
-      logoutButton.classList.add('loading');
+      logoutButton.classList.add("loading");
 
-      const wcToken = sessionStorage.getItem('hcl_wcToken');
+      const wcToken = sessionStorage.getItem("hcl_wcToken");
 
       // Call logout endpoint
       if (wcToken) {
-        await fetch('/api/hcl/logout', {
-          method: 'POST',
+        await fetch("/api/hcl/logout", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ wcToken }),
         });
       }
 
-      console.log('[LOGIN-BLOCK] Logout successful');
-      
+      console.log("[LOGIN-BLOCK] Logout successful");
+
       // Clear sessionStorage
       clearStoredToken();
 
       // Dispatch event
-      dispatchAuthEvent('logout');
+      dispatchAuthEvent("logout");
 
       // Show login form again
       renderLoginUI(container);
-
     } catch (error) {
-      console.error('[LOGIN-BLOCK] Logout error:', error);
+      console.error("[LOGIN-BLOCK] Logout error:", error);
       logoutButton.disabled = false;
-      logoutButton.classList.remove('loading');
-      alert('Logout failed. Please try again.');
+      logoutButton.classList.remove("loading");
+      alert("Logout failed. Please try again.");
     }
   });
 }
@@ -421,11 +424,11 @@ function attachLogoutListener(container) {
  */
 function escapeHtml(text) {
   const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
   };
   return text.replace(/[&<>"']/g, (m) => map[m]);
 }
@@ -439,29 +442,29 @@ function startTokenExpiryMonitor() {
     if (isTokenExpired()) {
       clearInterval(checkInterval);
       clearStoredToken();
-      
+
       // Dispatch expiry event
-      const event = new CustomEvent('hcl-token-expired');
+      const event = new CustomEvent("hcl-token-expired");
       window.dispatchEvent(event);
-      
-      console.log('[LOGIN-BLOCK] Token expired, user logged out');
-      
+
+      console.log("[LOGIN-BLOCK] Token expired, user logged out");
+
       // Find and update login block if it exists
-      const loginBlock = document.querySelector('.commerce-login');
+      const loginBlock = document.querySelector(".commerce-login");
       if (loginBlock) {
         renderLoginUI(loginBlock);
       }
     }
   }, 60000); // Check every minute
-  
+
   // Clear interval on unload
-  window.addEventListener('beforeunload', () => {
+  window.addEventListener("beforeunload", () => {
     clearInterval(checkInterval);
   });
 }
 
 // Start monitoring token expiry
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   startTokenExpiryMonitor();
 }
 ```
@@ -542,7 +545,9 @@ if (typeof window !== 'undefined') {
   border: 1px solid var(--color-border, #ccc);
   border-radius: 0.25rem;
   box-sizing: border-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .form-control:focus {
@@ -638,8 +643,12 @@ if (typeof window !== 'undefined') {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Login Footer */
@@ -814,7 +823,7 @@ if (typeof window !== 'undefined') {
 
 ### File: `blocks/commerce-login/README.md`
 
-```markdown
+````markdown
 # Commerce Login Block
 
 ## Description
@@ -835,11 +844,13 @@ Provides user authentication UI for HCL Commerce wcToken management. Allows cust
 The block automatically renders either:
 
 **When Not Logged In:**
+
 - Login form with username/password fields
 - Error message display
 - Test credentials information
 
 **When Logged In:**
+
 - Greeting message with user name
 - User email display
 - Logout button
@@ -858,6 +869,7 @@ The block automatically renders either:
 ## Token Management
 
 The block automatically:
+
 - Stores wcToken in sessionStorage on login
 - Checks for valid token on page load
 - Handles token expiry (1-hour default)
@@ -889,6 +901,7 @@ Override CSS variables for custom theming:
   --color-bg-secondary: #f5f5f5;
 }
 ```
+````
 
 ## Events
 
@@ -907,6 +920,7 @@ The block dispatches custom events:
 ## Test Credentials
 
 For development/testing:
+
 - Username: `auroraadobetest`, Password: `passw0rd`
 - Username: `adobetest1`, Password: `passw0rd`
 - Username: `adobetest2`, Password: `passw0rd`
@@ -918,6 +932,7 @@ For development/testing:
 - For longer persistence, use localStorage (less secure)
 - Compatible with other authentication blocks
 - Does not conflict with existing auth systems
+
 ```
 
 ---
@@ -956,3 +971,4 @@ Before deploying, verify:
 ---
 
 **Status: Ready for Implementation** ✅
+```

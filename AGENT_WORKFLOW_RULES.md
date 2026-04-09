@@ -7,6 +7,7 @@
 **DO NOT** start a background process and then run status checks in the SAME terminal window.
 
 ### ❌ WRONG PATTERN (What I Was Doing)
+
 ```powershell
 # Terminal 1
 node api/server.js                    # ← Server starts
@@ -18,6 +19,7 @@ Invoke-WebRequest http://localhost:3001/...  # ← Server shuts down!
 ### ✅ CORRECT PATTERN
 
 **Use separate terminal windows for:**
+
 1. **Terminal A (Background Server)**: Start `node api/server.js` and LEAVE IT RUNNING
 2. **Terminal B (Test/Check)**: Run status checks, tests, diagnostics
 3. **Terminal C (Git/Dev)**: Run git, npm, other development commands
@@ -25,6 +27,7 @@ Invoke-WebRequest http://localhost:3001/...  # ← Server shuts down!
 ### Implementation
 
 **Step 1: Start Server in BACKGROUND Terminal (Terminal A)**
+
 ```powershell
 # Terminal A - DEDICATED TO SERVER
 cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-starter"
@@ -35,6 +38,7 @@ node api/server.js
 **Step 2: Wait for Server Startup** (5-10 seconds)
 
 **Step 3: Verify Server is Running (DIFFERENT Terminal - Terminal B)**
+
 ```powershell
 # Terminal B - SEPARATE window for checks
 cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-starter"
@@ -49,6 +53,7 @@ if ($response.StatusCode -eq 200) {
 ```
 
 **Step 4: Return to Terminal A to View Server Logs**
+
 - Leave Terminal A running to see live logs
 - Server logs show all requests and errors
 - Use Terminal B for any other work
@@ -57,12 +62,12 @@ if ($response.StatusCode -eq 200) {
 
 ## Terminal Allocation Strategy
 
-| Terminal | Purpose | Commands | Duration |
-|----------|---------|----------|----------|
-| **A** | 🖥️ Backend Server | `node api/server.js` | **LEAVE RUNNING** (entire session) |
-| **B** | 🧪 Testing/Verification | Status checks, diagnostics | Temporary |
-| **C** | 👨‍💻 Development | Git, npm, file edits | Temporary |
-| **D** | 📝 Frontend Dev Server | `npm run dev` or `npm start` | **LEAVE RUNNING** (if needed) |
+| Terminal | Purpose                 | Commands                     | Duration                           |
+| -------- | ----------------------- | ---------------------------- | ---------------------------------- |
+| **A**    | 🖥️ Backend Server       | `node api/server.js`         | **LEAVE RUNNING** (entire session) |
+| **B**    | 🧪 Testing/Verification | Status checks, diagnostics   | Temporary                          |
+| **C**    | 👨‍💻 Development          | Git, npm, file edits         | Temporary                          |
+| **D**    | 📝 Frontend Dev Server  | `npm run dev` or `npm start` | **LEAVE RUNNING** (if needed)      |
 
 **RULE:** Never run commands in the same terminal where a background process is running.
 
@@ -73,6 +78,7 @@ if ($response.StatusCode -eq 200) {
 ### Phase 1: Start Servers (DO THIS FIRST)
 
 **Terminal A - Backend Server**
+
 ```powershell
 cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-starter"
 node api/server.js
@@ -81,6 +87,7 @@ node api/server.js
 ```
 
 **Terminal D - Frontend (if needed)**
+
 ```powershell
 cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-starter"
 npm run dev
@@ -98,19 +105,19 @@ cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-
 # Check backend
 Write-Host "Checking backend..." -ForegroundColor Cyan
 $backend = Invoke-WebRequest -Uri "http://localhost:3001/api/hcl/auth/diagnose" -UseBasicParsing 2>$null
-if ($?) { 
-    Write-Host "✅ Backend running on port 3001" -ForegroundColor Green 
-} else { 
-    Write-Host "❌ Backend not responding" -ForegroundColor Red 
+if ($?) {
+    Write-Host "✅ Backend running on port 3001" -ForegroundColor Green
+} else {
+    Write-Host "❌ Backend not responding" -ForegroundColor Red
 }
 
 # Check frontend
 Write-Host "Checking frontend..." -ForegroundColor Cyan
 $frontend = Invoke-WebRequest -Uri "http://localhost:3000" -UseBasicParsing 2>$null
-if ($?) { 
-    Write-Host "✅ Frontend running on port 3000" -ForegroundColor Green 
-} else { 
-    Write-Host "❌ Frontend not responding" -ForegroundColor Red 
+if ($?) {
+    Write-Host "✅ Frontend running on port 3000" -ForegroundColor Green
+} else {
+    Write-Host "❌ Frontend not responding" -ForegroundColor Red
 }
 ```
 
@@ -185,22 +192,26 @@ git commit -m "fix: <description>"
 ### ✅ If Login Fails
 
 **Check Server Logs (Terminal A):**
+
 - Look for `[AUTH-CONTROLLER]` messages
 - Look for `[HCL-REST-AUTH]` messages
 - Look for error responses from HCL
 
 **Check Browser Console (F12 → Console):**
+
 - Look for `[LOGIN]` messages
 - Look for fetch errors
 - Look for CORS errors
 
 **Check Network Tab (F12 → Network):**
+
 - Find the POST to `/api/hcl/login`
 - Check request headers and body
 - Check response status and body
 - Look for GraphQL queries (shouldn't be there for REST login)
 
 **Verify Configuration (Terminal B):**
+
 ```powershell
 # Check if LIVE mode is active
 $config = Invoke-WebRequest -Uri "http://localhost:3001/api/hcl/auth/diagnose" -UseBasicParsing | ConvertFrom-Json
@@ -214,12 +225,14 @@ Write-Host "USE_REAL_HCL_AUTH: $($config.configuration.USE_REAL_HCL_AUTH)"
 ## Memory Rules (Agent Learning)
 
 ### 1. Terminal Separation is NOT Optional
+
 - **ALWAYS** use separate terminals for server and tests
 - Server in Terminal A, Tests in Terminal B
 - Switching terminals in same window = server dies
 - **This is the #1 source of repeated debugging**
 
 ### 2. Server Startup is Deterministic
+
 - Server takes 5-10 seconds to start
 - After startup, you'll see messages like:
   ```
@@ -229,17 +242,20 @@ Write-Host "USE_REAL_HCL_AUTH: $($config.configuration.USE_REAL_HCL_AUTH)"
 - Only then is server ready for requests
 
 ### 3. Server Logs are Gold
+
 - Terminal A shows everything that happens
 - Every request logs to Terminal A
 - Every error shows in Terminal A
 - **Always check Terminal A logs first when debugging**
 
 ### 4. When to Restart Server
+
 - **DO restart after:** Code changes, `.env` changes
 - **DO NOT restart:** Between status checks, between test runs
 - **How to restart:** Terminal A → Ctrl+C → `node api/server.js` → wait 5-10s
 
 ### 5. Verification Flow (DO THIS EVERY TIME)
+
 ```
 1. ✅ Start Server (Terminal A)
 2. ⏳ Wait 5-10 seconds
@@ -255,21 +271,25 @@ Write-Host "USE_REAL_HCL_AUTH: $($config.configuration.USE_REAL_HCL_AUTH)"
 ## Commands to Keep Handy
 
 ### Start Backend (Terminal A)
+
 ```powershell
 cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-starter" ; node api/server.js
 ```
 
 ### Verify Backend Running (Terminal B)
+
 ```powershell
 cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-starter" ; $r = Invoke-WebRequest -Uri "http://localhost:3001/api/hcl/auth/diagnose" -UseBasicParsing -ErrorAction SilentlyContinue ; if ($r -and $r.StatusCode -eq 200) { Write-Host "✅ Backend running" -ForegroundColor Green ; $r.Content | ConvertFrom-Json } else { Write-Host "❌ Backend not responding" -ForegroundColor Red }
 ```
 
 ### Test Login (Terminal B)
+
 ```powershell
 cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-starter" ; $b = @{ username="auroraadobetest"; password="passw0rd" } | ConvertTo-Json ; $r = Invoke-WebRequest -Uri "http://localhost:3001/api/hcl/login" -Method POST -Body $b -ContentType "application/json" -UseBasicParsing -ErrorAction SilentlyContinue ; if ($r) { Write-Host "✅ Login: $($r.StatusCode)" ; $r.Content | ConvertFrom-Json } else { Write-Host "❌ Login failed" }
 ```
 
 ### Stop All Node Processes
+
 ```powershell
 Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force ; Write-Host "✅ All Node processes stopped"
 ```
@@ -278,7 +298,8 @@ Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force ; Write-Hos
 
 ## Summary
 
-**The golden rule:** 
+**The golden rule:**
+
 - **Terminal A** = Server (leave running)
 - **Terminal B** = Tests (run checks here)
 - **Terminal C** = Development (git/npm/edits)

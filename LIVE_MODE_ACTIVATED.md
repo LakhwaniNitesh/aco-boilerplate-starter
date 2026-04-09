@@ -21,6 +21,7 @@
 ## 🚀 You're Ready to Test!
 
 ### Prerequisites ✅
+
 - [x] Connected to VPN
 - [x] HCL Commerce VM running at `https://20.40.52.251`
 - [x] Backend configured for LIVE HCL authentication
@@ -29,6 +30,7 @@
 ### Step 1: Verify Backend is Running
 
 **Terminal Command:**
+
 ```powershell
 curl http://localhost:3001/api/hcl/auth/diagnose
 ```
@@ -40,12 +42,14 @@ curl http://localhost:3001/api/hcl/auth/diagnose
 **Navigate to:** `http://localhost:3000/customer/login`
 
 **Test Credentials:**
+
 - Username: `auroraadobetest`
 - Password: `passw0rd`
 
 ### Step 3: Expected Behavior
 
 #### ✅ If Login Succeeds:
+
 ```
 1. Form accepts credentials
 2. "Signing in..." message appears
@@ -55,6 +59,7 @@ curl http://localhost:3001/api/hcl/auth/diagnose
 ```
 
 #### ⚠️ If Login Fails:
+
 - Check backend console for error details
 - Look at browser DevTools → Network tab for API response
 - Check `HCL_STORE_ID` (715842834) exists in HCL
@@ -65,17 +70,18 @@ curl http://localhost:3001/api/hcl/auth/diagnose
 
 ## 📊 What Changed
 
-| Setting | Before | After |
-|---------|--------|-------|
-| `USE_REAL_HCL_AUTH` | `false` | **`true`** |
-| Authentication Mode | MOCK (in-memory) | **REAL HCL REST API** |
-| Login Endpoint | Local mock | **`https://20.40.52.251/store/715842834/loginidentity`** |
+| Setting             | Before           | After                                                    |
+| ------------------- | ---------------- | -------------------------------------------------------- |
+| `USE_REAL_HCL_AUTH` | `false`          | **`true`**                                               |
+| Authentication Mode | MOCK (in-memory) | **REAL HCL REST API**                                    |
+| Login Endpoint      | Local mock       | **`https://20.40.52.251/store/715842834/loginidentity`** |
 
 ---
 
 ## 🔍 Debugging Tools Available
 
 ### Check Backend Logs (Terminal Running Server)
+
 ```
 [AUTH-CONTROLLER] Using REAL HCL Commerce REST API
 [HCL-REST-AUTH] Attempting login for user: auroraadobetest
@@ -84,6 +90,7 @@ curl http://localhost:3001/api/hcl/auth/diagnose
 ```
 
 ### Check Browser Console (F12 → Console)
+
 ```
 [LOGIN] Attempting login with: {username: 'auroraadobetest'}
 [LOGIN] Response status: 200
@@ -91,6 +98,7 @@ curl http://localhost:3001/api/hcl/auth/diagnose
 ```
 
 ### Check SessionStorage (F12 → Application → Session Storage)
+
 ```
 hcl_wcToken: "real-token-from-hcl"
 hcl_userId: "..."
@@ -99,6 +107,7 @@ hcl_displayName: "Aurora Test User"
 ```
 
 ### Test HCL Connectivity Directly
+
 ```powershell
 $body = @{ logonId = "auroraadobetest"; password = "passw0rd" } | ConvertTo-Json
 Invoke-WebRequest -Uri "https://20.40.52.251/store/715842834/loginidentity" `
@@ -120,21 +129,25 @@ Invoke-WebRequest -Uri "https://20.40.52.251/store/715842834/loginidentity" `
 ## ⚡ Quick Troubleshooting
 
 ### Error: "Tenant not found or not accessible"
+
 - Verify `HCL_STORE_ID=715842834` exists in HCL
 - Verify user `auroraadobetest` has access to this store
 - Check VPN connection is still active
 
 ### Error: "Unable to connect to the remote server"
+
 - VPN connection may have dropped
 - HCL Commerce VM may not be running
 - Firewall may be blocking access
 
 ### Error: "Invalid credentials"
+
 - Verify username/password correct
 - Check user exists in HCL
 - Try from browser, not Postman/curl
 
 ### Other Errors:
+
 - Check backend terminal for detailed logs
 - Review troubleshooting guide: `HCL_TROUBLESHOOTING.md`
 - Check diagnostic endpoint: `/api/hcl/auth/diagnose`
@@ -158,7 +171,7 @@ Invoke-WebRequest -Uri "https://20.40.52.251/store/715842834/loginidentity" `
 **HCL Connection:** ✅ Configured and ready  
 **Authentication:** ✅ REAL HCL REST API active  
 **VPN:** ✅ You're connected  
-**HCL VM:** ✅ Running  
+**HCL VM:** ✅ Running
 
 **You're all set! Start testing the login form now.** 🚀
 
@@ -167,6 +180,7 @@ Invoke-WebRequest -Uri "https://20.40.52.251/store/715842834/loginidentity" `
 ## 📝 Configuration Summary
 
 **File:** `.env`
+
 ```properties
 USE_REAL_HCL_AUTH=true                        # ✅ LIVE
 HCL_HOST=https://20.40.52.251                 # ✅ HCL VM

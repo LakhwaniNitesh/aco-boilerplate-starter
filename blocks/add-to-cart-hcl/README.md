@@ -19,15 +19,15 @@ The Add to Cart HCL block provides a configurable button component for adding pr
 
 Configure the block using a Word document table with the following options:
 
-| Property | Description | Default | Type |
-|----------|-------------|---------|------|
-| `sku` | Product SKU identifier (required) | None | String |
-| `button-text` | Button display text | "Add to Cart" | String |
-| `button-variant` | Button style (primary, secondary) | primary | String |
-| `show-loading` | Show animated loading state | true | Boolean |
-| `redirect-on-success` | Redirect to /cart after add | false | Boolean |
-| `success-message` | Success notification text | "Added to cart!" | String |
-| `error-message` | Error notification prefix | "Failed to add to cart" | String |
+| Property              | Description                       | Default                 | Type    |
+| --------------------- | --------------------------------- | ----------------------- | ------- |
+| `sku`                 | Product SKU identifier (required) | None                    | String  |
+| `button-text`         | Button display text               | "Add to Cart"           | String  |
+| `button-variant`      | Button style (primary, secondary) | primary                 | String  |
+| `show-loading`        | Show animated loading state       | true                    | Boolean |
+| `redirect-on-success` | Redirect to /cart after add       | false                   | Boolean |
+| `success-message`     | Success notification text         | "Added to cart!"        | String  |
+| `error-message`       | Error notification prefix         | "Failed to add to cart" | String  |
 
 ## Usage Examples
 
@@ -82,27 +82,32 @@ This block is designed to work alongside product display blocks like `product-te
 ## State Flow
 
 ### 1. Initial Load
+
 - Button enabled if user is authenticated
 - Button disabled with tooltip if user is not authenticated
 - All messages hidden
 
 ### 2. Click Handler
+
 - Button becomes disabled
 - Loading indicator visible (if enabled)
 - Click events ignored (debounced)
 
 ### 3. Request Processing
+
 - `CartStore.addToCart()` called with SKU and quantity
 - Communicates with HCL Commerce API via Layer 2 service
 - Backend proxy handles authentication and API interaction
 
 ### 4. Success State
+
 - Success message displayed: "Added to cart!"
 - Button re-enabled after 2 seconds
 - Custom `addedToCart` event dispatched
 - Optional redirect to `/cart` page
 
 ### 5. Error State
+
 - Error message displayed with error details
 - Button immediately re-enabled
 - Error logged to console for debugging
@@ -115,6 +120,7 @@ This block is designed to work alongside product display blocks like `product-te
 **Event Name**: `addedToCart`
 **Fired When**: Product successfully added to cart
 **Payload**:
+
 ```javascript
 {
   detail: {
@@ -127,7 +133,7 @@ This block is designed to work alongside product display blocks like `product-te
 ### Usage Example
 
 ```javascript
-document.addEventListener('addedToCart', (event) => {
+document.addEventListener("addedToCart", (event) => {
   console.log(`Added ${event.detail.quantity} of ${event.detail.sku} to cart`);
   // Track in analytics, update UI, etc.
 });
@@ -136,17 +142,20 @@ document.addEventListener('addedToCart', (event) => {
 ## Styling & CSS Classes
 
 ### Button Classes
+
 - `.add-to-cart-hcl__button` - Base button style
 - `.add-to-cart-hcl__button.primary` - Primary variant (blue)
 - `.add-to-cart-hcl__button.secondary` - Secondary variant (outlined)
 - `.add-to-cart-hcl__button:disabled` - Disabled state
 
 ### Message Classes
+
 - `.add-to-cart-hcl__message` - Base message container
 - `.add-to-cart-hcl__message--success` - Success message (green)
 - `.add-to-cart-hcl__message--error` - Error message (red)
 
 ### Container Classes
+
 - `.add-to-cart-hcl` - Block container
 - `.add-to-cart-error` - Error state for entire block
 
@@ -164,16 +173,17 @@ This ensures users must be logged in before adding items to cart, meeting HCL Co
 
 ### Common Error Scenarios
 
-| Error | Cause | User Experience |
-|-------|-------|-----------------|
-| "Failed to add to cart: Unauthorized" | User session expired | Button re-enabled, user should re-login |
-| "Failed to add to cart: Product not found" | Invalid SKU | Check product configuration |
-| "Failed to add to cart: Network error" | Backend proxy unavailable | Show retry message |
-| "Cart system unavailable" | CartStore failed to load | Button disabled, informational message |
+| Error                                      | Cause                     | User Experience                         |
+| ------------------------------------------ | ------------------------- | --------------------------------------- |
+| "Failed to add to cart: Unauthorized"      | User session expired      | Button re-enabled, user should re-login |
+| "Failed to add to cart: Product not found" | Invalid SKU               | Check product configuration             |
+| "Failed to add to cart: Network error"     | Backend proxy unavailable | Show retry message                      |
+| "Cart system unavailable"                  | CartStore failed to load  | Button disabled, informational message  |
 
 ### Debugging
 
 Enable console logging for troubleshooting:
+
 ```javascript
 // Open browser DevTools (F12)
 // Go to Console tab
@@ -207,20 +217,20 @@ Enable console logging for troubleshooting:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <link rel="stylesheet" href="add-to-cart-hcl.css">
-</head>
-<body>
-  <div class="add-to-cart-hcl" data-sku="TEST-SKU-001"></div>
-  
-  <script>
-    // Simulate block initialization
-    import('./add-to-cart-hcl.js').then(module => {
-      const block = document.querySelector('.add-to-cart-hcl');
-      module.default(block);
-    });
-  </script>
-</body>
+  <head>
+    <link rel="stylesheet" href="add-to-cart-hcl.css" />
+  </head>
+  <body>
+    <div class="add-to-cart-hcl" data-sku="TEST-SKU-001"></div>
+
+    <script>
+      // Simulate block initialization
+      import("./add-to-cart-hcl.js").then((module) => {
+        const block = document.querySelector(".add-to-cart-hcl");
+        module.default(block);
+      });
+    </script>
+  </body>
 </html>
 ```
 

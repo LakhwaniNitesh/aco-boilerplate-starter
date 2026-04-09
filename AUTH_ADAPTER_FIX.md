@@ -1,20 +1,24 @@
 # Auth Adapter Fix Summary
 
 ## Problem Discovered
+
 Your browser console showed a critical error:
+
 ```
 TypeError: Cannot assign to property 'authenticateCustomer' of [object Module]
     at hclAuthAdapter.js:20:30
 ```
 
 This prevented the auth adapter from loading and broke the entire header module, causing:
+
 1. ❌ Navigation menu hidden
-2. ❌ Search bar hidden  
+2. ❌ Search bar hidden
 3. ❌ Auth icon hidden
 4. ❌ sessionStorage.hcl_auth never populated
 5. ❌ sessionCookies arriving as empty `{}` in cart requests
 
 ## Root Cause
+
 The original `hclAuthAdapter.js` tried to **mutate an imported ES module**:
 
 ```javascript
@@ -26,6 +30,7 @@ authApi.authenticateCustomer = async (...) => { ... }  // NOT ALLOWED!
 In ES modules, you **cannot** assign properties to imported objects. This is a fundamental JavaScript limitation, not a code issue.
 
 ## Solution Applied (Commit: 56a0d82)
+
 Rewrote the entire auth adapter to use **fetch interception** - a proper pattern for intercepting API calls in ES modules:
 
 ```javascript
@@ -34,7 +39,7 @@ const originalFetch = window.fetch;
 
 window.fetch = async function(...args) {
   const [resource, config] = args;
-  
+
   // If it's an auth request to drop-in API, redirect to HCL
   if (typeof resource === 'string' && resource.includes('/auth') && config?.method === 'POST') {
     // Call /api/hcl/login instead
@@ -45,7 +50,7 @@ window.fetch = async function(...args) {
         password: body.password,
       }),
     });
-    
+
     // Store sessionCookies to sessionStorage.hcl_auth
     if (hclResponse.sessionCookies) {
       sessionStorage.setItem('hcl_auth', JSON.stringify({
@@ -54,11 +59,11 @@ window.fetch = async function(...args) {
         sessionCookies: hclResponse.sessionCookies,
       }));
     }
-    
+
     // Return response in format drop-in expects
     return new Response(...);
   }
-  
+
   // For non-auth requests, use original fetch
   return originalFetch.apply(window, args);
 };
@@ -67,6 +72,7 @@ window.fetch = async function(...args) {
 ## How It Works Now
 
 ### Login Flow (Fixed)
+
 1. User clicks "Account" → Login modal appears
 2. User enters credentials and submits
 3. Drop-in auth calls `fetch()` to send login request
@@ -77,6 +83,7 @@ window.fetch = async function(...args) {
 8. Drop-in receives success response, shows "Welcome!" message
 
 ### Add-to-Cart Flow (Fixed)
+
 1. User navigates to PDP and clicks "Add to Cart"
 2. PDP code retrieves from sessionStorage.hcl_auth
 3. **sessionStorage now has cookies** because auth adapter stored them ✨
@@ -85,6 +92,7 @@ window.fetch = async function(...args) {
 6. Cart succeeds with authenticated user
 
 ## What Changed
+
 - **File**: `blocks/header/hclAuthAdapter.js`
 - **Lines**: 1-125 (complete rewrite)
 - **Pattern**: Module mutation → Fetch interception
@@ -92,6 +100,7 @@ window.fetch = async function(...args) {
 - **Error handling**: Proper try-catch and Response objects
 
 ## Testing Checklist
+
 After hard refresh (Ctrl+F5):
 
 - [ ] Header visible with navigation, search, auth icon
@@ -108,11 +117,13 @@ After hard refresh (Ctrl+F5):
 - [ ] Cart succeeds with no "generic user" error
 
 ## Commits in This Session
+
 1. **1fe6ca7**: Fix import paths (../../blocks/header/... → ./)
-2. **03c6e50**: Add detailed debugging logs  
+2. **03c6e50**: Add detailed debugging logs
 3. **56a0d82**: CRITICAL - Rewrite auth adapter with fetch interception
 
 All three commits work together to:
+
 1. Fix the module import paths
 2. Provide debugging visibility
 3. Enable proper auth flow with sessionCookie storage

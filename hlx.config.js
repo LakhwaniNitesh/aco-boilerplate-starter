@@ -8,11 +8,11 @@ module.exports = {
   // Routes /api/* requests to local backend server on port 3001
   proxy: {
     // Proxy all /api/hcl/* requests to backend server
-    '/api/hcl': {
+    "/api/hcl": {
       changeOrigin: true,
-      target: 'http://localhost:3001',
+      target: "http://localhost:3001",
       pathRewrite: {
-        '^/api/hcl': '/api/hcl',
+        "^/api/hcl": "/api/hcl",
       },
       ws: true,
     },

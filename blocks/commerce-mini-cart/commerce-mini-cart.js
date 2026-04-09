@@ -1,42 +1,87 @@
 export default async function decorate(block) {
   // Import CSS - use link element instead of import statement
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = new URL('./commerce-mini-cart.css', import.meta.url).href;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = new URL("./commerce-mini-cart.css", import.meta.url).href;
   document.head.appendChild(link);
-  
+
   // Test localStorage availability
-  console.log('[MINI-CART] Testing localStorage availability');
+  console.log("[MINI-CART] Testing localStorage availability");
   try {
-    localStorage.setItem('__test__', 'test');
-    const test = localStorage.getItem('__test__');
-    localStorage.removeItem('__test__');
-    console.log('[MINI-CART] localStorage works: ', test === 'test');
+    localStorage.setItem("__test__", "test");
+    const test = localStorage.getItem("__test__");
+    localStorage.removeItem("__test__");
+    console.log("[MINI-CART] localStorage works: ", test === "test");
   } catch (e) {
-    console.error('[MINI-CART] localStorage not available:', e);
+    console.error("[MINI-CART] localStorage not available:", e);
   }
-  
-  const { readBlockConfig } = await import('../../scripts/aem.js');
-  const { events } = await import('@dropins/tools/event-bus.js');
-  const { subscribeToCart, getCartState, updateCartState, fetchCartFromHCL } = await import('../../scripts/simple-cart-state.js');
-  
+
+  const { readBlockConfig } = await import("../../scripts/aem.js");
+  const { events } = await import("@dropins/tools/event-bus.js");
+  const { subscribeToCart, getCartState, updateCartState, fetchCartFromHCL } =
+    await import("../../scripts/simple-cart-state.js");
+
   const config = readBlockConfig(block);
 
   const {
-    'show-heading': showHeading = 'true',
-    'max-items': maxItems = '3',
-    'hide-empty': hideEmpty = 'false',
+    "show-heading": showHeading = "true",
+    "max-items": maxItems = "3",
+    "hide-empty": hideEmpty = "false",
   } = config;
 
-  console.log('[MINI-CART] Block config:', config);
-  block.classList.add('hcl-mini-cart');
+  console.log("[MINI-CART] Block config:", config);
+  block.classList.add("hcl-mini-cart");
 
   // Fetch cart from HCL Commerce on page load
   const getAccessToken = () => {
     try {
-      // Try to get from sessionStorage or auth context
-      return sessionStorage.getItem('hcl-access-token') || localStorage.getItem('hcl-access-token');
+      // Try consolidated auth data first
+      const authData = sessionStorage.getItem("hcl_auth");
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData);
+          if (parsed.token) {
+            console.log("[MINI-CART] Found token in hcl_auth");
+            return parsed.token;
+          }
+        } catch (e) {
+          console.warn("[MINI-CART] Could not parse hcl_auth:", e);
+        }
+      }
+      // Fallback to direct keys
+      return (
+        sessionStorage.getItem("hcl-access-token") ||
+        localStorage.getItem("hcl-access-token")
+      );
     } catch (e) {
+      console.warn("[MINI-CART] Error getting access token:", e);
+      return null;
+    }
+  };
+
+  // Get trusted token (WCTrustedToken)
+  const getTrustedToken = () => {
+    try {
+      // Try consolidated auth data first
+      const authData = sessionStorage.getItem("hcl_auth");
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData);
+          if (parsed.trustedToken) {
+            console.log("[MINI-CART] Found trustedToken in hcl_auth");
+            return parsed.trustedToken;
+          }
+        } catch (e) {
+          console.warn("[MINI-CART] Could not parse hcl_auth:", e);
+        }
+      }
+      // Fallback to direct keys
+      return (
+        sessionStorage.getItem("hcl-trusted-token") ||
+        localStorage.getItem("hcl-trusted-token")
+      );
+    } catch (e) {
+      console.warn("[MINI-CART] Error getting trusted token:", e);
       return null;
     }
   };
@@ -44,91 +89,108 @@ export default async function decorate(block) {
   const syncCartFromHCL = async () => {
     try {
       const token = getAccessToken();
-      if (token) {
-        console.log('[MINI-CART] Syncing cart from HCL...');
-        await fetchCartFromHCL(token);
+      const trustedToken = getTrustedToken();
+      console.log("[MINI-CART] syncCartFromHCL - token available?", !!token);
+      console.log(
+        "[MINI-CART] syncCartFromHCL - trustedToken available?",
+        !!trustedToken,
+      );
+
+      if (token && trustedToken) {
+        console.log("[MINI-CART] Syncing cart from HCL with both tokens...");
+        const cart = await fetchCartFromHCL(token, trustedToken);
+        console.log("[MINI-CART] fetchCartFromHCL returned:", cart);
+      } else {
+        console.log(
+          "[MINI-CART] Missing tokens (accessToken or trustedToken), skipping HCL sync",
+        );
+        if (!token) console.log("[MINI-CART]   - No accessToken found");
+        if (!trustedToken) console.log("[MINI-CART]   - No trustedToken found");
       }
     } catch (error) {
-      console.warn('[MINI-CART] Could not sync with HCL, will use in-memory state:', error.message);
+      console.warn(
+        "[MINI-CART] Could not sync with HCL, will use in-memory state:",
+        error.message,
+      );
     }
   };
 
   // Create container
-  const container = document.createElement('div');
-  container.className = 'hcl-mini-cart-container';
+  const container = document.createElement("div");
+  container.className = "hcl-mini-cart-container";
 
   // Create header
-  const header = document.createElement('div');
-  header.className = 'hcl-mini-cart-header';
+  const header = document.createElement("div");
+  header.className = "hcl-mini-cart-header";
 
-  if (showHeading === 'true') {
-    const title = document.createElement('h3');
-    title.className = 'hcl-mini-cart-title';
-    title.textContent = 'Cart';
+  if (showHeading === "true") {
+    const title = document.createElement("h3");
+    title.className = "hcl-mini-cart-title";
+    title.textContent = "Cart";
     header.appendChild(title);
   }
 
-  const badge = document.createElement('span');
-  badge.className = 'hcl-mini-cart-badge';
-  badge.textContent = '0';
+  const badge = document.createElement("span");
+  badge.className = "hcl-mini-cart-badge";
+  badge.textContent = "0";
   header.appendChild(badge);
 
   container.appendChild(header);
 
   // Create items list
-  const itemsList = document.createElement('div');
-  itemsList.className = 'hcl-mini-cart-items';
+  const itemsList = document.createElement("div");
+  itemsList.className = "hcl-mini-cart-items";
 
   // Create empty state
-  const emptyState = document.createElement('div');
-  emptyState.className = 'hcl-mini-cart-empty';
-  emptyState.textContent = 'Your cart is empty';
+  const emptyState = document.createElement("div");
+  emptyState.className = "hcl-mini-cart-empty";
+  emptyState.textContent = "Your cart is empty";
 
   container.appendChild(itemsList);
   container.appendChild(emptyState);
 
   // Create summary
-  const summary = document.createElement('div');
-  summary.className = 'hcl-mini-cart-summary';
+  const summary = document.createElement("div");
+  summary.className = "hcl-mini-cart-summary";
 
-  const totalLabel = document.createElement('span');
-  totalLabel.textContent = 'Total:';
+  const totalLabel = document.createElement("span");
+  totalLabel.textContent = "Total:";
 
-  const totalPrice = document.createElement('span');
-  totalPrice.className = 'hcl-mini-cart-total';
-  totalPrice.textContent = '$0.00';
+  const totalPrice = document.createElement("span");
+  totalPrice.className = "hcl-mini-cart-total";
+  totalPrice.textContent = "$0.00";
 
   summary.appendChild(totalLabel);
   summary.appendChild(totalPrice);
 
   // Create actions container
-  const actions = document.createElement('div');
-  actions.className = 'hcl-mini-cart-actions';
+  const actions = document.createElement("div");
+  actions.className = "hcl-mini-cart-actions";
 
   // Create view cart link
-  const viewCart = document.createElement('a');
-  viewCart.href = '/cart';
-  viewCart.className = 'hcl-mini-cart-link';
-  viewCart.textContent = 'View Cart';
+  const viewCart = document.createElement("a");
+  viewCart.href = "/cart";
+  viewCart.className = "hcl-mini-cart-link";
+  viewCart.textContent = "View Cart";
 
   // Create clear cart button (for testing)
-  const clearCart = document.createElement('button');
-  clearCart.className = 'hcl-mini-cart-clear';
-  clearCart.textContent = 'Clear Cart';
-  clearCart.addEventListener('click', async (e) => {
+  const clearCart = document.createElement("button");
+  clearCart.className = "hcl-mini-cart-clear";
+  clearCart.textContent = "Clear Cart";
+  clearCart.addEventListener("click", async (e) => {
     e.preventDefault();
     try {
       const token = getAccessToken();
-      const url = token 
+      const url = token
         ? `/api/hcl/cart/clear?accessToken=${encodeURIComponent(token)}`
-        : '/api/hcl/cart/clear';
-      
-      await fetch(url, { method: 'DELETE' });
+        : "/api/hcl/cart/clear";
+
+      await fetch(url, { method: "DELETE" });
       updateCartState({ cartId: null, items: [], total: 0 });
       updateDisplay();
-      console.log('[MINI-CART] Cart cleared via HCL');
+      console.log("[MINI-CART] Cart cleared via HCL");
     } catch (error) {
-      console.error('[MINI-CART] Error clearing cart:', error);
+      console.error("[MINI-CART] Error clearing cart:", error);
     }
   });
 
@@ -138,21 +200,21 @@ export default async function decorate(block) {
   container.appendChild(summary);
   container.appendChild(actions);
 
-  block.innerHTML = '';
+  block.innerHTML = "";
   block.appendChild(container);
 
   // Setup update display function (works with or without cartStore)
   const updateDisplay = () => {
-    console.log('[MINI-CART] updateDisplay() called');
+    console.log("[MINI-CART] updateDisplay() called");
     // PRIMARY: Try simple cart state first (guaranteed to be updated)
     let simpleState = getCartState();
     let items = simpleState.items || [];
     let total = simpleState.total || 0;
-    
+
     // FALLBACK: Try cartStore if simple state is empty
     let cartStoreState = null;
     try {
-      if (typeof window !== 'undefined' && window.__cartStore__) {
+      if (typeof window !== "undefined" && window.__cartStore__) {
         const state = window.__cartStore__.getState();
         if (state && state.cart) {
           cartStoreState = state;
@@ -163,92 +225,102 @@ export default async function decorate(block) {
         }
       }
     } catch (e) {
-      console.log('[MINI-CART] CartStore not available, using simple state');
+      console.log("[MINI-CART] CartStore not available, using simple state");
     }
-    
+
     const count = items.length;
-    console.log('[MINI-CART] Updating display - items:', items, 'count:', count, 'total:', total);
+    console.log(
+      "[MINI-CART] Updating display - items:",
+      items,
+      "count:",
+      count,
+      "total:",
+      total,
+    );
 
-      // Update badge
-      badge.textContent = count;
-      badge.className = `hcl-mini-cart-badge ${count > 0 ? 'has-items' : ''}`;
+    // Update badge
+    badge.textContent = count;
+    badge.className = `hcl-mini-cart-badge ${count > 0 ? "has-items" : ""}`;
 
-      // Update visibility
-      if (hideEmpty === 'true' && count === 0) {
-        block.style.display = 'none';
+    // Update visibility
+    if (hideEmpty === "true" && count === 0) {
+      block.style.display = "none";
+    } else {
+      block.style.display = "block";
+    }
+
+    // Update items list
+    itemsList.innerHTML = "";
+    const displayItems = items.slice(0, parseInt(maxItems, 10));
+
+    if (count === 0) {
+      emptyState.style.display = "block";
+    } else {
+      emptyState.style.display = "none";
+
+      displayItems.forEach((item) => {
+        const itemEl = document.createElement("div");
+        itemEl.className = "hcl-mini-cart-item";
+
+        const itemName = document.createElement("div");
+        itemName.className = "hcl-mini-cart-item-name";
+        itemName.textContent = item.name || "Product";
+
+        const itemQty = document.createElement("span");
+        itemQty.className = "hcl-mini-cart-item-qty";
+        itemQty.textContent = `× ${item.quantity || 1}`;
+
+        const itemPrice = document.createElement("span");
+        itemPrice.className = "hcl-mini-cart-item-price";
+        itemPrice.textContent = `$${(item.price || 0).toFixed(2)}`;
+
+        itemEl.appendChild(itemName);
+        itemEl.appendChild(itemQty);
+        itemEl.appendChild(itemPrice);
+
+        itemsList.appendChild(itemEl);
+      });
+
+      if (count > parseInt(maxItems, 10)) {
+        const moreItems = document.createElement("div");
+        moreItems.className = "hcl-mini-cart-more";
+        moreItems.textContent = `+${count - parseInt(maxItems, 10)} more`;
+        itemsList.appendChild(moreItems);
+      }
+    }
+
+    // Update total (calculated from items)
+    const calculatedTotal = items.reduce(
+      (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
+      0,
+    );
+    totalPrice.textContent = `$${calculatedTotal.toFixed(2)}`;
+
+    // Update cart button badge in header
+    const cartButton = document.querySelector(".nav-cart-button");
+    if (cartButton) {
+      if (count > 0) {
+        cartButton.setAttribute("data-count", count);
       } else {
-        block.style.display = 'block';
+        cartButton.removeAttribute("data-count");
       }
-
-      // Update items list
-      itemsList.innerHTML = '';
-      const displayItems = items.slice(0, parseInt(maxItems, 10));
-
-      if (count === 0) {
-        emptyState.style.display = 'block';
-      } else {
-        emptyState.style.display = 'none';
-
-        displayItems.forEach((item) => {
-          const itemEl = document.createElement('div');
-          itemEl.className = 'hcl-mini-cart-item';
-
-          const itemName = document.createElement('div');
-          itemName.className = 'hcl-mini-cart-item-name';
-          itemName.textContent = item.name || 'Product';
-
-          const itemQty = document.createElement('span');
-          itemQty.className = 'hcl-mini-cart-item-qty';
-          itemQty.textContent = `× ${item.quantity || 1}`;
-
-          const itemPrice = document.createElement('span');
-          itemPrice.className = 'hcl-mini-cart-item-price';
-          itemPrice.textContent = `$${(item.price || 0).toFixed(2)}`;
-
-          itemEl.appendChild(itemName);
-          itemEl.appendChild(itemQty);
-          itemEl.appendChild(itemPrice);
-
-          itemsList.appendChild(itemEl);
-        });
-
-        if (count > parseInt(maxItems, 10)) {
-          const moreItems = document.createElement('div');
-          moreItems.className = 'hcl-mini-cart-more';
-          moreItems.textContent = `+${count - parseInt(maxItems, 10)} more`;
-          itemsList.appendChild(moreItems);
-        }
-      }
-
-      // Update total (calculated from items)
-      const calculatedTotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
-      totalPrice.textContent = `$${calculatedTotal.toFixed(2)}`;
-      
-      // Update cart button badge in header
-      const cartButton = document.querySelector('.nav-cart-button');
-      if (cartButton) {
-        if (count > 0) {
-          cartButton.setAttribute('data-count', count);
-        } else {
-          cartButton.removeAttribute('data-count');
-        }
-      }
-    };
+    }
+  };
 
   // Load cartStore if available
   let cartStore = null;
   let ACTIONS = null;
-  console.log('[MINI-CART] About to import cart-manager...');
+  console.log("[MINI-CART] About to import cart-manager...");
   try {
-    const imported = await import('../../scripts/cart-manager.js');
+    const imported = await import("../../scripts/cart-manager.js");
     cartStore = imported.cartStore;
     ACTIONS = imported.ACTIONS;
     // Store reference globally for easy access
     window.__cartStore__ = cartStore;
-    console.log('[MINI-CART] Initialized with cartStore:', cartStore);
+    console.log("[MINI-CART] Initialized with cartStore:", cartStore);
   } catch (err) {
-    console.error('[MINI-CART] Error importing cart-manager:', err);
-    console.log('[MINI-CART] Will use simple-cart-state only');
+    console.error("[MINI-CART] Error importing cart-manager:", err);
+    console.log("[MINI-CART] Will use simple-cart-state only");
   }
 
   // Sync cart from HCL Commerce on page load
@@ -256,24 +328,24 @@ export default async function decorate(block) {
   await syncCartFromHCL();
 
   // Initial display update
-  console.log('[MINI-CART] Calling initial updateDisplay()');
+  console.log("[MINI-CART] Calling initial updateDisplay()");
   updateDisplay();
 
   // Subscribe to cart state changes for real-time updates
-  console.log('[MINI-CART] Subscribing to simple cart state');
+  console.log("[MINI-CART] Subscribing to simple cart state");
   const unsubscribeSimple = subscribeToCart((simpleState) => {
-    console.log('[MINI-CART] Received cart state update:', simpleState);
+    console.log("[MINI-CART] Received cart state update:", simpleState);
     updateDisplay();
   });
 
   // Subscribe to cartStore if available
   if (cartStore) {
-    console.log('[MINI-CART] Subscribing to cartStore');
+    console.log("[MINI-CART] Subscribing to cartStore");
     const unsubscribe = cartStore.subscribe(updateDisplay);
-    
+
     // Also listen to cart/update events from the event bus (fallback mechanism)
-    events.on('cart/update', (data) => {
-      console.log('[MINI-CART] Received cart/update event:', data);
+    events.on("cart/update", (data) => {
+      console.log("[MINI-CART] Received cart/update event:", data);
       if (data.cart && cartStore) {
         // Dispatch to cartStore to ensure state is updated
         cartStore.dispatch({
@@ -284,8 +356,8 @@ export default async function decorate(block) {
     });
 
     // Listen to custom window events as extra fallback
-    window.addEventListener('hcl-cart-updated', (e) => {
-      console.log('[MINI-CART] Received hcl-cart-updated event:', e.detail);
+    window.addEventListener("hcl-cart-updated", (e) => {
+      console.log("[MINI-CART] Received hcl-cart-updated event:", e.detail);
       if (e.detail?.cart && cartStore) {
         cartStore.dispatch({
           type: ACTIONS.SET_CART,
@@ -295,15 +367,15 @@ export default async function decorate(block) {
     });
 
     // Cleanup on block removal
-    block.addEventListener('DOMNodeRemoved', () => {
+    block.addEventListener("DOMNodeRemoved", () => {
       unsubscribe();
       unsubscribeSimple();
     });
   } else {
-    console.log('[MINI-CART] CartStore not available, using simple state only');
-    
+    console.log("[MINI-CART] CartStore not available, using simple state only");
+
     // Cleanup simple subscription on block removal
-    block.addEventListener('DOMNodeRemoved', () => {
+    block.addEventListener("DOMNodeRemoved", () => {
       unsubscribeSimple();
     });
   }

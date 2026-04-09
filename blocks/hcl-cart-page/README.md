@@ -3,6 +3,7 @@
 ## Overview
 
 The **Cart Page** block displays the full shopping cart with comprehensive item management features. This block serves as a dedicated cart page where users can:
+
 - View all cart items with details (product name, SKU, price, quantity)
 - Manage quantities (increase, decrease, or directly enter quantity)
 - Remove items from the cart
@@ -59,6 +60,7 @@ Configure the Cart Page block via authoring UI or JSON. Currently supports basic
 ### Basic Usage
 
 Add this block to a dedicated `/cart` page. The block will:
+
 1. Initialize CartStore
 2. Fetch current cart contents
 3. Display items and summary
@@ -118,7 +120,9 @@ Add this block to a dedicated `/cart` page. The block will:
 
         <div class="hcl-cart-actions">
           <button class="hcl-cart-checkout-btn">Proceed to Checkout</button>
-          <a href="/products" class="hcl-cart-continue-link">Continue Shopping</a>
+          <a href="/products" class="hcl-cart-continue-link"
+            >Continue Shopping</a
+          >
         </div>
 
         <div class="hcl-cart-coupon-section">
@@ -152,17 +156,17 @@ The Cart Page uses CSS variables for easy theme customization:
 
 ```css
 /* Colors */
---text-color: #000;              /* Primary text color */
---text-secondary: #666;          /* Secondary text color */
---bg-color: #fff;                /* Background color */
---header-bg: #f5f5f5;            /* Table header background */
---summary-bg: #f9f9f9;           /* Summary container background */
---border-color: #e0e0e0;         /* Border color */
---border-light: #f0f0f0;         /* Light border color */
---price-color: #e63946;          /* Price text color */
---primary-color: #0066cc;        /* Primary button color */
---danger-color: #e63946;         /* Danger button color */
---link-color: #0066cc;           /* Link color */
+--text-color: #000; /* Primary text color */
+--text-secondary: #666; /* Secondary text color */
+--bg-color: #fff; /* Background color */
+--header-bg: #f5f5f5; /* Table header background */
+--summary-bg: #f9f9f9; /* Summary container background */
+--border-color: #e0e0e0; /* Border color */
+--border-light: #f0f0f0; /* Light border color */
+--price-color: #e63946; /* Price text color */
+--primary-color: #0066cc; /* Primary button color */
+--danger-color: #e63946; /* Danger button color */
+--link-color: #0066cc; /* Link color */
 
 /* Dark Mode */
 --text-color-dark: #fff;
@@ -211,6 +215,7 @@ Override default styles in your theme's main CSS file:
 ### Quantity Updates
 
 Users can update quantity via:
+
 1. **+/- buttons**: Quick increment/decrement
 2. **Direct input**: Type desired quantity in input field
 3. **Minimum validation**: Prevents quantity < 1
@@ -218,6 +223,7 @@ Users can update quantity via:
 ### Item Removal
 
 Click "Remove" button to:
+
 1. Remove item from cart
 2. Update CartStore
 3. Trigger real-time UI refresh
@@ -236,21 +242,23 @@ Click "Remove" button to:
 
 The summary section displays:
 
-| Line Item | Calculation | Notes |
-|-----------|-------------|-------|
-| Subtotal | Item prices × quantities | Shows item count |
-| Shipping | $0.00 (placeholder) | Can integrate with shipping API |
-| Tax | $0.00 (placeholder) | Can integrate with tax API |
-| **Total** | Subtotal + Shipping + Tax | Bold, prominent display |
+| Line Item | Calculation               | Notes                           |
+| --------- | ------------------------- | ------------------------------- |
+| Subtotal  | Item prices × quantities  | Shows item count                |
+| Shipping  | $0.00 (placeholder)       | Can integrate with shipping API |
+| Tax       | $0.00 (placeholder)       | Can integrate with tax API      |
+| **Total** | Subtotal + Shipping + Tax | Bold, prominent display         |
 
 ## Coupon System
 
 The coupon section allows users to:
+
 1. Enter coupon code
 2. Click "Apply" to validate and apply
 3. See discount reflected in total (when implemented)
 
 **Current Status**: Placeholder implementation. To integrate:
+
 - Add API endpoint for coupon validation
 - Verify coupon eligibility
 - Calculate discount amount
@@ -259,6 +267,7 @@ The coupon section allows users to:
 ## Integration with CartStore
 
 The Cart Page automatically subscribes to CartStore changes. When users:
+
 - Modify quantity
 - Remove items
 - Clear cart
@@ -268,7 +277,7 @@ The page updates instantly via subscription callback.
 ### Hook Used Internally
 
 ```javascript
-import { useCart } from '../cart-manager.js';
+import { useCart } from "../cart-manager.js";
 
 const cart = useCart(); // Subscribe to cart changes
 
@@ -284,6 +293,7 @@ const cart = useCart(); // Subscribe to cart changes
 ### Network Errors
 
 If fetching cart data fails:
+
 1. Display error message with reload option
 2. Log error to console
 3. Provide option to retry
@@ -291,6 +301,7 @@ If fetching cart data fails:
 ### Quantity Update Errors
 
 If quantity update fails:
+
 1. Revert quantity to previous value
 2. Show error alert
 3. Log error for debugging
@@ -298,6 +309,7 @@ If quantity update fails:
 ### Remove Errors
 
 If item removal fails:
+
 1. Show error message
 2. Keep item in cart
 3. Suggest retry
@@ -335,6 +347,7 @@ If item removal fails:
 Located at: `test/blocks/hcl-cart-page.test.js`
 
 Test coverage includes:
+
 - Block initialization
 - Item rendering
 - Quantity updates
@@ -348,6 +361,7 @@ Test coverage includes:
 Located at: `test/integration/hcl-cart-page.integration.test.js`
 
 Test coverage includes:
+
 - Full user workflow (add items → cart page → modify → checkout)
 - Real CartStore integration
 - Backend API calls
@@ -377,6 +391,7 @@ Test coverage includes:
 **Symptom**: Cart page shows but no items
 
 **Solution**:
+
 1. Check browser console for errors
 2. Verify CartStore initialized
 3. Check backend `/cart/get` endpoint
@@ -387,6 +402,7 @@ Test coverage includes:
 **Symptom**: Clicking +/- buttons doesn't change quantity
 
 **Solution**:
+
 1. Check browser console for errors
 2. Verify CartStore subscription active
 3. Check backend `/cart/add` endpoint
@@ -397,6 +413,7 @@ Test coverage includes:
 **Symptom**: Total doesn't change when items modified
 
 **Solution**:
+
 1. Verify backend returns correct totalPrice
 2. Check CartStore value calculation
 3. Verify real-time subscription firing
@@ -406,6 +423,7 @@ Test coverage includes:
 **Symptom**: Table doesn't fit or layout broken
 
 **Solution**:
+
 1. Check device viewport width
 2. Verify CSS media queries loading
 3. Test on actual mobile device or DevTools
@@ -438,6 +456,7 @@ blocks/hcl-cart-page/
 ## Version History
 
 ### v1.0.0 (Initial Release)
+
 - Full cart page display
 - Quantity management
 - Item removal
@@ -454,6 +473,7 @@ See LICENSE file in project root.
 ## Support
 
 For issues, feature requests, or questions:
+
 1. Check this README
 2. Review test files for usage examples
 3. Check browser console for error messages

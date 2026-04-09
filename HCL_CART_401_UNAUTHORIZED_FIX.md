@@ -3,6 +3,7 @@
 ## Problem Summary
 
 **Error:** HTTP 401 Unauthorized when adding products to cart
+
 ```
 [CART-PROXY] Adding to cart: CLA022_220101 x1
 ❌ Add to cart failed: { statusCode: 401, message: 'HTTP 401', details: {} }
@@ -21,7 +22,7 @@ The `hcl-client.js` was sending the wcToken using the wrong header format:
 ```javascript
 // ❌ WRONG - HCL doesn't recognize this format
 headers: {
-  Authorization: `Bearer ${accessToken}`
+  Authorization: `Bearer ${accessToken}`;
 }
 ```
 
@@ -30,7 +31,7 @@ HCL Commerce REST API expects the token in a **Cookie header**, not `Authorizati
 ```javascript
 // ✅ CORRECT - HCL expects this format
 headers: {
-  Cookie: `WCToken=${accessToken}`
+  Cookie: `WCToken=${accessToken}`;
 }
 ```
 
@@ -54,11 +55,13 @@ headers: {
 ### File Changed: `api/utils/hcl-client.js`
 
 **Line 52 - Before:**
+
 ```javascript
 ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
 ```
 
 **Line 52 - After:**
+
 ```javascript
 // HCL Commerce expects token in Cookie header, not Authorization: Bearer
 ...(accessToken && { Cookie: `WCToken=${accessToken}` }),
@@ -93,23 +96,28 @@ Cookie: WCToken=1007002%2CEyUvdJq4PDhZ6LYGchqq...
 ### Affected Operations (Now Fixed)
 
 ✅ **Add to Cart** - `hclClient.addToCart(token, partNumber, qty)`
+
 - Now correctly passes token as Cookie header
 - HCL recognizes as authenticated request
 - Returns 200 OK with cart response
 
 ✅ **Get Cart** - `hclClient.getCart(token)`
+
 - Now correctly passes token
 - Retrieves cart with authentication
 
 ✅ **Update Cart** - `hclClient.updateCartItem(token, orderId, itemId, qty)`
+
 - Now correctly passes token
 - Updates quantities with authentication
 
 ✅ **Remove from Cart** - `hclClient.removeFromCart(token, orderId, itemId)`
+
 - Now correctly passes token
 - Removes items with authentication
 
 ✅ **Clear Cart** - `hclClient.clearCart(token)`
+
 - Now correctly passes token
 - Clears all items with authentication
 
@@ -136,6 +144,7 @@ Cookie: WCToken=1007002%2CEyUvdJq4PDhZ6LYGchqq...
 ## Testing the Fix
 
 ### Prerequisites
+
 1. Backend running: `npm run dev:backend`
 2. User logged in with valid wcToken
 3. Token stored in `sessionStorage` key `hcl_wcToken`
@@ -145,6 +154,7 @@ Cookie: WCToken=1007002%2CEyUvdJq4PDhZ6LYGchqq...
 **1. Open Browser DevTools (F12)**
 
 **2. Check Network Tab**
+
 ```
 POST /api/hcl/cart/add
 
@@ -171,6 +181,7 @@ Response Body:
 ```
 
 **3. Check Backend Logs**
+
 ```
 [CART-PROXY] Adding to cart: CLA022_220101 x1
 [HCL-CLIENT] Making request to: https://20.40.52.251/wcs/resources/store/715842834/cart
@@ -181,6 +192,7 @@ POST /api/hcl/cart/add - 200
 ```
 
 **4. Expected Result**
+
 - ✅ No error message on page
 - ✅ Product appears in mini-cart
 - ✅ Network shows 200 status, not 401
@@ -210,19 +222,19 @@ Cookie: WCToken=1007002%2CEyUvdJq4PDhZ6LYGchqqJBA...
 
 **Different APIs expect different authentication formats:**
 
-| API | Token Format | Example |
-|-----|--------------|---------|
-| **HCL Commerce** | Cookie header | `Cookie: WCToken=...` |
-| **OAuth 2.0** | Authorization header | `Authorization: Bearer ...` |
-| **API Keys** | Custom header | `X-API-Key: ...` |
-| **Basic Auth** | Authorization header | `Authorization: Basic ...` |
+| API              | Token Format         | Example                     |
+| ---------------- | -------------------- | --------------------------- |
+| **HCL Commerce** | Cookie header        | `Cookie: WCToken=...`       |
+| **OAuth 2.0**    | Authorization header | `Authorization: Bearer ...` |
+| **API Keys**     | Custom header        | `X-API-Key: ...`            |
+| **Basic Auth**   | Authorization header | `Authorization: Basic ...`  |
 
 **Always check the API documentation for the expected format!**
 
 ## Files Modified
 
-| File | Change | Reason |
-|------|--------|--------|
+| File                      | Change                                   | Reason                             |
+| ------------------------- | ---------------------------------------- | ---------------------------------- |
 | `api/utils/hcl-client.js` | Line 52: Cookie format instead of Bearer | HCL expects token in Cookie header |
 
 ## Commit Details
@@ -230,6 +242,7 @@ Cookie: WCToken=1007002%2CEyUvdJq4PDhZ6LYGchqqJBA...
 **Commit Hash:** `947654a`
 
 **Message:**
+
 ```
 fix: Use Cookie header for HCL Commerce token instead of Authorization Bearer
 
@@ -242,16 +255,19 @@ fix: Use Cookie header for HCL Commerce token instead of Authorization Bearer
 ## Related Issues Fixed
 
 ✅ **Issue:** HTTP 401 Unauthorized when adding to cart
+
 - **Root Cause:** Wrong authentication header format
 - **Solution:** Use `Cookie: WCToken=...` instead of `Authorization: Bearer`
 - **Status:** FIXED
 
 ✅ **Issue:** Get cart fails with 401
+
 - **Root Cause:** Same as above
 - **Solution:** Same fix applies to all API calls
 - **Status:** FIXED
 
 ✅ **Issue:** Remove from cart fails with 401
+
 - **Root Cause:** Same as above
 - **Solution:** Same fix applies
 - **Status:** FIXED
@@ -311,6 +327,7 @@ UI updates with cart item ✅
 **Solution:** Changed one line in `hcl-client.js` to use correct header format
 
 **Result:**
+
 - ✅ Add to cart: 500 Error → 200 OK
 - ✅ Get cart: 401 Unauthorized → 200 OK
 - ✅ All cart operations: Working with authentication

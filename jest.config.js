@@ -1,16 +1,16 @@
 export default {
-  testEnvironment: 'jsdom',
-  testMatch: ['**/test/**/*.test.js'],
-  setupFilesAfterEnv: ['<rootDir>/test/setup.js'],
+  testEnvironment: "jsdom",
+  testMatch: ["**/test/**/*.test.js"],
+  setupFilesAfterEnv: ["<rootDir>/test/setup.js"],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
+    "^@/(.*)$": "<rootDir>/src/$1",
   },
   collectCoverageFrom: [
-    'blocks/**/*.js',
-    'scripts/hcl-*.js',
-    'scripts/cart-*.js',
-    '!**/*.test.js',
-    '!**/node_modules/**',
+    "blocks/**/*.js",
+    "scripts/hcl-*.js",
+    "scripts/cart-*.js",
+    "!**/*.test.js",
+    "!**/node_modules/**",
   ],
   coverageThreshold: {
     global: {
@@ -21,6 +21,6 @@ export default {
     },
   },
   transform: {
-    '^.+\\.js$': 'babel-jest',
+    "^.+\\.js$": "babel-jest",
   },
 };

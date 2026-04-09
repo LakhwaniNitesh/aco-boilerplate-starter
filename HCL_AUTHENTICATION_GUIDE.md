@@ -73,12 +73,14 @@ HCL_STORE_ID=715842834
 ```
 
 **Benefits:**
+
 - ✅ Real authentication against HCL Commerce
 - ✅ wcToken is valid for HCL API calls
 - ✅ Full end-to-end integration testing
 - ✅ Production-ready
 
 **Requirements:**
+
 - VPN access to HCL Commerce VM
 - HCL_HOST environment variable set correctly
 - HCL_STORE_ID configured
@@ -96,12 +98,14 @@ USE_REAL_HCL_AUTH=false
 ```
 
 **Benefits:**
+
 - ✅ No VPN required
 - ✅ Fast development cycle
 - ✅ No external dependencies
 - ✅ Good for UI/UX testing
 
 **Limitations:**
+
 - ❌ wcToken not valid for HCL API calls
 - ❌ Cart operations still need real HCL
 - ❌ Can't test full integration flow
@@ -117,6 +121,7 @@ POST /api/hcl/login
 ```
 
 **Request:**
+
 ```json
 {
   "username": "auroraadobetest",
@@ -125,6 +130,7 @@ POST /api/hcl/login
 ```
 
 **Response (Success - 200):**
+
 ```json
 {
   "success": true,
@@ -140,6 +146,7 @@ POST /api/hcl/login
 ```
 
 **Response (Failure - 401):**
+
 ```json
 {
   "success": false,
@@ -156,6 +163,7 @@ POST /api/hcl/logout
 ```
 
 **Request:**
+
 ```json
 {
   "wcToken": "eyJhbGc..."
@@ -163,6 +171,7 @@ POST /api/hcl/logout
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -179,6 +188,7 @@ GET /api/hcl/auth/validate?wcToken=eyJhbGc...
 ```
 
 **Response (Valid):**
+
 ```json
 {
   "success": true,
@@ -187,6 +197,7 @@ GET /api/hcl/auth/validate?wcToken=eyJhbGc...
 ```
 
 **Response (Invalid/Expired):**
+
 ```json
 {
   "success": true,
@@ -206,15 +217,15 @@ Create `blocks/commerce-login/commerce-login.js`:
 /**
  * Commerce Login Block
  * Adobe EDS Storefront - Block Decorator Pattern
- * 
+ *
  * This block provides login/logout UI for HCL Commerce authentication
  * Uses sessionStorage to persist wcToken across page reloads
  */
 
 export default async function decorate(block) {
   // Check if user is already logged in
-  const wcToken = sessionStorage.getItem('hcl_wcToken');
-  
+  const wcToken = sessionStorage.getItem("hcl_wcToken");
+
   if (wcToken) {
     // User is logged in - show logout button
     renderLogoutUI(block);
@@ -257,23 +268,23 @@ function renderLoginUI(block) {
     </div>
   `;
 
-  const form = document.getElementById('login-form');
-  const errorDiv = document.getElementById('error-message');
+  const form = document.getElementById("login-form");
+  const errorDiv = document.getElementById("error-message");
 
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
     try {
-      errorDiv.innerHTML = '';
-      
+      errorDiv.innerHTML = "";
+
       // Call backend login endpoint
-      const response = await fetch('/api/hcl/login', {
-        method: 'POST',
+      const response = await fetch("/api/hcl/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
       });
@@ -286,23 +297,27 @@ function renderLoginUI(block) {
       }
 
       // Store wcToken in sessionStorage
-      sessionStorage.setItem('hcl_wcToken', data.wcToken);
-      sessionStorage.setItem('hcl_userId', data.userId);
-      sessionStorage.setItem('hcl_displayName', data.displayName);
-      sessionStorage.setItem('hcl_tokenExpires', Date.now() + (data.expiresIn * 1000));
+      sessionStorage.setItem("hcl_wcToken", data.wcToken);
+      sessionStorage.setItem("hcl_userId", data.userId);
+      sessionStorage.setItem("hcl_displayName", data.displayName);
+      sessionStorage.setItem(
+        "hcl_tokenExpires",
+        Date.now() + data.expiresIn * 1000,
+      );
 
       // Refresh the UI
       renderLogoutUI(block);
 
       // Dispatch custom event for other components to listen
-      window.dispatchEvent(new CustomEvent('hcl-user-logged-in', {
-        detail: {
-          userId: data.userId,
-          displayName: data.displayName,
-          wcToken: data.wcToken,
-        },
-      }));
-
+      window.dispatchEvent(
+        new CustomEvent("hcl-user-logged-in", {
+          detail: {
+            userId: data.userId,
+            displayName: data.displayName,
+            wcToken: data.wcToken,
+          },
+        }),
+      );
     } catch (error) {
       errorDiv.innerHTML = `Error: ${error.message}`;
     }
@@ -310,8 +325,8 @@ function renderLoginUI(block) {
 }
 
 function renderLogoutUI(block) {
-  const displayName = sessionStorage.getItem('hcl_displayName') || 'User';
-  
+  const displayName = sessionStorage.getItem("hcl_displayName") || "User";
+
   block.innerHTML = `
     <div class="logout-container">
       <p>Welcome, <strong>${displayName}</strong></p>
@@ -319,35 +334,34 @@ function renderLogoutUI(block) {
     </div>
   `;
 
-  const logoutBtn = document.getElementById('logout-btn');
-  
-  logoutBtn.addEventListener('click', async () => {
-    const wcToken = sessionStorage.getItem('hcl_wcToken');
-    
+  const logoutBtn = document.getElementById("logout-btn");
+
+  logoutBtn.addEventListener("click", async () => {
+    const wcToken = sessionStorage.getItem("hcl_wcToken");
+
     try {
       // Call backend logout endpoint
-      await fetch('/api/hcl/logout', {
-        method: 'POST',
+      await fetch("/api/hcl/logout", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ wcToken }),
       });
 
       // Clear sessionStorage
-      sessionStorage.removeItem('hcl_wcToken');
-      sessionStorage.removeItem('hcl_userId');
-      sessionStorage.removeItem('hcl_displayName');
-      sessionStorage.removeItem('hcl_tokenExpires');
+      sessionStorage.removeItem("hcl_wcToken");
+      sessionStorage.removeItem("hcl_userId");
+      sessionStorage.removeItem("hcl_displayName");
+      sessionStorage.removeItem("hcl_tokenExpires");
 
       // Refresh the UI
       renderLoginUI(block);
 
       // Dispatch custom event
-      window.dispatchEvent(new CustomEvent('hcl-user-logged-out'));
-
+      window.dispatchEvent(new CustomEvent("hcl-user-logged-out"));
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     }
   });
 }
@@ -360,18 +374,18 @@ In `blocks/product-details/product-details.js`:
 ```javascript
 // When adding to cart, include wcToken in the request
 async function addToCart(productData) {
-  const wcToken = sessionStorage.getItem('hcl_wcToken');
-  
+  const wcToken = sessionStorage.getItem("hcl_wcToken");
+
   if (!wcToken) {
-    alert('Please login first');
+    alert("Please login first");
     return;
   }
 
-  const response = await fetch('/api/hcl/cart/add', {
-    method: 'POST',
+  const response = await fetch("/api/hcl/cart/add", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'X-WC-Token': wcToken, // Pass token in header
+      "Content-Type": "application/json",
+      "X-WC-Token": wcToken, // Pass token in header
     },
     body: JSON.stringify({
       partNumber: productData.partNumber,
@@ -382,19 +396,19 @@ async function addToCart(productData) {
   });
 
   const data = await response.json();
-  
+
   if (!data.success) {
     // Handle error - might be token expired
     if (response.status === 401) {
-      alert('Session expired. Please login again.');
-      sessionStorage.removeItem('hcl_wcToken');
-      window.dispatchEvent(new CustomEvent('hcl-user-logged-out'));
+      alert("Session expired. Please login again.");
+      sessionStorage.removeItem("hcl_wcToken");
+      window.dispatchEvent(new CustomEvent("hcl-user-logged-out"));
     }
     return;
   }
 
   // Success
-  console.log('Item added to cart');
+  console.log("Item added to cart");
 }
 ```
 
@@ -414,6 +428,7 @@ curl -X POST http://localhost:3001/api/hcl/login \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -435,6 +450,7 @@ curl -X POST http://localhost:3001/api/hcl/login \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": false,
@@ -466,22 +482,22 @@ curl "http://localhost:3001/api/hcl/auth/validate?wcToken=eyJhbGc..."
 
 ```javascript
 // Store in sessionStorage (cleared when browser closes)
-sessionStorage.setItem('hcl_wcToken', wcToken);
-sessionStorage.setItem('hcl_tokenExpires', expiresAt);
+sessionStorage.setItem("hcl_wcToken", wcToken);
+sessionStorage.setItem("hcl_tokenExpires", expiresAt);
 
 // Retrieve when needed
-const token = sessionStorage.getItem('hcl_wcToken');
-const expiresAt = parseInt(sessionStorage.getItem('hcl_tokenExpires'));
+const token = sessionStorage.getItem("hcl_wcToken");
+const expiresAt = parseInt(sessionStorage.getItem("hcl_tokenExpires"));
 
 // Check if token is expired
 if (Date.now() > expiresAt) {
   // Token expired - prompt user to login again
-  sessionStorage.removeItem('hcl_wcToken');
+  sessionStorage.removeItem("hcl_wcToken");
 }
 
 // Clear on logout
-sessionStorage.removeItem('hcl_wcToken');
-sessionStorage.removeItem('hcl_tokenExpires');
+sessionStorage.removeItem("hcl_wcToken");
+sessionStorage.removeItem("hcl_tokenExpires");
 ```
 
 ### Token in API Requests
@@ -490,14 +506,14 @@ Always include wcToken when making authenticated requests:
 
 ```javascript
 const headers = {
-  'Content-Type': 'application/json',
-  'Cookie': `WCToken=${wcToken}`, // HCL expects token in cookie
+  "Content-Type": "application/json",
+  Cookie: `WCToken=${wcToken}`, // HCL expects token in cookie
 };
 
 // Or use header if supported
 const headers = {
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${wcToken}`,
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${wcToken}`,
 };
 ```
 
@@ -508,21 +524,21 @@ Monitor token expiry and prompt re-login:
 ```javascript
 // Check token expiry periodically
 function checkTokenExpiry() {
-  const expiresAt = parseInt(sessionStorage.getItem('hcl_tokenExpires'));
-  
+  const expiresAt = parseInt(sessionStorage.getItem("hcl_tokenExpires"));
+
   if (!expiresAt) return;
-  
+
   // Warn user 5 minutes before expiry
-  const warningTime = expiresAt - (5 * 60 * 1000);
-  
+  const warningTime = expiresAt - 5 * 60 * 1000;
+
   if (Date.now() > warningTime) {
-    showWarning('Your session will expire soon. Please login again.');
+    showWarning("Your session will expire soon. Please login again.");
   }
-  
+
   if (Date.now() > expiresAt) {
     // Token expired
-    sessionStorage.removeItem('hcl_wcToken');
-    window.dispatchEvent(new CustomEvent('hcl-token-expired'));
+    sessionStorage.removeItem("hcl_wcToken");
+    window.dispatchEvent(new CustomEvent("hcl-token-expired"));
   }
 }
 
@@ -537,12 +553,14 @@ setInterval(checkTokenExpiry, 60000);
 ### Issue: Login returns 401 "Authentication failed"
 
 **Possible Causes:**
+
 1. HCL Commerce VM not accessible
 2. Invalid username or password
 3. Wrong HCL_HOST URL
 4. Network/VPN issue
 
 **Solution:**
+
 ```bash
 # Test HCL connectivity
 curl -v https://20.40.52.251/identity/v1/customers/login \
@@ -557,31 +575,33 @@ curl -v https://20.40.52.251/identity/v1/customers/login \
 ### Issue: Cart operations return 401
 
 **Possible Causes:**
+
 1. wcToken not included in request
 2. Token has expired
 3. Token format incorrect
 
 **Solution:**
+
 ```javascript
 // Always check token before API calls
-const wcToken = sessionStorage.getItem('hcl_wcToken');
+const wcToken = sessionStorage.getItem("hcl_wcToken");
 if (!wcToken) {
-  alert('Please login first');
+  alert("Please login first");
   return;
 }
 
 // Check expiry
-const expiresAt = parseInt(sessionStorage.getItem('hcl_tokenExpires'));
+const expiresAt = parseInt(sessionStorage.getItem("hcl_tokenExpires"));
 if (Date.now() > expiresAt) {
-  alert('Session expired. Please login again.');
-  sessionStorage.removeItem('hcl_wcToken');
+  alert("Session expired. Please login again.");
+  sessionStorage.removeItem("hcl_wcToken");
   return;
 }
 
 // Include token in request
-const response = await fetch('/api/hcl/cart/add', {
+const response = await fetch("/api/hcl/cart/add", {
   headers: {
-    'X-WC-Token': wcToken,
+    "X-WC-Token": wcToken,
   },
   // ... other options
 });
@@ -590,6 +610,7 @@ const response = await fetch('/api/hcl/cart/add', {
 ### Issue: "USE_REAL_HCL_AUTH not set" warning
 
 **Solution:**
+
 ```bash
 # Set environment variable before starting server
 export USE_REAL_HCL_AUTH=true
@@ -604,12 +625,14 @@ echo "USE_REAL_HCL_AUTH=true" >> .env
 ## Files Modified
 
 ### Backend Files
+
 - `api/utils/hcl-rest-auth.js` (NEW) - HCL REST API authentication
 - `api/controllers/hcl-auth-controller.js` (UPDATED) - Support both real and mock auth
 - `api/server.js` (UPDATED) - Added logout and validate endpoints
 - `.env` (UPDATED) - Added USE_REAL_HCL_AUTH flag
 
 ### Frontend Files (To Create)
+
 - `blocks/commerce-login/commerce-login.js` (NEW) - Login/logout UI
 - `blocks/commerce-login/commerce-login.css` (NEW) - Styling
 - `blocks/product-details/product-details.js` (UPDATED) - Include wcToken in requests
@@ -630,6 +653,7 @@ The authentication system is now configured to:
 ✅ Provide fallback to mock auth for development
 
 **Next Steps:**
+
 1. Update frontend components to use wcToken
 2. Create login/logout UI block
 3. Test with real HCL Commerce credentials

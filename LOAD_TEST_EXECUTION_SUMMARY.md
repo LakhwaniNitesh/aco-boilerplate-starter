@@ -16,17 +16,20 @@ Verify the authentication endpoint (`POST /api/hcl/login`) reliability under con
 ### Features
 
 ✅ **Concurrent Request Management**
+
 - Configurable concurrency (default: 5 concurrent requests)
 - Configurable iterations (default: 20 total requests)
 - Automatic request queuing respects concurrency limit
 
 ✅ **Comprehensive Metrics Collection**
+
 - Response time tracking (avg, min, max, median)
 - Success/failure counts and rates
 - Token validation
 - Error categorization
 
 ✅ **Production-Ready Output**
+
 - Clear, organized results summary
 - Statistical analysis with recommendations
 - Error detailed logging
@@ -105,19 +108,19 @@ Load test complete!
 
 ### Success Rate Thresholds
 
-| Rate | Status | Action |
-|------|--------|--------|
-| >= 95% | ✅ Excellent | Endpoint ready for production |
-| 90-95% | ⚠️ Good | Monitor for intermittent errors |
-| < 90% | ❌ Poor | Investigate backend issues |
+| Rate   | Status       | Action                          |
+| ------ | ------------ | ------------------------------- |
+| >= 95% | ✅ Excellent | Endpoint ready for production   |
+| 90-95% | ⚠️ Good      | Monitor for intermittent errors |
+| < 90%  | ❌ Poor      | Investigate backend issues      |
 
 ### Response Time Thresholds
 
-| Time | Status | Action |
-|------|--------|--------|
-| < 500ms | ✅ Excellent | High performance endpoint |
+| Time       | Status        | Action                        |
+| ---------- | ------------- | ----------------------------- |
+| < 500ms    | ✅ Excellent  | High performance endpoint     |
 | 500-1000ms | ⚠️ Acceptable | Monitor under production load |
-| > 1000ms | ❌ Slow | Optimize backend or scale |
+| > 1000ms   | ❌ Slow       | Optimize backend or scale     |
 
 ---
 
@@ -144,7 +147,7 @@ for (let i = 0; i < iterations; i++) {
     await delay(10); // Wait for slot to open
   }
   activeRequests += 1;
-  makeRequest(i);  // Non-blocking
+  makeRequest(i); // Non-blocking
 }
 
 // Wait for all to complete
@@ -154,6 +157,7 @@ while (completedRequests < iterations) {
 ```
 
 This ensures:
+
 - ✅ Exactly `concurrency` requests in flight at any time
 - ✅ All `iterations` requests eventually complete
 - ✅ Accurate timing of HTTP operations only (excludes wait time)
@@ -165,12 +169,15 @@ This ensures:
 ### Environment Setup
 
 1. **Backend Proxy Running**:
+
    ```bash
    node api/server.js
    ```
+
    Server will run on `http://localhost:3001`
 
 2. **Credentials Configured** (in `.env`):
+
    ```
    HCL_USERNAME=auroraadobetest
    HCL_PASSWORD=passw0rd
@@ -234,6 +241,7 @@ npm run test:e2e
 **Problem**: Backend proxy not running
 
 **Solution**:
+
 ```bash
 node api/server.js
 # Wait for "Status: RUNNING" message before running test
@@ -244,6 +252,7 @@ node api/server.js
 **Problem**: Backend server crashed or authentication failed
 
 **Solution**:
+
 1. Check backend proxy output for errors
 2. Verify `.env` credentials are correct
 3. Check HCL Commerce server is accessible
@@ -254,6 +263,7 @@ node api/server.js
 **Problem**: Network latency or server load
 
 **Solution**:
+
 1. Reduce concurrency: `node api/load-test.mjs 5 50`
 2. Check HCL Commerce server status
 3. Check network connectivity
@@ -272,11 +282,11 @@ node api/server.js
 
 ## 📝 Files Created
 
-| File | Purpose | Size |
-|------|---------|------|
-| `api/load-test.mjs` | Load test tool | ~400 lines |
+| File                                   | Purpose               | Size       |
+| -------------------------------------- | --------------------- | ---------- |
+| `api/load-test.mjs`                    | Load test tool        | ~400 lines |
 | `LAYER2_FRONTEND_SERVICES_COMPLETE.md` | Service documentation | ~500 lines |
-| `LOAD_TEST_EXECUTION_SUMMARY.md` | This file | ~300 lines |
+| `LOAD_TEST_EXECUTION_SUMMARY.md`       | This file             | ~300 lines |
 
 ---
 

@@ -1,5 +1,5 @@
 /* eslint-disable import/no-cycle */
-import { deepmerge } from '@dropins/tools/lib.js';
+import { deepmerge } from "@dropins/tools/lib.js";
 
 // Private state
 let config = null;
@@ -13,8 +13,10 @@ let rootConfig = null;
  */
 function buildConfigURL() {
   // Use config-local.json if running on localhost, otherwise use config.json
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const configFile = isLocalhost ? 'config-local.json' : 'config.json';
+  const isLocalhost =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+  const configFile = isLocalhost ? "config-local.json" : "config.json";
   return new URL(`${window.location.origin}/${configFile}`);
 }
 
@@ -26,7 +28,7 @@ function buildConfigURL() {
  * @returns {any} - The value of the key.
  */
 function getValue(obj, key) {
-  return key.split('.').reduce((current, part) => {
+  return key.split(".").reduce((current, part) => {
     if (!Object.prototype.hasOwnProperty.call(current, part)) {
       console.warn(`Property ${key} does not exist in the object`);
       return undefined;
@@ -41,11 +43,11 @@ function getValue(obj, key) {
  * @returns {string} - The value of the cookie
  */
 function getCookie(cookieName) {
-  const cookies = document.cookie.split(';');
+  const cookies = document.cookie.split(";");
   let foundValue;
 
   cookies.forEach((cookie) => {
-    const [name, value] = cookie.trim().split('=');
+    const [name, value] = cookie.trim().split("=");
     if (name === cookieName) {
       foundValue = decodeURIComponent(value);
     }
@@ -61,23 +63,27 @@ function getCookie(cookieName) {
  */
 function getRootPath(configObj = config) {
   if (!configObj) {
-    console.warn('No config found. Please call initializeConfig() first.');
-    return '/';
+    console.warn("No config found. Please call initializeConfig() first.");
+    return "/";
   }
 
   const value = Object.keys(configObj?.public)
     // Sort by number of non-empty segments to find the deepest path
     .sort((a, b) => {
-      const aSegments = a.split('/').filter(Boolean).length;
-      const bSegments = b.split('/').filter(Boolean).length;
+      const aSegments = a.split("/").filter(Boolean).length;
+      const bSegments = b.split("/").filter(Boolean).length;
       return bSegments - aSegments;
     })
-    .find((key) => window.location.pathname === key || window.location.pathname.startsWith(key));
+    .find(
+      (key) =>
+        window.location.pathname === key ||
+        window.location.pathname.startsWith(key),
+    );
 
-  rootPath = value ?? '/';
+  rootPath = value ?? "/";
 
-  if (!rootPath.startsWith('/') || !rootPath.endsWith('/')) {
-    throw new Error('Invalid root path');
+  if (!rootPath.startsWith("/") || !rootPath.endsWith("/")) {
+    throw new Error("Invalid root path");
   }
 
   return rootPath;
@@ -89,11 +95,11 @@ function getRootPath(configObj = config) {
  */
 function getListOfRootPaths() {
   if (!config) {
-    console.warn('No config found. Please call initializeConfig() first.');
+    console.warn("No config found. Please call initializeConfig() first.");
     return [];
   }
 
-  return Object.keys(config?.public).filter((root) => root !== 'default');
+  return Object.keys(config?.public).filter((root) => root !== "default");
 }
 
 /**
@@ -112,12 +118,14 @@ function isMultistore() {
  */
 function getHeaders(scope) {
   if (!rootConfig) {
-    throw new Error('Configuration not initialized. Call initializeConfig() first.');
+    throw new Error(
+      "Configuration not initialized. Call initializeConfig() first.",
+    );
   }
   const headers = rootConfig.headers ?? {};
   return {
-    ...headers.all ?? {},
-    ...headers[scope] ?? {},
+    ...(headers.all ?? {}),
+    ...(headers[scope] ?? {}),
   };
 }
 
@@ -126,7 +134,7 @@ function getHeaders(scope) {
  * @returns {boolean} - true if the user is authenticated
  */
 function checkIsAuthenticated() {
-  return !!getCookie('auth_dropin_user_token') ?? false;
+  return !!getCookie("auth_dropin_user_token") ?? false;
 }
 
 /**
@@ -138,7 +146,9 @@ function checkIsAuthenticated() {
  */
 async function applyConfigOverrides(configObj = config, root = rootPath) {
   if (!configObj) {
-    throw new Error('Configuration not initialized. Call initializeConfig() first.');
+    throw new Error(
+      "Configuration not initialized. Call initializeConfig() first.",
+    );
   }
 
   const defaultConfig = configObj.public?.default;
@@ -149,7 +159,7 @@ async function applyConfigOverrides(configObj = config, root = rootPath) {
 
   const current = deepmerge(
     defaultConfig,
-    root === '/' ? defaultConfig : configObj.public[root] || defaultConfig,
+    root === "/" ? defaultConfig : configObj.public[root] || defaultConfig,
   );
 
   return current;
@@ -163,24 +173,27 @@ async function applyConfigOverrides(configObj = config, root = rootPath) {
  */
 async function getConfigFromSession() {
   try {
-    const configJSON = window.sessionStorage.getItem('config');
+    const configJSON = window.sessionStorage.getItem("config");
     if (!configJSON) {
-      throw new Error('No config in session storage');
+      throw new Error("No config in session storage");
     }
 
     const parsedConfig = JSON.parse(configJSON);
-    if (!parsedConfig[':expiry'] || parsedConfig[':expiry'] < Math.round(Date.now() / 1000)) {
-      throw new Error('Config expired');
+    if (
+      !parsedConfig[":expiry"] ||
+      parsedConfig[":expiry"] < Math.round(Date.now() / 1000)
+    ) {
+      throw new Error("Config expired");
     }
     return parsedConfig;
   } catch (e) {
     let configJSON = await fetch(buildConfigURL());
     if (!configJSON.ok) {
-      throw new Error('Failed to fetch config');
+      throw new Error("Failed to fetch config");
     }
     configJSON = await configJSON.json();
-    configJSON[':expiry'] = Math.round(Date.now() / 1000) + 7200;
-    window.sessionStorage.setItem('config', JSON.stringify(configJSON));
+    configJSON[":expiry"] = Math.round(Date.now() / 1000) + 7200;
+    window.sessionStorage.setItem("config", JSON.stringify(configJSON));
     return configJSON;
   }
 }
@@ -203,7 +216,9 @@ async function initializeConfig() {
  */
 function getConfigValue(configParam) {
   if (!rootConfig) {
-    throw new Error('Configuration not initialized. Call initializeConfig() first.');
+    throw new Error(
+      "Configuration not initialized. Call initializeConfig() first.",
+    );
   }
   return getValue(rootConfig, configParam);
 }

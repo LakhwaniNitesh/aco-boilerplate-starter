@@ -3,6 +3,7 @@
 ## 🔴 Problem Identified
 
 ### Symptom
+
 ```
 Error: "Failed to add product to cart: Internal Server Error"
 Network Response: 500 status code
@@ -42,14 +43,15 @@ Error details: {
 ### Code Problem
 
 **Before (WRONG):**
+
 ```javascript
 // hcl-client.js
 
 class HCLClient {
   constructor() {
     // ❌ PROBLEM: Reading env vars at import time
-    this.host = process.env.HCL_HOST;  // Returns: undefined
-    this.storeId = process.env.HCL_STORE_ID;  // Returns: undefined
+    this.host = process.env.HCL_HOST; // Returns: undefined
+    this.storeId = process.env.HCL_STORE_ID; // Returns: undefined
     this.baseUrl = `${this.host}/wcs/resources/store/${this.storeId}`;
     // Result: baseUrl = "undefined/wcs/resources/store/undefined"
   }
@@ -60,6 +62,7 @@ export const hclClient = new HCLClient();
 ```
 
 **After (CORRECT):**
+
 ```javascript
 // hcl-client.js
 
@@ -74,8 +77,8 @@ class HCLClient {
 
   // ✅ New initialize method
   initialize() {
-    this.host = process.env.HCL_HOST;  // Now returns: https://20.40.52.251
-    this.storeId = process.env.HCL_STORE_ID;  // Now returns: 715842834
+    this.host = process.env.HCL_HOST; // Now returns: https://20.40.52.251
+    this.storeId = process.env.HCL_STORE_ID; // Now returns: 715842834
     this.baseUrl = `${this.host}/wcs/resources/store/${this.storeId}`;
     // Result: baseUrl = "https://20.40.52.251/wcs/resources/store/715842834"
   }
@@ -92,6 +95,7 @@ export const hclClient = new HCLClient();
 ### Step 1: Defer Initialization in hcl-client.js
 
 **Changed constructor:**
+
 ```javascript
 class HCLClient {
   constructor() {
@@ -111,12 +115,12 @@ class HCLClient {
     this.host = process.env.HCL_HOST;
     this.storeId = process.env.HCL_STORE_ID;
     this.baseUrl = `${this.host}/wcs/resources/store/${this.storeId}`;
-    
+
     if (!this.host || !this.storeId) {
-      console.error('[ERROR] HCL_HOST or HCL_STORE_ID not set');
-      throw new Error('Missing required environment variables');
+      console.error("[ERROR] HCL_HOST or HCL_STORE_ID not set");
+      throw new Error("Missing required environment variables");
     }
-    
+
     console.log(`[INFO] HCL Client initialized: ${this.baseUrl}`);
   }
 }
@@ -125,15 +129,16 @@ class HCLClient {
 ### Step 2: Call initialize() After dotenv.config() in server.js
 
 **Added to server.js:**
+
 ```javascript
-import { hclClient } from './utils/hcl-client.js';
+import { hclClient } from "./utils/hcl-client.js";
 
 // IMPORTANT: Initialize HCL client AFTER loading environment variables
 try {
   hclClient.initialize();
-  console.log('[INFO] ✅ HCL Client initialized successfully');
+  console.log("[INFO] ✅ HCL Client initialized successfully");
 } catch (error) {
-  console.error('[ERROR] Failed to initialize HCL Client:', error.message);
+  console.error("[ERROR] Failed to initialize HCL Client:", error.message);
   process.exit(1);
 }
 ```
@@ -175,24 +180,26 @@ try {
 
 ## 📊 Impact Summary
 
-| Aspect | Before | After |
-|--------|--------|-------|
+| Aspect               | Before                                    | After                                                |
+| -------------------- | ----------------------------------------- | ---------------------------------------------------- |
 | **URL Construction** | `undefined/wcs/resources/store/undefined` | `https://20.40.52.251/wcs/resources/store/715842834` |
-| **HTTP Status** | 500 Internal Server Error | 201 Created (success) |
-| **Cart Operations** | ❌ Fail | ✅ Work |
-| **Error Message** | "ERR_INVALID_URL" | None - Success! |
-| **User Experience** | Can't add to cart | Add to cart works! |
+| **HTTP Status**      | 500 Internal Server Error                 | 201 Created (success)                                |
+| **Cart Operations**  | ❌ Fail                                   | ✅ Work                                              |
+| **Error Message**    | "ERR_INVALID_URL"                         | None - Success!                                      |
+| **User Experience**  | Can't add to cart                         | Add to cart works!                                   |
 
 ---
 
 ## 🧪 Testing the Fix
 
 ### Test Script
+
 ```bash
 node test-cart-endpoint.js
 ```
 
 ### Manual Testing
+
 1. Start backend: `npm run dev:backend`
 2. Open browser: `http://localhost:8080/products/budget-laptop-cla022_220101`
 3. Click "Add to Cart"
@@ -203,6 +210,7 @@ node test-cart-endpoint.js
    - ✅ Network shows 200/201 status
 
 ### Backend Logs to Expect
+
 ```
 [INFO] HCL Client initialized: https://20.40.52.251/wcs/resources/store/715842834
 ...
@@ -217,12 +225,14 @@ node test-cart-endpoint.js
 ### Best Practice: Initialization Timing
 
 **❌ WRONG:**
+
 ```javascript
 // Reading env vars at import/instantiation time
 const client = new Client(process.env.API_KEY);
 ```
 
 **✅ RIGHT:**
+
 ```javascript
 // Create instance, initialize after env vars loaded
 const client = new Client();
@@ -247,10 +257,10 @@ client.initialize();
 
 ## 📝 Files Changed
 
-| File | Change | Line |
-|------|--------|------|
-| `api/utils/hcl-client.js` | Defer env var reading to `initialize()` | 11-27 |
-| `api/server.js` | Call `hclClient.initialize()` after dotenv | 31-36 |
+| File                      | Change                                     | Line  |
+| ------------------------- | ------------------------------------------ | ----- |
+| `api/utils/hcl-client.js` | Defer env var reading to `initialize()`    | 11-27 |
+| `api/server.js`           | Call `hclClient.initialize()` after dotenv | 31-36 |
 
 ## Git Commit
 

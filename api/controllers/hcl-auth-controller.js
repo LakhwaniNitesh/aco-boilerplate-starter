@@ -1,26 +1,26 @@
 /**
  * HCL Authentication Controller
  * Handles login and token management using HCL Commerce REST API
- * 
+ *
  * References:
  * https://help.hcl-software.com/commerce/9.0.0/restapi/code/authentication_and_session_management.html
  */
 
-import hclRestAuth from '../utils/hcl-rest-auth.js';
-import mockHCLAuth from '../utils/mock-hcl-auth.js';
+import hclRestAuth from "../utils/hcl-rest-auth.js";
+import mockHCLAuth from "../utils/mock-hcl-auth.js";
 
 /**
  * USE_REAL_HCL_AUTH: Set to true to use real HCL Commerce REST API
  * Set to false to use mock auth (development/testing without HCL VM)
- * 
+ *
  * Real HCL: Requires HCL_HOST and HCL_STORE_ID environment variables
  * Mock: Uses in-memory user database (test credentials built-in)
- * 
+ *
  * NOTE: This is evaluated at runtime (not at module load time) to ensure
  * dotenv has already loaded the .env file.
  */
 const getUseRealHCLAuth = () => {
-  const value = process.env.USE_REAL_HCL_AUTH === 'true';
+  const value = process.env.USE_REAL_HCL_AUTH === "true";
   return value;
 };
 
@@ -28,13 +28,13 @@ export const hclAuthController = {
   /**
    * POST /api/hcl/login
    * Authenticate user with HCL Commerce REST API
-   * 
+   *
    * Request body:
    * {
    *   "username": "auroraadobetest",
    *   "password": "passw0rd"
    * }
-   * 
+   *
    * Response:
    * {
    *   "success": true,
@@ -51,7 +51,7 @@ export const hclAuthController = {
       if (!username || !password) {
         return res.status(400).json({
           success: false,
-          error: 'Missing required fields: username, password',
+          error: "Missing required fields: username, password",
         });
       }
 
@@ -60,18 +60,22 @@ export const hclAuthController = {
       // Use real HCL REST API or mock based on environment
       let authResult;
       const useReal = getUseRealHCLAuth();
-      
+
       if (useReal) {
-        console.log('[AUTH-CONTROLLER] Using REAL HCL Commerce REST API');
+        console.log("[AUTH-CONTROLLER] Using REAL HCL Commerce REST API");
         authResult = await hclRestAuth.login(username, password);
       } else {
-        console.log('[AUTH-CONTROLLER] Using MOCK authentication (development mode)');
+        console.log(
+          "[AUTH-CONTROLLER] Using MOCK authentication (development mode)",
+        );
         authResult = mockHCLAuth.login(username, password);
       }
 
       // Check for authentication failure
       if (!authResult.success) {
-        console.warn(`[AUTH-CONTROLLER] Authentication failed: ${authResult.error}`);
+        console.warn(
+          `[AUTH-CONTROLLER] Authentication failed: ${authResult.error}`,
+        );
         const statusCode = authResult.statusCode || 401;
         return res.status(statusCode).json({
           success: false,
@@ -87,26 +91,62 @@ export const hclAuthController = {
       const responseData = {
         success: true,
         wcToken: authResult.wcToken || authResult.accessToken,
+        wcTrustedToken: authResult.wcTrustedToken || authResult.trustedToken, // CRITICAL: Include trusted token separately
         accessToken: authResult.wcToken || authResult.accessToken, // Alias for consistency
+        trustedToken: authResult.wcTrustedToken || authResult.trustedToken, // Alias for consistency
         userId: authResult.userId,
         email: authResult.email,
         displayName: authResult.displayName || username,
-        firstName: authResult.firstName || '',
-        lastName: authResult.lastName || '',
+        firstName: authResult.firstName || "",
+        lastName: authResult.lastName || "",
         expiresIn: authResult.expiresIn || 3600, // Token expiration in seconds
         // Include session cookies from login response (JSESSIONID, WC_PERSISTENT, etc)
         // Frontend should pass these to subsequent cart requests
         sessionCookies: authResult.sessionCookies || {},
       };
 
-      console.log(`[AUTH-CONTROLLER] Sending login response with sessionCookies:`, {
+      console.log(
+        `[AUTH-CONTROLLER] BEFORE SENDING RESPONSE - authResult contains:`,
+        {
+          hasWcToken: !!authResult.wcToken,
+          hasWcTrustedToken: !!authResult.wcTrustedToken,
+          hasTrustedToken: !!authResult.trustedToken,
+          wcTokenSample: authResult.wcToken
+            ? authResult.wcToken.substring(0, 30)
+            : "MISSING",
+          wcTrustedTokenSample: authResult.wcTrustedToken
+            ? authResult.wcTrustedToken.substring(0, 30)
+            : "MISSING",
+          trustedTokenSample: authResult.trustedToken
+            ? authResult.trustedToken.substring(0, 30)
+            : "MISSING",
+        },
+      );
+
+      console.log(`[AUTH-CONTROLLER] RESPONSE DATA BEING SENT TO FRONTEND:`, {
+        success: responseData.success,
+        hasWcToken: !!responseData.wcToken,
+        hasWcTrustedToken: !!responseData.wcTrustedToken,
+        hasTrustedToken: !!responseData.trustedToken,
+        wcTokenSample: responseData.wcToken
+          ? responseData.wcToken.substring(0, 30)
+          : "MISSING",
+        wcTrustedTokenSample: responseData.wcTrustedToken
+          ? responseData.wcTrustedToken.substring(0, 30)
+          : "MISSING",
+        trustedTokenSample: responseData.trustedToken
+          ? responseData.trustedToken.substring(0, 30)
+          : "MISSING",
         hasCookies: !!responseData.sessionCookies,
         cookieKeys: Object.keys(responseData.sessionCookies || {}),
-        sessionCookiesValue: responseData.sessionCookies,
       });
 
-      res.json(responseData);
+      console.log(
+        `[AUTH-CONTROLLER] FULL RESPONSE DATA:`,
+        JSON.stringify(responseData, null, 2),
+      );
 
+      res.json(responseData);
     } catch (error) {
       console.error(`[AUTH-CONTROLLER] Login error: ${error.message}`);
       next(error);
@@ -116,7 +156,7 @@ export const hclAuthController = {
   /**
    * POST /api/hcl/logout
    * Invalidate session and logout from HCL Commerce
-   * 
+   *
    * Request body:
    * {
    *   "wcToken": "..."
@@ -127,31 +167,32 @@ export const hclAuthController = {
       const { wcToken } = req.body;
 
       if (!wcToken) {
-        console.warn('[AUTH-CONTROLLER] Logout called without wcToken');
+        console.warn("[AUTH-CONTROLLER] Logout called without wcToken");
         return res.status(400).json({
           success: false,
-          error: 'Missing wcToken',
+          error: "Missing wcToken",
         });
       }
 
-      console.log('[AUTH-CONTROLLER] Processing logout');
+      console.log("[AUTH-CONTROLLER] Processing logout");
 
       // Call HCL logout if using real auth
       const useReal = getUseRealHCLAuth();
       if (useReal) {
         const logoutResult = await hclRestAuth.logout(wcToken);
-        console.log(`[AUTH-CONTROLLER] HCL logout response: ${logoutResult.success}`);
+        console.log(
+          `[AUTH-CONTROLLER] HCL logout response: ${logoutResult.success}`,
+        );
       } else {
         mockHCLAuth.logout(wcToken);
-        console.log('[AUTH-CONTROLLER] Mock logout completed');
+        console.log("[AUTH-CONTROLLER] Mock logout completed");
       }
 
       // Always return success - token is invalidated on frontend anyway
       res.json({
         success: true,
-        message: 'Logout successful',
+        message: "Logout successful",
       });
-
     } catch (error) {
       console.error(`[AUTH-CONTROLLER] Logout error: ${error.message}`);
       next(error);
@@ -161,7 +202,7 @@ export const hclAuthController = {
   /**
    * GET /api/hcl/auth/validate
    * Validate if a wcToken is still valid
-   * 
+   *
    * Query params:
    * ?wcToken=...
    */
@@ -172,11 +213,11 @@ export const hclAuthController = {
       if (!wcToken) {
         return res.status(400).json({
           success: false,
-          error: 'Missing wcToken parameter',
+          error: "Missing wcToken parameter",
         });
       }
 
-      console.log('[AUTH-CONTROLLER] Validating token');
+      console.log("[AUTH-CONTROLLER] Validating token");
 
       let isValid;
       const useReal = getUseRealHCLAuth();
@@ -192,7 +233,6 @@ export const hclAuthController = {
         success: true,
         valid: isValid,
       });
-
     } catch (error) {
       console.error(`[AUTH-CONTROLLER] Validation error: ${error.message}`);
       next(error);
@@ -209,24 +249,26 @@ export const hclAuthController = {
         success: true,
         users: [
           {
-            username: 'auroraadobetest',
-            password: 'passw0rd',
-            description: 'Aurora Test User',
+            username: "auroraadobetest",
+            password: "passw0rd",
+            description: "Aurora Test User",
           },
           {
-            username: 'adobetest1',
-            password: 'passw0rd',
-            description: 'Adobe Test User 1',
+            username: "adobetest1",
+            password: "passw0rd",
+            description: "Adobe Test User 1",
           },
           {
-            username: 'adobetest2',
-            password: 'passw0rd',
-            description: 'Adobe Test User 2',
+            username: "adobetest2",
+            password: "passw0rd",
+            description: "Adobe Test User 2",
           },
         ],
       });
     } catch (error) {
-      console.error(`[AUTH-CONTROLLER] Error getting available users: ${error.message}`);
+      console.error(
+        `[AUTH-CONTROLLER] Error getting available users: ${error.message}`,
+      );
       next(error);
     }
   },
@@ -239,29 +281,29 @@ export const hclAuthController = {
   diagnose: async (req, res, next) => {
     try {
       const useReal = getUseRealHCLAuth();
-      
+
       res.json({
         success: true,
-        mode: useReal ? 'REAL HCL Commerce' : 'MOCK Authentication',
+        mode: useReal ? "REAL HCL Commerce" : "MOCK Authentication",
         configuration: {
-          HCL_HOST: process.env.HCL_HOST || 'http://localhost:8080',
-          HCL_STORE_ID: process.env.HCL_STORE_ID || 'B2CStore',
-          HCL_CATALOG_ID: process.env.HCL_CATALOG_ID || '10001',
-          USE_REAL_HCL_AUTH: process.env.USE_REAL_HCL_AUTH === 'true',
+          HCL_HOST: process.env.HCL_HOST || "http://localhost:8080",
+          HCL_STORE_ID: process.env.HCL_STORE_ID || "B2CStore",
+          HCL_CATALOG_ID: process.env.HCL_CATALOG_ID || "10001",
+          USE_REAL_HCL_AUTH: process.env.USE_REAL_HCL_AUTH === "true",
         },
         loginEndpoints: {
-          primary: `${process.env.HCL_HOST || 'http://localhost:8080'}/store/${process.env.HCL_STORE_ID || 'B2CStore'}/loginidentity`,
-          alternative: `${process.env.HCL_HOST || 'http://localhost:8080'}/identity/v1/customers/login`,
+          primary: `${process.env.HCL_HOST || "http://localhost:8080"}/store/${process.env.HCL_STORE_ID || "B2CStore"}/loginidentity`,
+          alternative: `${process.env.HCL_HOST || "http://localhost:8080"}/identity/v1/customers/login`,
         },
         testCredentials: {
-          username: 'auroraadobetest',
-          password: 'passw0rd',
+          username: "auroraadobetest",
+          password: "passw0rd",
         },
         instructions: [
-          '1. If mode is MOCK, switch to REAL by setting USE_REAL_HCL_AUTH=true in .env',
-          '2. Verify HCL_HOST points to your HCL Commerce VM',
-          '3. Verify HCL_STORE_ID exists and user has access',
-          '4. Try logging in with test credentials',
+          "1. If mode is MOCK, switch to REAL by setting USE_REAL_HCL_AUTH=true in .env",
+          "2. Verify HCL_HOST points to your HCL Commerce VM",
+          "3. Verify HCL_STORE_ID exists and user has access",
+          "4. Try logging in with test credentials",
           '5. If "tenant not found" error, check store ID',
         ],
       });

@@ -5,10 +5,10 @@
 When attempting to login, received 503 error:
 
 ```
-Login failed with status 503. 
-("success":false,"error":"Service error: request to 
-https://20.40.52.251/store/715842834/logidentity failed, 
-reason: self-signed certificate; if the root CA is installed 
+Login failed with status 503.
+("success":false,"error":"Service error: request to
+https://20.40.52.251/store/715842834/logidentity failed,
+reason: self-signed certificate; if the root CA is installed
 locally, try running Node.js with `--use-system-ca`")
 ```
 
@@ -21,11 +21,13 @@ Node.js `node-fetch` library by default rejects HTTPS connections with self-sign
 Modified `api/utils/hcl-rest-auth.js` to:
 
 1. **Import https module**
+
    ```javascript
-   import https from 'https';
+   import https from "https";
    ```
 
 2. **Create HTTPS agent that accepts self-signed certs**
+
    ```javascript
    const httpsAgent = new https.Agent({
      rejectUnauthorized: false, // Accept self-signed certificates
@@ -43,6 +45,7 @@ Modified `api/utils/hcl-rest-auth.js` to:
    ```
 
 Applied to:
+
 - Login endpoint (`POST /store/{storeId}/loginidentity`)
 - Logout endpoint (`POST /identity/v1/customers/logout`)
 - Token validation endpoint (`GET /rest/model/v2/sites/{storeId}/cart`)
@@ -50,22 +53,27 @@ Applied to:
 ## How to Test
 
 1. **Ensure backend is running:**
+
    ```powershell
    npm run dev:backend
    ```
+
    Should show: `✅ RUNNING Port: 3001`
 
 2. **Start proxy:**
+
    ```powershell
    npm run dev:proxy
    ```
 
 3. **Start frontend:**
+
    ```powershell
    npm run dev:frontend
    ```
 
 4. **Open browser:**
+
    ```
    http://localhost:8080
    ```
@@ -78,6 +86,7 @@ Applied to:
 ## Verification
 
 Check browser DevTools Network tab:
+
 - ✅ `POST /api/hcl/login` → Status **200** (not 503)
 - ✅ Response contains `wcToken`
 - ✅ Modal shows success message

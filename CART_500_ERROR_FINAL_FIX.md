@@ -9,11 +9,13 @@
 ## Problem
 
 When trying to add a product to cart, the frontend shows:
+
 ```
 Failed to add product to cart: Internal Server Error
 ```
 
 Backend logs show HCL Commerce returning:
+
 ```
 [ERROR] HCL API returned 500: {
   "errors": [{
@@ -31,20 +33,22 @@ Backend logs show HCL Commerce returning:
 The backend was sending **too many fields** in the add-to-cart request body.
 
 ### ❌ **What We Were Sending (WRONG)**
+
 ```json
 {
   "body": [
     {
-      "catalogId": "10001",        // ← HCL doesn't like this
+      "catalogId": "10001", // ← HCL doesn't like this
       "partNumber": "CLA022_220101",
       "quantity": 1,
-      "storeId": "715842834"       // ← HCL doesn't like this
+      "storeId": "715842834" // ← HCL doesn't like this
     }
   ]
 }
 ```
 
 ### ✅ **What HCL Expects (CORRECT)**
+
 ```json
 {
   "body": [
@@ -71,14 +75,15 @@ Simplified the request body to include **only required fields**:
 const requestBody = {
   body: [
     {
-      partNumber,    // Only field 1: Product identifier
-      quantity,      // Only field 2: Quantity
+      partNumber, // Only field 1: Product identifier
+      quantity, // Only field 2: Quantity
     },
   ],
 };
 ```
 
 The `catalogId` and `storeId` are:
+
 - Already encoded in the **URL** path: `/store/{storeId}/cart`
 - Not needed in the body for HCL Commerce API
 - Actually causing HCL to reject the request
@@ -147,6 +152,7 @@ The `catalogId` and `storeId` are:
 ## Testing
 
 ### Browser Test
+
 1. Start backend: `npm run dev:backend`
 2. Navigate to: `http://localhost:8080`
 3. Login: `auroraadobetest` / `passw0rd`
@@ -156,6 +162,7 @@ The `catalogId` and `storeId` are:
 **Expected:** ✅ Success message appears, product in mini-cart
 
 **Backend Logs Should Show:**
+
 ```
 [DEBUG] Adding to cart: partNumber=CLA022_220101, qty=1
 [DEBUG] Cart request body: {"body":[{"partNumber":"CLA022_220101","quantity":1}]}
@@ -165,11 +172,13 @@ The `catalogId` and `storeId` are:
 ```
 
 ### Postman Test
+
 1. **URL:** `POST http://localhost:3001/api/hcl/cart/add`
 2. **Headers:**
    - `WCToken`: (your token)
    - `Content-Type`: `application/json`
 3. **Body:**
+
 ```json
 {
   "partNumber": "CLA022_220101",
@@ -177,6 +186,7 @@ The `catalogId` and `storeId` are:
   "accessToken": "(your token)"
 }
 ```
+
 4. **Expected:** `200 OK` with cart data
 
 ---
@@ -221,7 +231,7 @@ The `catalogId` and `storeId` are:
 ✅ Authentication - Still using Cookie header with WCToken  
 ✅ Endpoint structure - Still `/api/hcl/cart/add`  
 ✅ Response format - Still normalized to standard cart format  
-✅ Error handling - Still returns proper error messages  
+✅ Error handling - Still returns proper error messages
 
 ---
 

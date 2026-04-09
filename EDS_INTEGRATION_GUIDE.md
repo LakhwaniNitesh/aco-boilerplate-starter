@@ -50,6 +50,7 @@ npm run start:proxy
 ```
 
 **Expected Output:**
+
 ```
 ✓ HCL Commerce Backend Proxy listening on port 3001
 ✓ Health endpoint: http://localhost:3001/health
@@ -64,6 +65,7 @@ aem up --html-folder="./drafts/agents"
 ```
 
 **Expected Output:**
+
 ```
 ✓ AEM instance running on http://localhost:3000
 ✓ Blocks loaded and ready
@@ -72,6 +74,7 @@ aem up --html-folder="./drafts/agents"
 ### Step 3: Verify Both are Running
 
 **Test Backend:**
+
 ```bash
 curl http://localhost:3001/health
 # Should return: { "status": "ok" }
@@ -89,36 +92,40 @@ Open `http://localhost:3000` in your browser (should load)
 Create new pages in `drafts/agents/` to test each component:
 
 **auth-test.html** - Test authentication
+
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Auth Test</title>
     <script src="/scripts/scripts.js" type="module"></script>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Authentication Test</h1>
     <button onclick="testAuth()">Test Login</button>
     <pre id="result"></pre>
-    
+
     <script type="module">
-        import { HCLAuthService } from '/scripts/hcl-auth-service.js';
-        
-        window.testAuth = async () => {
-            try {
-                const result = await HCLAuthService.login(
-                    'test@example.com',
-                    'password123'
-                );
-                document.getElementById('result').textContent = 
-                    JSON.stringify(result, null, 2);
-            } catch (err) {
-                document.getElementById('result').textContent = 
-                    'Error: ' + err.message;
-            }
-        };
+      import { HCLAuthService } from "/scripts/hcl-auth-service.js";
+
+      window.testAuth = async () => {
+        try {
+          const result = await HCLAuthService.login(
+            "test@example.com",
+            "password123",
+          );
+          document.getElementById("result").textContent = JSON.stringify(
+            result,
+            null,
+            2,
+          );
+        } catch (err) {
+          document.getElementById("result").textContent =
+            "Error: " + err.message;
+        }
+      };
     </script>
-</body>
+  </body>
 </html>
 ```
 
@@ -127,51 +134,58 @@ Open: `http://localhost:3000/auth-test.html`
 ---
 
 **cart-test.html** - Test cart operations
+
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Cart Test</title>
-    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/styles.css" />
     <script src="/scripts/scripts.js" type="module"></script>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Cart Operations Test</h1>
-    
+
     <button onclick="addProduct()">Add Product</button>
     <button onclick="showCart()">Show Cart</button>
     <button onclick="clearCart()">Clear Cart</button>
-    
+
     <pre id="result"></pre>
-    
+
     <script type="module">
-        import { CartStore, useAddToCart } from '/scripts/cart-store.js';
-        
-        CartStore.subscribe((cart) => {
-            document.getElementById('result').textContent = 
-                JSON.stringify(cart, null, 2);
+      import { CartStore, useAddToCart } from "/scripts/cart-store.js";
+
+      CartStore.subscribe((cart) => {
+        document.getElementById("result").textContent = JSON.stringify(
+          cart,
+          null,
+          2,
+        );
+      });
+
+      window.addProduct = () => {
+        CartStore.addItem({
+          productId: "TEST-001",
+          name: "Test Product",
+          price: 99.99,
+          quantity: 1,
         });
-        
-        window.addProduct = () => {
-            CartStore.addItem({
-                productId: 'TEST-001',
-                name: 'Test Product',
-                price: 99.99,
-                quantity: 1
-            });
-        };
-        
-        window.showCart = () => {
-            const cart = CartStore.getCart();
-            document.getElementById('result').textContent = 
-                JSON.stringify(cart, null, 2);
-        };
-        
-        window.clearCart = () => {
-            CartStore.clear();
-        };
+      };
+
+      window.showCart = () => {
+        const cart = CartStore.getCart();
+        document.getElementById("result").textContent = JSON.stringify(
+          cart,
+          null,
+          2,
+        );
+      };
+
+      window.clearCart = () => {
+        CartStore.clear();
+      };
     </script>
-</body>
+  </body>
 </html>
 ```
 
@@ -180,55 +194,58 @@ Open: `http://localhost:3000/cart-test.html`
 ---
 
 **components-test.html** - Test all components
+
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Components Test</title>
-    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/styles.css" />
     <script src="/scripts/scripts.js" type="module"></script>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <h1>Component Integration Test</h1>
+      <h1>Component Integration Test</h1>
     </header>
-    
+
     <main>
-        <!-- Test 1: Product List -->
-        <section>
-            <h2>1. Product List Block</h2>
-            <div class="product-list-page"></div>
-        </section>
-        
-        <!-- Test 2: Add to Cart Button -->
-        <section>
-            <h2>2. Add to Cart Button</h2>
-            <div class="add-to-cart-hcl" 
-                 data-product-id="TEST-001"
-                 data-button-text="Add to Cart">
-            </div>
-        </section>
-        
-        <!-- Test 3: Mini Cart -->
-        <section>
-            <h2>3. Mini Cart Display</h2>
-            <div class="hcl-mini-cart" 
-                 data-show-heading="true"
-                 data-max-items="3">
-            </div>
-        </section>
-        
-        <!-- Test 4: Cart Page -->
-        <section>
-            <h2>4. Full Cart Page</h2>
-            <div class="hcl-cart-page"></div>
-        </section>
+      <!-- Test 1: Product List -->
+      <section>
+        <h2>1. Product List Block</h2>
+        <div class="product-list-page"></div>
+      </section>
+
+      <!-- Test 2: Add to Cart Button -->
+      <section>
+        <h2>2. Add to Cart Button</h2>
+        <div
+          class="add-to-cart-hcl"
+          data-product-id="TEST-001"
+          data-button-text="Add to Cart"
+        ></div>
+      </section>
+
+      <!-- Test 3: Mini Cart -->
+      <section>
+        <h2>3. Mini Cart Display</h2>
+        <div
+          class="hcl-mini-cart"
+          data-show-heading="true"
+          data-max-items="3"
+        ></div>
+      </section>
+
+      <!-- Test 4: Cart Page -->
+      <section>
+        <h2>4. Full Cart Page</h2>
+        <div class="hcl-cart-page"></div>
+      </section>
     </main>
-    
+
     <footer>
-        <p>All components should load and be interactive</p>
+      <p>All components should load and be interactive</p>
     </footer>
-</body>
+  </body>
 </html>
 ```
 
@@ -241,6 +258,7 @@ Open: `http://localhost:3000/components-test.html`
 Add components to your existing block pages:
 
 **In your existing page markup:**
+
 ```html
 <div class="section">
   <div class="default">
@@ -272,10 +290,11 @@ In `scripts/hcl-commerce-api.js`, update the API endpoint:
 
 ```javascript
 // Current default
-const API_BASE_URL = 'http://localhost:3001/api/hcl';
+const API_BASE_URL = "http://localhost:3001/api/hcl";
 
 // Or configure via environment variable
-const API_BASE_URL = process.env.HCL_API_BASE_URL || 'http://localhost:3001/api/hcl';
+const API_BASE_URL =
+  process.env.HCL_API_BASE_URL || "http://localhost:3001/api/hcl";
 ```
 
 ### Configure Cart Persistence
@@ -284,10 +303,10 @@ The cart automatically saves to localStorage:
 
 ```javascript
 // Get saved cart
-const savedCart = JSON.parse(localStorage.getItem('cart') || '{}');
+const savedCart = JSON.parse(localStorage.getItem("cart") || "{}");
 
 // Clear cart
-localStorage.removeItem('cart');
+localStorage.removeItem("cart");
 ```
 
 ---
@@ -297,16 +316,19 @@ localStorage.removeItem('cart');
 When integrating locally, verify:
 
 ### ✅ Backend
+
 - [ ] `curl http://localhost:3001/health` returns OK
 - [ ] Backend process is running (check Task Manager)
 - [ ] No errors in backend console
 
 ### ✅ EDS
+
 - [ ] `http://localhost:3000` loads successfully
 - [ ] Existing blocks still work
 - [ ] No console errors (F12)
 
 ### ✅ Components
+
 - [ ] Components render without errors
 - [ ] Add to cart button is clickable
 - [ ] Mini cart shows item count
@@ -314,12 +336,14 @@ When integrating locally, verify:
 - [ ] Real-time updates work (add item, see it appear)
 
 ### ✅ Services
+
 - [ ] Authentication completes
 - [ ] Cart operations work
 - [ ] No CORS errors
 - [ ] All network requests succeed (Network tab)
 
 ### ✅ Persistence
+
 - [ ] Cart persists after page reload
 - [ ] Authentication token is stored
 - [ ] localStorage shows cart data
@@ -337,10 +361,10 @@ console.log(window.HCLAuthService);
 console.log(window.HCLCommerceAPI);
 
 // Check cart state
-localStorage.getItem('cart');
+localStorage.getItem("cart");
 
 // Check session token
-sessionStorage.getItem('authToken');
+sessionStorage.getItem("authToken");
 ```
 
 ### Check Network Tab (F12)
@@ -353,6 +377,7 @@ sessionStorage.getItem('authToken');
 ### Check Backend Logs
 
 Look at the terminal running `npm run start:proxy` for:
+
 - Request logs
 - Error messages
 - Performance metrics
@@ -375,6 +400,7 @@ npm test -- --coverage
 ```
 
 **Expected Results:**
+
 - All tests pass ✅
 - Coverage > 80% ✅
 - No errors ✅
@@ -390,16 +416,16 @@ In your product detail block:
 ```javascript
 // blocks/product-details/product-details.js
 export default function decorate(block) {
-    const productId = block.getAttribute('data-product-id');
-    
-    // Create add to cart button
-    const btn = document.createElement('div');
-    btn.className = 'add-to-cart-hcl';
-    btn.setAttribute('data-product-id', productId);
-    
-    block.appendChild(btn);
-    
-    // Let decorator initialize the component
+  const productId = block.getAttribute("data-product-id");
+
+  // Create add to cart button
+  const btn = document.createElement("div");
+  btn.className = "add-to-cart-hcl";
+  btn.setAttribute("data-product-id", productId);
+
+  block.appendChild(btn);
+
+  // Let decorator initialize the component
 }
 ```
 
@@ -410,13 +436,13 @@ In your header block:
 ```javascript
 // blocks/header/header.js
 export default function decorate(block) {
-    const cart = document.createElement('div');
-    cart.className = 'hcl-mini-cart';
-    cart.setAttribute('data-max-items', '5');
-    
-    // Add to header
-    const nav = block.querySelector('nav');
-    nav.appendChild(cart);
+  const cart = document.createElement("div");
+  cart.className = "hcl-mini-cart";
+  cart.setAttribute("data-max-items", "5");
+
+  // Add to header
+  const nav = block.querySelector("nav");
+  nav.appendChild(cart);
 }
 ```
 
@@ -427,9 +453,9 @@ Create a new block:
 ```javascript
 // blocks/cart/cart.js
 export default function decorate(block) {
-    const cartPage = document.createElement('div');
-    cartPage.className = 'hcl-cart-page';
-    block.appendChild(cartPage);
+  const cartPage = document.createElement("div");
+  cartPage.className = "hcl-cart-page";
+  block.appendChild(cartPage);
 }
 ```
 
@@ -443,14 +469,15 @@ In your `scripts/scripts.js`:
 
 ```javascript
 // Enable debug mode in development
-if (window.location.hostname === 'localhost') {
-    localStorage.setItem('debug', 'true');
+if (window.location.hostname === "localhost") {
+  localStorage.setItem("debug", "true");
 }
 ```
 
 ### Optimize Bundle Size
 
 The services are lightweight:
+
 - HCLAuthService: ~300 lines
 - HCLCommerceAPI: ~300 lines
 - CartStore: ~400 lines
@@ -461,6 +488,7 @@ The services are lightweight:
 ## 🔒 Security Notes for Localhost
 
 While testing locally:
+
 - Credentials are stored in sessionStorage (secure for localhost)
 - CORS is enabled for localhost:3000
 - HTTPS is optional for localhost
@@ -485,19 +513,19 @@ While testing locally:
 ```javascript
 // In console
 // Check if decorator is running
-window.__DECORATORS__
+window.__DECORATORS__;
 
 // Check if component classes exist
-document.querySelector('.add-to-cart-hcl')
+document.querySelector(".add-to-cart-hcl");
 ```
 
 ### Cart Not Updating?
 
 ```javascript
 // In console
-import { CartStore } from '/scripts/cart-store.js';
-CartStore.subscribe(cart => console.log('Cart:', cart));
-CartStore.addItem({productId: 'TEST', name: 'Test', price: 10});
+import { CartStore } from "/scripts/cart-store.js";
+CartStore.subscribe((cart) => console.log("Cart:", cart));
+CartStore.addItem({ productId: "TEST", name: "Test", price: 10 });
 ```
 
 ### Backend Not Responding?
@@ -523,10 +551,10 @@ Your HCL Commerce integration is ready to test locally:
 ✓ Components ready (4 blocks)  
 ✓ Services available (3 production services)  
 ✓ Tests passing (110+ cases)  
-✓ Documentation complete  
+✓ Documentation complete
 
 **Start testing now**: Create test files in `drafts/agents/` and open them in your browser!
 
 ---
 
-*Integration Status: ✅ READY FOR LOCAL TESTING*
+_Integration Status: ✅ READY FOR LOCAL TESTING_

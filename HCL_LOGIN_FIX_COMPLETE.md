@@ -10,7 +10,7 @@
 Login failed with status 404: {"success":false,"error":"Authentication failed"}
 
 Backend logs showed:
-SRVE0255E: A WebGroup/Virtual Host to handle /store/715842834/loginidentity 
+SRVE0255E: A WebGroup/Virtual Host to handle /store/715842834/loginidentity
 has not been defined.
 SRVE0255E: A WebGroup/Virtual Host to handle 20.40.52.251:443 has not been defined.
 ```
@@ -32,23 +32,25 @@ But HCL Commerce requires: `/wcs/resources/store/{storeId}/loginidentity`
 **File:** `api/utils/hcl-rest-auth.js`
 
 **Change 1: Add Host header** (commit `da2aa15`)
+
 ```javascript
 // Extract hostname from endpoint for Host header
 const url = new URL(endpoint);
 const hostHeader = url.host; // This includes port if present
 
 const response = await fetch(endpoint, {
-  method: 'POST',
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Host': hostHeader, // ← NEW: Send Host header for virtual host routing
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    Host: hostHeader, // ← NEW: Send Host header for virtual host routing
   },
   // ...
 });
 ```
 
 **Change 2: Fix endpoint paths** (commit `bd20962`)
+
 ```javascript
 const endpoints = [
   // ✅ PRIMARY - Correct format with /wcs/resources prefix
@@ -160,24 +162,28 @@ Accept: application/json
 ### To Test Login Manually
 
 **Terminal 1 - Backend:**
+
 ```powershell
 npm run dev:backend
 # Runs on http://localhost:3001
 ```
 
 **Terminal 2 - Frontend:**
+
 ```powershell
 npm run dev:frontend
 # Runs on http://localhost:3000
 ```
 
 **Terminal 3 - Proxy:**
+
 ```powershell
 npm run dev:proxy
 # Runs on http://localhost:8080
 ```
 
 **Browser:**
+
 1. Open http://localhost:8080
 2. Click "Sign In"
 3. Enter:
@@ -211,11 +217,11 @@ $response.Content | ConvertFrom-Json
 
 ### Commit History (This Session)
 
-| Hash | Message | Status |
-|------|---------|--------|
+| Hash      | Message                                                  | Status    |
+| --------- | -------------------------------------------------------- | --------- |
 | `bd20962` | fix: Add /wcs/resources prefix to primary login endpoint | ✅ LATEST |
-| `da2aa15` | fix: Add Host header to HCL login requests | ✅ |
-| Previous | Various backend setup commits | ✅ |
+| `da2aa15` | fix: Add Host header to HCL login requests               | ✅        |
+| Previous  | Various backend setup commits                            | ✅        |
 
 ---
 
@@ -223,13 +229,15 @@ $response.Content | ConvertFrom-Json
 
 ### Lesson 1: Endpoint Documentation vs Implementation
 
-The original code was based on *incomplete* API documentation. The **correct** endpoint includes the `/wcs/resources` prefix:
+The original code was based on _incomplete_ API documentation. The **correct** endpoint includes the `/wcs/resources` prefix:
+
 - ❌ WRONG: `/store/{id}/loginidentity`
 - ✅ CORRECT: `/wcs/resources/store/{id}/loginidentity`
 
 ### Lesson 2: Multiple Endpoint Strategy
 
 HCL Commerce can have different endpoint formats depending on version and configuration. The fallback approach tries multiple variations:
+
 1. Most common format first (with /wcs/resources)
 2. Alternative formats next
 3. Succeeds on first match
@@ -237,12 +245,14 @@ HCL Commerce can have different endpoint formats depending on version and config
 ### Lesson 3: Virtual Host Requirements
 
 HCL Commerce requires:
+
 1. **Correct endpoint path** - `/wcs/resources/...`
 2. **Host header** - Must identify which virtual host to use
 
 ### Lesson 4: HTTPS and Self-Signed Certificates
 
 The solution includes:
+
 ```javascript
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false, // Accept self-signed certs
@@ -297,13 +307,13 @@ This allows development/test environments to work with self-signed SSL certifica
 
 ### Common Issues
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| 404 Not Found | Wrong endpoint path | Use `/wcs/resources/store/{id}/loginidentity` |
-| 401 Unauthorized | Wrong credentials | Check username/password in HCL system |
-| 503 SSL Error | Self-signed cert | Already fixed with `rejectUnauthorized: false` |
-| Connection Refused | HCL server down | Check HCL server is running and reachable |
-| 405 Method Not Allowed | POST not supported | Verify endpoint supports POST method |
+| Issue                  | Cause               | Solution                                       |
+| ---------------------- | ------------------- | ---------------------------------------------- |
+| 404 Not Found          | Wrong endpoint path | Use `/wcs/resources/store/{id}/loginidentity`  |
+| 401 Unauthorized       | Wrong credentials   | Check username/password in HCL system          |
+| 503 SSL Error          | Self-signed cert    | Already fixed with `rejectUnauthorized: false` |
+| Connection Refused     | HCL server down     | Check HCL server is running and reachable      |
+| 405 Method Not Allowed | POST not supported  | Verify endpoint supports POST method           |
 
 ---
 
@@ -313,7 +323,8 @@ This allows development/test environments to work with self-signed SSL certifica
 
 **Root Cause:** Endpoint was missing `/wcs/resources` prefix
 
-**Solution:** 
+**Solution:**
+
 1. Add `/wcs/resources` to endpoint path
 2. Add Host header for virtual host routing
 

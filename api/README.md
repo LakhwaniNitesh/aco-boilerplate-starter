@@ -95,6 +95,7 @@ pm2 start api/server.js
 Authenticate user with HCL Commerce.
 
 **Request:**
+
 ```json
 {
   "username": "customer@example.com",
@@ -103,6 +104,7 @@ Authenticate user with HCL Commerce.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -113,6 +115,7 @@ Authenticate user with HCL Commerce.
 ```
 
 **Response (401):**
+
 ```json
 {
   "error": {
@@ -129,6 +132,7 @@ Authenticate user with HCL Commerce.
 Add product to cart.
 
 **Request:**
+
 ```json
 {
   "partNumber": "SKU123",
@@ -138,6 +142,7 @@ Add product to cart.
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -159,6 +164,7 @@ Add product to cart.
 Get current cart for authenticated user.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -174,6 +180,7 @@ Get current cart for authenticated user.
 Remove item from cart.
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -250,6 +257,7 @@ curl -X POST http://localhost:3001/api/hcl/cart/add \
 ### Using Postman
 
 Import the provided Postman collection:
+
 - `docs/postman-collection.json`
 
 ## Troubleshooting
@@ -258,6 +266,7 @@ Import the provided Postman collection:
 
 **Problem:** Can't reach HCL server
 **Solution:**
+
 1. Verify `HCL_HOST` in .env is correct
 2. Check HCL server is running and accessible
 3. Verify network/VPN connectivity
@@ -266,6 +275,7 @@ Import the provided Postman collection:
 
 **Problem:** Login returns 401
 **Solution:**
+
 1. Verify `HCL_AUTH_USERNAME` and `HCL_AUTH_PASSWORD` in .env
 2. Check credentials work directly with HCL
 3. Verify HCL `/loginidentity` endpoint is responding
@@ -274,6 +284,7 @@ Import the provided Postman collection:
 
 **Problem:** Frontend can't call proxy
 **Solution:**
+
 1. Verify `CORS_ORIGIN` matches frontend origin exactly
 2. Check proxy is running on correct `PORT`
 3. Verify frontend is making requests to correct URL

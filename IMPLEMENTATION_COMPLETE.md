@@ -5,6 +5,7 @@
 The HTTP 400 "This request cannot run as a generic user" error has been **FIXED** through complete implementation of session cookie propagation.
 
 **Root Cause:** HCL Commerce requires TWO authentication components:
+
 1. ✅ **Tokens** (WCToken, WCTrustedToken) - We had this
 2. ❌ **Session Cookies** (JSESSIONID, WC_PERSISTENT) - We were MISSING this
 
@@ -17,6 +18,7 @@ The HTTP 400 "This request cannot run as a generic user" error has been **FIXED*
 ## What Was Fixed
 
 ### Problem (Before Fix)
+
 ```
 Login Response (from HCL):
 ├── Headers: Set-Cookie: JSESSIONID=...; Set-Cookie: WC_PERSISTENT=...
@@ -29,6 +31,7 @@ Add-to-Cart Request (to HCL):
 ```
 
 ### Solution (After Fix)
+
 ```
 Login Response Capture:
 ├── Backend captures Set-Cookie headers: JSESSIONID, WC_PERSISTENT
@@ -47,18 +50,21 @@ Add-to-Cart Request:
 ## Implementation Details
 
 ### Layer 1: Backend Login Endpoint
+
 **File:** `api/utils/hcl-rest-auth.js`
 
 **What it does:**
+
 - Receives login response from HCL
 - Extracts Set-Cookie headers: `JSESSIONID`, `WC_PERSISTENT`
 - Parses cookie string format into object: `{ JSESSIONID: "value", WC_PERSISTENT: "value" }`
 - Returns sessionCookies to auth controller
 
 **Code:**
+
 ```javascript
 // Capture Set-Cookie header from HCL response
-const setCookieHeader = response.headers.get('set-cookie');
+const setCookieHeader = response.headers.get("set-cookie");
 const sessionCookies = {};
 if (setCookieHeader) {
   // Parse "JSESSIONID=value; Path=/; HttpOnly" format
@@ -70,32 +76,36 @@ return {
   wcToken,
   wcTrustedToken,
   userId,
-  sessionCookies  // ← NEW: Send to controller
+  sessionCookies, // ← NEW: Send to controller
 };
 ```
 
 ---
 
 ### Layer 2: Backend Auth Controller
+
 **File:** `api/controllers/hcl-auth-controller.js`
 
 **What it does:**
+
 - Receives sessionCookies from login endpoint
 - Includes sessionCookies in login response sent to frontend
 
 **Code:**
+
 ```javascript
 const loginResponse = {
   success: true,
   wcToken: authResult.wcToken,
   wcTrustedToken: authResult.wcTrustedToken,
   userId: authResult.userId,
-  sessionCookies: authResult.sessionCookies || {}  // ← NEW: Include for frontend
+  sessionCookies: authResult.sessionCookies || {}, // ← NEW: Include for frontend
 };
 res.json(loginResponse);
 ```
 
 **Frontend receives:**
+
 ```javascript
 {
   "wcToken": "1007002%2C...",
@@ -111,14 +121,17 @@ res.json(loginResponse);
 ---
 
 ### Layer 3: Frontend Auth Service
+
 **File:** `scripts/hcl-commerce-auth.js`
 
 **What it does:**
+
 - Stores session cookies from login response in sessionStorage
 - Provides getSessionCookies() method to retrieve cookies
 - Maintains cookies throughout user session
 
 **Key Methods:**
+
 ```javascript
 constructor() {
   // Restore cookies on page reload
@@ -158,32 +171,36 @@ logout() {
 ---
 
 ### Layer 4: Frontend API Client
+
 **File:** `scripts/hcl-commerce-api.js`
 
 **What it does:**
+
 - Before making cart request, retrieves sessionCookies from auth service
 - Includes sessionCookies in request body
 - Backend receives cookies and initializes HCL client
 
 **Code:**
+
 ```javascript
 async request(method, endpoint, body = {}) {
   const token = this.getToken();
-  
+
   // Get session cookies from auth service ← NEW
   const sessionCookies = hclAuthService.getSessionCookies();
-  
+
   const requestBody = {
     ...body,
     accessToken: token,
     sessionCookies: sessionCookies  // ← Include cookies in request
   };
-  
+
   // Rest of request logic...
 }
 ```
 
 **Request sent to backend:**
+
 ```javascript
 POST /api/hcl/cart/add
 {
@@ -200,24 +217,27 @@ POST /api/hcl/cart/add
 ---
 
 ### Layer 5: Backend Cart Controller
+
 **File:** `api/controllers/hcl-cart-controller.js`
 
 **What it does:**
+
 - Extracts sessionCookies from request body
 - Initializes HCL client with these cookies BEFORE making cart request
 - Ensures cookies are sent to HCL in Cookie header
 
 **Code:**
+
 ```javascript
 async addToCart(req, res) {
   const { sessionCookies: bodySessionCookies } = req.body;
-  
+
   // Initialize HCL client with cookies from login
   if (bodySessionCookies) {
     Object.assign(hclClient.sessionCookies, bodySessionCookies);
     console.log(`[CART-PROXY] Session cookies from login: ${Object.keys(bodySessionCookies).length} cookies`);
   }
-  
+
   // Now make cart request with cookies initialized
   const result = await hclClient.addToCart(orderId, cartItems);
   res.json(result);
@@ -225,6 +245,7 @@ async addToCart(req, res) {
 ```
 
 **HCL Client sends to HCL:**
+
 ```
 POST /wcs/resources/store/715842834/cart?langId=1&responseFormat=json
 Cookie: WCToken=1007002,B2HE/...; WCTrustedToken=1007002,3Un+...; JSESSIONID=0000tXpK...; WC_PERSISTENT=hM1T9y...
@@ -371,16 +392,16 @@ Set-Cookie: WC_PERSISTENT=...                    "WCToken": "...",
 
 ## Files Changed (Summary)
 
-| File | Purpose | Changes |
-|------|---------|---------|
-| `api/utils/hcl-rest-auth.js` | Login endpoint | Capture Set-Cookie headers |
-| `api/controllers/hcl-auth-controller.js` | Auth controller | Return sessionCookies to frontend |
-| `api/controllers/hcl-cart-controller.js` | Cart controller | Extract and initialize sessionCookies |
-| `api/utils/hcl-client.js` | HCL client | Enhanced logging (no new logic needed) |
-| `scripts/hcl-commerce-auth.js` | Frontend auth | Store/retrieve sessionCookies |
-| `scripts/hcl-commerce-api.js` | Frontend API | Include sessionCookies in requests |
-| `SESSION_COOKIE_FIX.md` | Documentation | Complete technical guide |
-| `TEST_PLAN.md` | Testing guide | Manual test steps + troubleshooting |
+| File                                     | Purpose         | Changes                                |
+| ---------------------------------------- | --------------- | -------------------------------------- |
+| `api/utils/hcl-rest-auth.js`             | Login endpoint  | Capture Set-Cookie headers             |
+| `api/controllers/hcl-auth-controller.js` | Auth controller | Return sessionCookies to frontend      |
+| `api/controllers/hcl-cart-controller.js` | Cart controller | Extract and initialize sessionCookies  |
+| `api/utils/hcl-client.js`                | HCL client      | Enhanced logging (no new logic needed) |
+| `scripts/hcl-commerce-auth.js`           | Frontend auth   | Store/retrieve sessionCookies          |
+| `scripts/hcl-commerce-api.js`            | Frontend API    | Include sessionCookies in requests     |
+| `SESSION_COOKIE_FIX.md`                  | Documentation   | Complete technical guide               |
+| `TEST_PLAN.md`                           | Testing guide   | Manual test steps + troubleshooting    |
 
 ---
 
@@ -389,15 +410,18 @@ Set-Cookie: WC_PERSISTENT=...                    "WCToken": "...",
 Before testing, verify these files exist and contain expected changes:
 
 ### Backend Files
+
 - [ ] `api/utils/hcl-rest-auth.js` - Has Set-Cookie parsing logic
 - [ ] `api/controllers/hcl-auth-controller.js` - Returns sessionCookies
 - [ ] `api/controllers/hcl-cart-controller.js` - Extracts and initializes sessionCookies
 
 ### Frontend Files
+
 - [ ] `scripts/hcl-commerce-auth.js` - Has getSessionCookies() method
 - [ ] `scripts/hcl-commerce-api.js` - Includes sessionCookies in request body
 
 ### Documentation
+
 - [ ] `SESSION_COOKIE_FIX.md` - Exists and documents the fix
 - [ ] `TEST_PLAN.md` - Exists with detailed test steps
 
@@ -436,18 +460,21 @@ Before testing, verify these files exist and contain expected changes:
 ## Key Insights
 
 **Why this matters:**
+
 - HCL Commerce validates both tokens AND session state
 - Tokens alone insufficient (like having a passport but no matching visa)
 - Session cookies must come from login response (not from error response)
 - Multi-layer flow ensures cookies flow through entire stack
 
 **What changed:**
+
 - Backend now captures cookies from login (before, we missed them)
 - Frontend now stores and retrieves cookies (before, they were lost)
 - Frontend now sends cookies with cart requests (before, they were missing)
 - Backend now initializes client with cookies (before, client started empty)
 
 **Why it works:**
+
 1. **Complete authentication:** Token + Cookies = Verified user
 2. **Proper timing:** Cookies captured at login (not retry)
 3. **Proper storage:** Browser sessionStorage maintains them

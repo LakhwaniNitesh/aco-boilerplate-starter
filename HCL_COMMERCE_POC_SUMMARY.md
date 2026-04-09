@@ -2,7 +2,7 @@
 
 **Date**: April 5, 2026  
 **Status**: ✅ **APPROVED FOR DEVELOPMENT**  
-**Timeline**: 2-3 weeks (Phase 1)  
+**Timeline**: 2-3 weeks (Phase 1)
 
 ---
 
@@ -10,7 +10,8 @@
 
 Integrate an **EDS (Edge Delivery Services) Storefront** with **HCL Commerce** as the commerce backend engine, while maintaining **ACO (Adobe Commerce on Cloud)** for catalog/product data.
 
-**Use Case**: 
+**Use Case**:
+
 - Users browse products from ACO catalog on EDS Storefront
 - Users add products to cart in HCL Commerce
 - Cart state synchronized and displayed on EDS Storefront
@@ -21,6 +22,7 @@ Integrate an **EDS (Edge Delivery Services) Storefront** with **HCL Commerce** a
 ## ✅ Key Decisions Made
 
 ### 1. Authentication Strategy
+
 ```
 POST https://20.40.52.251/wcs/resources/store/715842834/loginidentity?responseFormat=json
 {
@@ -28,21 +30,26 @@ POST https://20.40.52.251/wcs/resources/store/715842834/loginidentity?responseFo
   "logonPassword": "passw0rd"
 }
 ```
+
 - Guest sessions NOT available in HCL Commerce
 - Using provided test credentials for POC
 - ⚠️ **Production**: Move credentials to backend proxy (security requirement)
 
 ### 2. Product Mapping
+
 **ACO SKU → HCL partNumber**
+
 ```
-Example: 
+Example:
   ACO: product.sku = "CLA022_220601"
   HCL: partNumber = "CLA022_220601"
 ```
+
 - Primary mapping: `product.sku` → `partNumber`
 - Fallback: `product.id` → `productId` (not recommended)
 
 ### 3. Architecture Pattern
+
 **Backend Proxy + Direct Client Calls**
 
 ```
@@ -62,6 +69,7 @@ Example:
 ```
 
 **Why Backend Proxy?**
+
 - ✅ Avoids CORS issues (HCL doesn't allow cross-origin)
 - ✅ Centralizes authentication
 - ✅ Protects credentials from exposure
@@ -69,20 +77,26 @@ Example:
 - ✅ Production-ready from day 1
 
 ### 4. Pricing Source
+
 **Use ACO Pricing for POC**
+
 - Catalog shows ACO prices
 - Cart shows ACO prices
 - HCL prices not displayed in Phase 1
 - Can switch in Phase 2 if needed
 
 ### 5. Checkout Scope
+
 **OUT of Phase 1 Scope**
+
 - ✅ Phase 1: Add to Cart, Mini-Cart, Cart Display
 - ❌ Phase 1: Checkout flow, shipping, payment
 - ✅ Phase 2: Will implement full checkout with HCL
 
 ### 6. Testing Environment
+
 **HCL Staging Available**
+
 - Credentials: auroraadobetest / passw0rd ✅
 - Host: https://20.40.52.251 ✅
 - Store ID: 715842834 ✅
@@ -93,6 +107,7 @@ Example:
 ## 📋 Phase 1 Scope & Deliverables (2-3 weeks)
 
 ### Features Included
+
 1. **Add to Cart** (PLP & PDP)
    - Browse products from ACO
    - Add to cart with qty selector
@@ -119,6 +134,7 @@ Example:
    - Error recovery (auto re-auth on expiration)
 
 ### Features Excluded (Phase 2+)
+
 - ❌ Checkout flow
 - ❌ Customer login/registration
 - ❌ Shipping address entry
@@ -166,11 +182,11 @@ aco-boilerplate-starter/
 
 ### Core Services
 
-| Service | Responsibility | Key Methods |
-|---------|----------------|------------|
-| **HCL Auth** | Login & token mgmt | `login()`, `refreshToken()`, `getTokens()` |
-| **HCL API Client** | API calls to HCL | `addToCart()`, `getCart()`, `removeFromCart()` |
-| **Cart Manager** | State management | `addItem()`, `removeItem()`, `updateQty()`, `sync()` |
+| Service            | Responsibility     | Key Methods                                          |
+| ------------------ | ------------------ | ---------------------------------------------------- |
+| **HCL Auth**       | Login & token mgmt | `login()`, `refreshToken()`, `getTokens()`           |
+| **HCL API Client** | API calls to HCL   | `addToCart()`, `getCart()`, `removeFromCart()`       |
+| **Cart Manager**   | State management   | `addItem()`, `removeItem()`, `updateQty()`, `sync()` |
 
 ### Data Flow
 
@@ -194,6 +210,7 @@ User clicks "Add to Cart"
 ## 🛠️ Development Tasks (Prioritized)
 
 ### Week 1: Backend & Authentication
+
 - [ ] Create Node.js backend proxy (`/api/hcl/*`)
 - [ ] Implement HCL login endpoint (`/api/hcl/login`)
 - [ ] Add cart endpoints (`/api/hcl/cart/add`, `/api/hcl/cart/get`, etc.)
@@ -201,6 +218,7 @@ User clicks "Add to Cart"
 - [ ] Test against HCL staging
 
 ### Week 2: Frontend Core
+
 - [ ] Create `hcl-commerce-auth.js` (client auth service)
 - [ ] Create `hcl-commerce-api.js` (API client with proxy)
 - [ ] Create `cart-manager.js` (state management)
@@ -210,6 +228,7 @@ User clicks "Add to Cart"
 - [ ] Unit tests (70% coverage)
 
 ### Week 3: Cart Page & Polish
+
 - [ ] Build cart page block
 - [ ] Display HCL cart items, totals
 - [ ] Integration tests with HCL staging
@@ -223,6 +242,7 @@ User clicks "Add to Cart"
 ## 📊 Success Criteria (Phase 1)
 
 ### Functional
+
 - ✅ Users can add products to cart from PLP/PDP
 - ✅ Cart displays in mini-cart (header)
 - ✅ Full cart page shows all items from HCL
@@ -231,12 +251,14 @@ User clicks "Add to Cart"
 - ✅ 0 hard errors in production (24 hrs)
 
 ### Performance
+
 - ✅ Add to cart API response < 500ms (p95)
 - ✅ Cart page load < 1 second (p95)
 - ✅ Mini-cart update < 300ms
 - ✅ 99.5%+ API availability
 
 ### Quality
+
 - ✅ 80%+ test coverage (unit + E2E)
 - ✅ 0 linting errors
 - ✅ All error scenarios handled
@@ -247,12 +269,14 @@ User clicks "Add to Cart"
 ## 🔐 Security Considerations
 
 ### Current (POC)
+
 - ✅ Credentials stored in environment variables
 - ✅ Backend proxy handles HCL calls
 - ✅ Tokens in sessionStorage (auto-cleared on browser close)
 - ✅ HTTPS enforced for all API calls
 
 ### Production Readiness (Phase 2)
+
 - ⚠️ Implement OAuth/SSO instead of hardcoded credentials
 - ⚠️ Add rate limiting to prevent abuse
 - ⚠️ Implement request signing/HMAC
@@ -263,42 +287,46 @@ User clicks "Add to Cart"
 
 ## 📅 Timeline & Milestones
 
-| Week | Milestone | Status |
-|------|-----------|--------|
-| Week 1 | Backend proxy + auth ready | In Progress |
+| Week   | Milestone                     | Status      |
+| ------ | ----------------------------- | ----------- |
+| Week 1 | Backend proxy + auth ready    | In Progress |
 | Week 2 | Frontend integration complete | In Progress |
-| Week 3 | Testing & deployment | In Progress |
-| EOW3 | **Launch Phase 1** | Target |
+| Week 3 | Testing & deployment          | In Progress |
+| EOW3   | **Launch Phase 1**            | Target      |
 
 ---
 
 ## 🚨 Risks & Mitigation
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| HCL API changes | High | Use staging env, document API contracts, version control |
-| CORS blocks requests | High | Backend proxy solves this |
-| Token expiration | Medium | Auto-refresh logic, graceful retry |
-| Inventory conflicts | Medium | Validate on add, warn on cart view |
-| Performance issues | Medium | Cache cart, lazy load items, optimize queries |
+| Risk                 | Impact | Mitigation                                               |
+| -------------------- | ------ | -------------------------------------------------------- |
+| HCL API changes      | High   | Use staging env, document API contracts, version control |
+| CORS blocks requests | High   | Backend proxy solves this                                |
+| Token expiration     | Medium | Auto-refresh logic, graceful retry                       |
+| Inventory conflicts  | Medium | Validate on add, warn on cart view                       |
+| Performance issues   | Medium | Cache cart, lazy load items, optimize queries            |
 
 ---
 
 ## 📞 Contact & Governance
 
 ### Decision Authority
+
 - **Requirements**: Product Manager
 - **Architecture**: Lead Architect
 - **Implementation**: Development Team
 - **Deployment**: DevOps/Infrastructure
 
 ### Document Location
+
 - **Technical Plan**: `HCL_COMMERCE_INTEGRATION_PLAN.md`
 - **Executive Summary**: This document
 - **Sprint Tasks**: Will be created in Jira/project management tool
 
 ### Questions?
+
 Refer to the main **HCL_COMMERCE_INTEGRATION_PLAN.md** document for:
+
 - Detailed feature requirements
 - Complete architecture
 - Data mapping & transformation
@@ -321,6 +349,5 @@ Refer to the main **HCL_COMMERCE_INTEGRATION_PLAN.md** document for:
 
 ---
 
-*Last Updated: April 5, 2026*  
-*Document Version: 1.0 (Approved)*
-
+_Last Updated: April 5, 2026_  
+_Document Version: 1.0 (Approved)_

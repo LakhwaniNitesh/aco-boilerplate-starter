@@ -3,7 +3,7 @@
 **Project**: EDS Storefront + ACO Catalog + HCL Commerce Integration  
 **Date**: April 5, 2026  
 **Status**: Planning & Approval  
-**Owner**: Development Team  
+**Owner**: Development Team
 
 ---
 
@@ -12,6 +12,7 @@
 This document outlines the technical architecture and development plan for integrating an **Edge Delivery Services (EDS) Storefront** with **HCL Commerce** as the commerce engine. The storefront will use **ACO (Adobe Commerce on Cloud)** for catalog/product data and **HCL Commerce** for cart, order, and checkout operations.
 
 ### Key Objectives
+
 - ✅ Enable "Add to Cart" functionality from EDS Storefront → HCL Commerce
 - ✅ Create guest sessions in HCL Commerce for unauthenticated users
 - ✅ Validate product availability and inventory in HCL Commerce
@@ -20,6 +21,7 @@ This document outlines the technical architecture and development plan for integ
 - ✅ Support checkout flow integration with HCL Commerce
 
 ### Technology Stack
+
 - **Frontend**: EDS (Edge Delivery Services) Storefront
 - **Catalog Backend**: ACO (Adobe Commerce on Cloud) - Catalog Service
 - **Commerce Backend**: HCL Commerce (v9.1+)
@@ -99,6 +101,7 @@ EDS Storefront
 **Requirement**: Users can add products to cart from Product Listing Page or Product Details Page
 
 **Technical Requirements**:
+
 1. **Product Selection**
    - Product comes from ACO Catalog Service
    - Quantity selection (default: 1)
@@ -106,12 +109,12 @@ EDS Storefront
 
 2. **HCL Commerce API Call**
    - **Endpoint**: `POST https://{aurora-host}/wcs/resources/store/{adobe-storeId}/cart?langId=1`
-   - **Headers**: 
+   - **Headers**:
      - `WCToken`: Retrieved from session/guest login
      - `WCTrustedToken`: Retrieved from session/guest login
      - `Content-Type: application/json`
      - `Accept: application/json`
-   - **Body**: 
+   - **Body**:
      ```json
      {
        "orderId": ".",
@@ -120,7 +123,7 @@ EDS Storefront
        "orderItem": [
          {
            "quantity": "1",
-           "productId": "3074457345619160265"  // OR partNumber
+           "productId": "3074457345619160265" // OR partNumber
          }
        ]
      }
@@ -136,6 +139,7 @@ EDS Storefront
      - API error (timeout, 500, etc.) → Display "Unable to add to cart, try again"
 
 **UI Changes**:
+
 - ✅ "Add to Cart" button on PLP products
 - ✅ "Add to Cart" button on PDP with quantity selector
 - ✅ Loading state (spinner) during API call
@@ -158,6 +162,7 @@ EDS Storefront
 **Requirement**: Verify product exists in HCL Commerce and can be purchased before confirming cart addition
 
 **Technical Implementation**:
+
 1. **Pre-flight Validation** (Optional, POC v1 can skip)
    - Could call product detail API from HCL to verify stock
    - For MVP: Rely on `x_inventoryValidation: true` in Add to Cart call
@@ -180,6 +185,7 @@ EDS Storefront
 **Requirement**: Authenticate with HCL Commerce using provided credentials and maintain session tokens
 
 **Technical Implementation**:
+
 1. **Initial Authentication** (On page load or explicit login)
    - **Endpoint**: `POST https://{aurora-host}/wcs/resources/store/{adobe-storeId}/loginidentity?responseFormat=json`
    - **Credentials** (POC):
@@ -214,6 +220,7 @@ EDS Storefront
    - **Timeline**: Implement in Phase 2 before production
 
 **Error Handling**:
+
 ```javascript
 // Token expired or invalid
 if (response.status === 401 || response.status === 403) {
@@ -224,7 +231,7 @@ if (response.status === 401 || response.status === 403) {
     return retryAddToCart();
   } else {
     // Auth failed, show login prompt
-    showAuthError('Session expired. Please refresh page.');
+    showAuthError("Session expired. Please refresh page.");
   }
 }
 ```
@@ -236,6 +243,7 @@ if (response.status === 401 || response.status === 403) {
 **Requirement**: Show cart summary in header with product count, subtotal, and quick view
 
 **Technical Implementation**:
+
 1. **Data to Display**
    - Item count: `response.orderItem.length`
    - Subtotal: `response.totalProductPrice`
@@ -248,6 +256,7 @@ if (response.status === 401 || response.status === 403) {
    - On cart page view → Refresh from HCL before displaying
 
 3. **UI Display**
+
    ```
    Header Mini-Cart
    ┌──────────────────────────┐
@@ -273,7 +282,9 @@ if (response.status === 401 || response.status === 403) {
 **Requirement**: Full cart page showing all items with ability to modify quantities and checkout
 
 **Technical Implementation**:
+
 1. **Cart Data Retrieval**
+
    ```
    GET /wcs/resources/store/{storeId}/cart/@self
    Headers: WCToken, WCTrustedToken
@@ -288,13 +299,11 @@ if (response.status === 401 || response.status === 403) {
      - Quantity: `orderItem.quantity` (editable)
      - Total: `orderItem.orderItemPrice`
      - Remove button
-   
    - Cart summary:
      - Subtotal: `totalProductPrice`
      - Shipping: `totalShippingCharge`
      - Tax: `totalSalesTax`
      - Grand Total: `grandTotal`
-   
    - Checkout button → Calls `PUT /update_order_item` (Feature 6)
 
 3. **Item Quantity Updates** (Future Enhancement)
@@ -307,6 +316,7 @@ if (response.status === 401 || response.status === 403) {
 ### 3.6 Feature 6: Checkout Flow Integration (REMOVED FROM POC SCOPE)
 
 **Note**: Checkout is **NOT included in POC Phase 1**. Focus is on:
+
 - ✅ Add to Cart (PLP/PDP)
 - ✅ Mini-Cart Display
 - ✅ Cart Page Display
@@ -319,10 +329,12 @@ The cart page will have a "Proceed to Checkout" button that is a placeholder. Ph
 ## 4. Development Phases
 
 ### Phase 1: Core Cart Integration (MVP) - POC SCOPE
+
 **Timeline**: 2-3 weeks  
 **Deliverables**: Add to Cart, Mini-Cart, Cart Page Display (NO Checkout)
 
 #### Phase 1 Tasks:
+
 1. **Setup HCL Commerce Authentication**
    - Create `hcl-commerce-auth.js` utility module
    - Implement login flow using `/loginidentity` endpoint
@@ -380,6 +392,7 @@ The cart page will have a "Proceed to Checkout" button that is a placeholder. Ph
    - Browser testing (Chrome, Firefox, Safari, mobile)
 
 **Deliverables**:
+
 - ✅ Authentication service
 - ✅ API client with retry logic
 - ✅ Cart manager/state management
@@ -391,10 +404,12 @@ The cart page will have a "Proceed to Checkout" button that is a placeholder. Ph
 ---
 
 ### Phase 2: Advanced Features (Future Sprints)
+
 **Timeline**: 2-3 weeks each  
 **Deliverables**: Checkout Flow, Account Integration, Order Management
 
 #### Phase 2 Tasks:
+
 1. **Checkout Flow**
    - Update order item for checkout
    - Shipping address selection
@@ -455,6 +470,7 @@ aco-boilerplate-starter/
 #### A. HCL Commerce API Client (`hcl-commerce-api.js`)
 
 **Responsibilities**:
+
 - Make authenticated HTTP calls to HCL Commerce APIs
 - Handle guest session tokens (WCToken, WCTrustedToken)
 - Implement retry logic for failed requests
@@ -462,20 +478,21 @@ aco-boilerplate-starter/
 - Handle common error scenarios
 
 **Methods**:
+
 ```javascript
 export const HCLCommerceAPI = {
   // Session Management
   getGuestSession(),           // Create/refresh guest session
-  
+
   // Cart Operations
   addToCart(productId, qty),   // Add item to cart
   getCart(),                   // Get current cart
   updateCartItem(itemId, qty), // Update item quantity
   removeFromCart(itemId),      // Remove item from cart
-  
+
   // Checkout
   prepareForCheckout(),        // Update order items for checkout
-  
+
   // Error Handling
   handleError(error),          // Centralized error handling
 };
@@ -484,12 +501,14 @@ export const HCLCommerceAPI = {
 #### B. Cart Manager Service (`cart-manager.js`)
 
 **Responsibilities**:
+
 - Manage cart state (Redux store or Context API)
 - Coordinate between EDS Storefront and HCL Commerce
 - Handle optimistic updates for better UX
 - Persist cart state in sessionStorage
 
 **State Shape**:
+
 ```javascript
 cartState = {
   orderId: "764426",
@@ -500,49 +519,53 @@ cartState = {
       partNumber: "BCL022_220601",
       name: "Product Name",
       quantity: 1,
-      unitPrice: 45.00,
-      totalPrice: 45.00,
-      image: "..." // from ACO
-    }
+      unitPrice: 45.0,
+      totalPrice: 45.0,
+      image: "...", // from ACO
+    },
   ],
   totals: {
-    subtotal: 85.00,
-    shipping: 0.00,
-    tax: 0.00,
-    grandTotal: 85.00
+    subtotal: 85.0,
+    shipping: 0.0,
+    tax: 0.0,
+    grandTotal: 85.0,
   },
-  lastUpdated: "2025-04-05T10:30:00Z"
+  lastUpdated: "2025-04-05T10:30:00Z",
 };
 ```
 
 #### C. Mini-Cart Component (`mini-cart.js`)
 
 **Responsibilities**:
+
 - Display cart summary in header
 - Show item count and subtotal
 - Quick preview of items
 - Links to cart page and checkout
 
 **Props**:
+
 ```javascript
-<MiniCart 
+<MiniCart
   itemCount={3}
-  subtotal={85.00}
+  subtotal={85.0}
   currency="USD"
   items={orderItems}
-  onCartClick={() => navigate('/cart')}
+  onCartClick={() => navigate("/cart")}
 />
 ```
 
 #### D. Cart Page Block (`cart-page.js`)
 
 **Responsibilities**:
+
 - Full cart display
 - Item management (update qty, remove)
 - Cart summary with totals
 - Checkout button
 
 **Sub-components**:
+
 - `CartItemList.js` - Product list
 - `CartSummary.js` - Totals and checkout
 
@@ -555,33 +578,35 @@ cartState = {
 ```javascript
 export const HCL_COMMERCE_CONFIG = {
   // HCL Aurora Host
-  apiHost: process.env.HCL_COMMERCE_HOST || 'https://20.40.52.251',
-  
+  apiHost: process.env.HCL_COMMERCE_HOST || "https://20.40.52.251",
+
   // Store ID
-  storeId: process.env.HCL_STORE_ID || '715842834',
-  
+  storeId: process.env.HCL_STORE_ID || "715842834",
+
   // API Paths
   apiPaths: {
-    cart: '/wcs/resources/store/{storeId}/cart',
-    cartSelf: '/wcs/resources/store/{storeId}/cart/@self',
-    updateOrderItem: '/wcs/resources/store/{storeId}/cart/@self/update_order_item',
-    guestLogin: '/wcs/resources/login',  // If available
+    cart: "/wcs/resources/store/{storeId}/cart",
+    cartSelf: "/wcs/resources/store/{storeId}/cart/@self",
+    updateOrderItem:
+      "/wcs/resources/store/{storeId}/cart/@self/update_order_item",
+    guestLogin: "/wcs/resources/login", // If available
   },
-  
+
   // Request Config
-  timeout: 10000,  // 10 seconds
-  retries: 2,      // Retry failed requests
-  
+  timeout: 10000, // 10 seconds
+  retries: 2, // Retry failed requests
+
   // Feature Flags
   features: {
     guestCheckout: true,
     inventoryValidation: true,
     taxCalculation: true,
-  }
+  },
 };
 ```
 
 **Environment Variables** (`.env` or `env.dist`):
+
 ```
 HCL_COMMERCE_HOST=https://20.40.52.251
 HCL_STORE_ID=715842834
@@ -597,16 +622,17 @@ HCL_COMMERCE_RETRIES=2
 
 When adding product from ACO to HCL cart, use `partNumber` from ACO SKU:
 
-| ACO Field | HCL Field | Mapping Logic |
-|-----------|-----------|---------------|
-| `product.sku` | `partNumber` | **PRIMARY MAPPING** - Use ACO SKU as partNumber |
-| `product.id` | `productId` | Fallback if partNumber unavailable (not recommended) |
-| User input | `quantity` | Integer, min 1 |
-| Auto | `orderId` | "." for new/guest |
-| Always | `x_inventoryValidation` | true |
-| Always | `x_calculateOrder` | "0" for add, "1" for checkout |
+| ACO Field     | HCL Field               | Mapping Logic                                        |
+| ------------- | ----------------------- | ---------------------------------------------------- |
+| `product.sku` | `partNumber`            | **PRIMARY MAPPING** - Use ACO SKU as partNumber      |
+| `product.id`  | `productId`             | Fallback if partNumber unavailable (not recommended) |
+| User input    | `quantity`              | Integer, min 1                                       |
+| Auto          | `orderId`               | "." for new/guest                                    |
+| Always        | `x_inventoryValidation` | true                                                 |
+| Always        | `x_calculateOrder`      | "0" for add, "1" for checkout                        |
 
 **Example**:
+
 ```json
 {
   "orderId": ".",
@@ -615,7 +641,7 @@ When adding product from ACO to HCL cart, use `partNumber` from ACO SKU:
   "orderItem": [
     {
       "quantity": "1",
-      "partNumber": "CLA022_220601"  // From ACO product.sku
+      "partNumber": "CLA022_220601" // From ACO product.sku
     }
   ]
 }
@@ -625,19 +651,19 @@ When adding product from ACO to HCL cart, use `partNumber` from ACO SKU:
 
 From `GET /cart/@self` response:
 
-| HCL Field | Storefront Use | Transform |
-|-----------|----------------|-----------|
-| `orderId` | Cart ID | Store in state |
-| `orderItem[].orderItemId` | Item ID | Store per product |
-| `orderItem[].partNumber` | Display name | Show on cart |
-| `orderItem[].quantity` | Item qty | Display & allow edit |
-| `orderItem[].unitPrice` | Per-item price | Format currency |
-| `orderItem[].orderItemPrice` | Line total | quantity × unitPrice |
-| `totalProductPrice` | Subtotal | Sum of line totals |
-| `totalShippingCharge` | Shipping | Show if > 0 |
-| `totalSalesTax` | Tax | Show if > 0 |
-| `grandTotal` | Total | Primary total |
-| `recordSetCount` | Item count | Update header badge |
+| HCL Field                    | Storefront Use | Transform            |
+| ---------------------------- | -------------- | -------------------- |
+| `orderId`                    | Cart ID        | Store in state       |
+| `orderItem[].orderItemId`    | Item ID        | Store per product    |
+| `orderItem[].partNumber`     | Display name   | Show on cart         |
+| `orderItem[].quantity`       | Item qty       | Display & allow edit |
+| `orderItem[].unitPrice`      | Per-item price | Format currency      |
+| `orderItem[].orderItemPrice` | Line total     | quantity × unitPrice |
+| `totalProductPrice`          | Subtotal       | Sum of line totals   |
+| `totalShippingCharge`        | Shipping       | Show if > 0          |
+| `totalSalesTax`              | Tax            | Show if > 0          |
+| `grandTotal`                 | Total          | Primary total        |
+| `recordSetCount`             | Item count     | Update header badge  |
 
 ---
 
@@ -645,14 +671,14 @@ From `GET /cart/@self` response:
 
 ### 7.1 Common Error Scenarios
 
-| Scenario | HTTP Status | Handling |
-|----------|-------------|----------|
-| Product not in HCL | 404 | Show "Product unavailable in HCL" |
-| Out of stock | 409 or error message | Show "Out of stock" |
-| Invalid token | 401/403 | Refresh session and retry |
-| Network timeout | TIMEOUT | Show "Connection error" + retry button |
-| Server error | 500+ | Show "Server error" + retry button |
-| Malformed response | (error parsing) | Log error + show generic message |
+| Scenario           | HTTP Status          | Handling                               |
+| ------------------ | -------------------- | -------------------------------------- |
+| Product not in HCL | 404                  | Show "Product unavailable in HCL"      |
+| Out of stock       | 409 or error message | Show "Out of stock"                    |
+| Invalid token      | 401/403              | Refresh session and retry              |
+| Network timeout    | TIMEOUT              | Show "Connection error" + retry button |
+| Server error       | 500+                 | Show "Server error" + retry button     |
+| Malformed response | (error parsing)      | Log error + show generic message       |
 
 ### 7.2 Edge Case Handling
 
@@ -681,6 +707,7 @@ From `GET /cart/@self` response:
 ## 8. Security Considerations
 
 ### 8.1 Token Management
+
 - ✅ Store tokens in `sessionStorage` (cleared on browser close)
 - ✅ Validate token age before API calls
 - ❌ Never log tokens in console (production)
@@ -692,20 +719,21 @@ From `GET /cart/@self` response:
 **Current Limitation**: HCL Commerce CORS policy not yet confirmed
 
 **Solutions**:
+
 1. **Option A**: Backend Proxy (RECOMMENDED for POC)
    - Create Node.js proxy endpoint: `/api/hcl/*`
    - Proxy forwards requests to HCL Aurora
    - Client calls proxy, proxy calls HCL
    - **Benefit**: Avoids CORS issues, centralizes auth, secures credentials
    - **Implementation**: Express.js middleware, use `node-fetch` or `axios`
-   
+
    ```javascript
    // Backend proxy endpoint
    POST /api/hcl/login
      → Forward to HCL /loginidentity
      → Store tokens in session
      → Return to client
-   
+
    POST /api/hcl/cart/add
      → Use server-side tokens
      → Forward to HCL /cart
@@ -718,6 +746,7 @@ From `GET /cart/@self` response:
    - **Risk**: Credentials exposed to client (temporary for POC)
 
 **Recommendation**: Implement **Option A (Backend Proxy)** from the start:
+
 - More secure (credentials never on client)
 - Enables production readiness
 - Better error handling & logging
@@ -726,6 +755,7 @@ From `GET /cart/@self` response:
 **Timeline**: Backend proxy implementation can happen in parallel with frontend (no blocking dependency)
 
 ### 8.3 PII Handling
+
 - Guest session doesn't require PII
 - When displaying payment info → Redact sensitive fields
 - When logging errors → Remove PII from logs
@@ -796,11 +826,13 @@ Scenario 3: Begin Checkout
 ### 10.1 API Call Optimization
 
 **Reduce API calls**:
+
 - Cache cart for 30 seconds (unless user modifies)
 - Use sessionStorage to avoid refetching on page refresh
 - Batch updates if multiple items modified
 
 **Response Size**:
+
 - HCL cart response can be large (includes shipping options, etc.)
 - Parse response and store only necessary fields
 - Lazy load detailed cart info on cart page view
@@ -850,27 +882,27 @@ Timeline (ms):
 
 ### 12.1 High Risk
 
-| Risk | Mitigation |
-|------|-----------|
-| HCL API downtime | Implement fallback to guest cart (localStorage), show offline message |
-| CORS issues | Configure CORS on HCL server, or use backend proxy |
-| Token expiration during checkout | Implement automatic refresh with retry |
+| Risk                             | Mitigation                                                            |
+| -------------------------------- | --------------------------------------------------------------------- |
+| HCL API downtime                 | Implement fallback to guest cart (localStorage), show offline message |
+| CORS issues                      | Configure CORS on HCL server, or use backend proxy                    |
+| Token expiration during checkout | Implement automatic refresh with retry                                |
 
 ### 12.2 Medium Risk
 
-| Risk | Mitigation |
-|------|-----------|
-| Inventory sync issues | Validate inventory on add to cart, warn on cart refresh |
-| Performance (large carts) | Paginate items, lazy load details |
+| Risk                         | Mitigation                                               |
+| ---------------------------- | -------------------------------------------------------- |
+| Inventory sync issues        | Validate inventory on add to cart, warn on cart refresh  |
+| Performance (large carts)    | Paginate items, lazy load details                        |
 | Browser session storage full | Cleanup old cart data, use sessionStorage (auto-cleared) |
 
 ### 12.3 Low Risk
 
-| Risk | Mitigation |
-|------|-----------|
-| UI inconsistency (dark mode, etc.) | Follow EDS storefront design system |
-| Mobile responsiveness | Test on iOS/Android, touch-friendly targets |
-| Accessibility | ARIA labels, keyboard navigation |
+| Risk                               | Mitigation                                  |
+| ---------------------------------- | ------------------------------------------- |
+| UI inconsistency (dark mode, etc.) | Follow EDS storefront design system         |
+| Mobile responsiveness              | Test on iOS/Android, touch-friendly targets |
+| Accessibility                      | ARIA labels, keyboard navigation            |
 
 ---
 
@@ -892,16 +924,19 @@ Timeline (ms):
 ### 13.2 Rollout Strategy
 
 **Phase 1 (Week 1-2)**: Development & Testing
+
 - Develop core modules
 - Unit & integration tests
 - Testing on HCL staging
 
 **Phase 2 (Week 3)**: Internal Testing
+
 - QA testing on staging
 - Beta testing with internal users
 - Performance validation
 
 **Phase 3 (Week 4+)**: Production Deployment
+
 - Deploy to production
 - Monitor for errors
 - Gradual rollout (50% → 100%)
@@ -969,19 +1004,19 @@ Timeline (ms):
 
 ## 16. Glossary
 
-| Term | Definition |
-|------|-----------|
-| **EDS** | Edge Delivery Services (Adobe's content delivery platform) |
-| **ACO** | Adobe Commerce on Cloud (SaaS offering) |
-| **HCL Commerce** | IBM HCL's e-commerce engine for back-office operations |
-| **WCToken** | Authentication token from HCL Commerce |
-| **WCTrustedToken** | Secondary authentication token from HCL Commerce |
-| **OrderId** | Cart/order ID in HCL Commerce |
-| **OrderItemId** | Individual line item ID in HCL cart |
-| **Guest Session** | Unauthenticated user session in HCL |
-| **Storefront** | Customer-facing shopping interface (EDS) |
-| **Catalog Service** | ACO API providing product data |
-| **POC** | Proof of Concept (MVP/Phase 1) |
+| Term                | Definition                                                 |
+| ------------------- | ---------------------------------------------------------- |
+| **EDS**             | Edge Delivery Services (Adobe's content delivery platform) |
+| **ACO**             | Adobe Commerce on Cloud (SaaS offering)                    |
+| **HCL Commerce**    | IBM HCL's e-commerce engine for back-office operations     |
+| **WCToken**         | Authentication token from HCL Commerce                     |
+| **WCTrustedToken**  | Secondary authentication token from HCL Commerce           |
+| **OrderId**         | Cart/order ID in HCL Commerce                              |
+| **OrderItemId**     | Individual line item ID in HCL cart                        |
+| **Guest Session**   | Unauthenticated user session in HCL                        |
+| **Storefront**      | Customer-facing shopping interface (EDS)                   |
+| **Catalog Service** | ACO API providing product data                             |
+| **POC**             | Proof of Concept (MVP/Phase 1)                             |
 
 ---
 
@@ -989,7 +1024,7 @@ Timeline (ms):
 
 **Document prepared by**: Development Team  
 **Date**: April 5, 2026  
-**Status**: ⏳ Awaiting Approval  
+**Status**: ⏳ Awaiting Approval
 
 ### Approvals Needed
 
@@ -1040,27 +1075,34 @@ Before proceeding with development, please confirm:
 Based on stakeholder input, the following decisions have been finalized:
 
 ### **Decision 1: Authentication Method**
+
 ✅ **Approved**: Use HCL `/loginidentity` API with provided credentials
+
 ```
 POST https://20.40.52.251/wcs/resources/store/715842834/loginidentity?responseFormat=json
 Body: { "logonId": "auroraadobetest", "logonPassword": "passw0rd" }
 Response: { WCToken, WCTrustedToken }
 ```
+
 - Guest sessions are not available in HCL Commerce
 - Credentials provided by HCL team for POC
 - **Production**: Move credentials to backend proxy (never expose in client code)
 
 ### **Decision 2: Product Mapping (ACO → HCL)**
+
 ✅ **Approved**: Use `partNumber` as primary mapping
 | Field | Value |
 |-------|-------|
 | ACO `product.sku` | Maps to HCL `partNumber` |
 | Example | "CLA022_220601" |
+
 - Rationale: HCL recognizes partNumber as unique product identifier
 - Fallback: productId if partNumber unavailable (not recommended)
 
 ### **Decision 3: CORS & Proxy Strategy**
+
 ✅ **Approved**: Backend proxy required (CORS not yet configured on HCL)
+
 - **Approach**: Implement Node.js backend proxy (`/api/hcl/*`)
 - **Benefits**:
   - Avoids CORS issues on client
@@ -1071,30 +1113,34 @@ Response: { WCToken, WCTrustedToken }
 - **Future**: Required for production security
 
 ### **Decision 4: Pricing Source (ACO vs HCL)**
+
 ✅ **Approved**: Use **ACO Pricing** for POC
+
 - Catalog displays ACO pricing (consistent with product listing)
 - Cart shows ACO pricing as well
 - **Future**: Can switch to HCL pricing in Phase 2 if needed
 - **Rationale**: Simpler for POC, ACO already integrated
 
 ### **Decision 5: Checkout Scope**
+
 ✅ **Approved**: **NO Checkout in POC** (Phase 1)
+
 - Phase 1 Focus:
   - ✅ Add to Cart
   - ✅ Mini-Cart Display
   - ✅ Cart Page (view only)
   - ✅ Item removal capability (future)
-  
 - Phase 2 (Future):
   - ❌ Checkout flow (deferred)
   - ❌ Shipping address entry
   - ❌ Payment processing
   - ❌ Order confirmation
-  
 - **Placeholder**: "Proceed to Checkout" button on cart page → Navigate to external HCL checkout or placeholder page
 
 ### **Decision 6: Testing Environment**
+
 ✅ **Approved**: HCL Commerce Staging Access Available
+
 - Credentials provided: auroraadobetest / passw0rd
 - Host: https://20.40.52.251
 - Store ID: 715842834
@@ -1169,4 +1215,3 @@ PHASE 2+ (Future):
 **All critical decisions made. Ready to start Phase 1 development.**
 
 **For questions**: Refer to Section 18-20 of this document for all decisions and rationales.
-

@@ -3,9 +3,11 @@
 ## Issue: "Tenant not found or not accessible"
 
 ### Summary
+
 When attempting to login, you're seeing the error: **"Tenant not found or not accessible"**
 
 This error typically means one of the following:
+
 1. **HCL Commerce VM is not reachable** (network issue)
 2. **Store ID is incorrect or doesn't exist** (configuration issue)
 3. **User doesn't exist in HCL Commerce** (user management issue)
@@ -30,14 +32,16 @@ Test-Connection 20.40.52.251 -Count 1
 Visit: `http://localhost:3001/api/hcl/auth/diagnose`
 
 This shows:
+
 - Current HCL_HOST
-- Current HCL_STORE_ID  
+- Current HCL_STORE_ID
 - Login endpoints being used
 - Current authentication mode (MOCK or REAL)
 
 ### Step 3: Test Login Endpoint Directly
 
 Use the provided PowerShell script:
+
 ```powershell
 cd aco-boilerplate-starter
 powershell -ExecutionPolicy Bypass -File test-hcl-login.ps1
@@ -52,6 +56,7 @@ powershell -ExecutionPolicy Bypass -File test-hcl-login.ps1
 **Symptom:** "Unable to connect to the remote server"
 
 **Action:**
+
 1. Verify HCL Commerce VM (https://20.40.52.251) is running
 2. Check network connectivity to the VM
 3. If VM is down, use MOCK authentication for development:
@@ -64,6 +69,7 @@ powershell -ExecutionPolicy Bypass -File test-hcl-login.ps1
 **Symptom:** "Tenant not found or not accessible" from HCL API
 
 **Action:**
+
 1. Verify the HCL_STORE_ID exists in your HCL Commerce instance
 2. Common Store IDs: `B2CStore`, `ReactStore`, or numeric IDs like `715842834`
 3. Get the correct Store ID from HCL Commerce admin or documentation
@@ -77,6 +83,7 @@ powershell -ExecutionPolicy Bypass -File test-hcl-login.ps1
 **Symptom:** Login fails with authentication error
 
 **Action:**
+
 1. Verify user `auroraadobetest` exists in HCL Commerce
 2. Create the user in HCL Commerce admin if missing
 3. Verify password is correct
@@ -88,6 +95,7 @@ powershell -ExecutionPolicy Bypass -File test-hcl-login.ps1
 
 **Action:**
 The code automatically tries two endpoints:
+
 1. Primary: `POST /store/{storeId}/loginidentity`
 2. Alternative: `POST /identity/v1/customers/login`
 
@@ -109,6 +117,7 @@ HCL_AUTH_PASSWORD=passw0rd
 ```
 
 Test credentials in mock mode:
+
 - `auroraadobetest` / `passw0rd`
 - `adobetest1` / `passw0rd`
 - `adobetest2` / `passw0rd`
@@ -125,14 +134,14 @@ HCL_STORE_ID=<your_store_id>
 
 ## Environment Variables Reference
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `USE_REAL_HCL_AUTH` | Use real HCL or mock | `false` (mock), `true` (real) |
-| `HCL_HOST` | HCL Commerce VM URL | `https://20.40.52.251` |
-| `HCL_STORE_ID` | Store ID in HCL | `715842834` or `B2CStore` |
-| `HCL_CATALOG_ID` | Catalog ID (optional) | `10001` |
-| `HCL_LANGUAGE_ID` | Language ID (optional) | `-1` |
-| `HCL_CURRENCY_ID` | Currency ID (optional) | `1` |
+| Variable            | Description            | Example                       |
+| ------------------- | ---------------------- | ----------------------------- |
+| `USE_REAL_HCL_AUTH` | Use real HCL or mock   | `false` (mock), `true` (real) |
+| `HCL_HOST`          | HCL Commerce VM URL    | `https://20.40.52.251`        |
+| `HCL_STORE_ID`      | Store ID in HCL        | `715842834` or `B2CStore`     |
+| `HCL_CATALOG_ID`    | Catalog ID (optional)  | `10001`                       |
+| `HCL_LANGUAGE_ID`   | Language ID (optional) | `-1`                          |
+| `HCL_CURRENCY_ID`   | Currency ID (optional) | `1`                           |
 
 ---
 
@@ -141,11 +150,13 @@ HCL_STORE_ID=<your_store_id>
 ### Enable Detailed Logging
 
 Set in `.env`:
+
 ```env
 LOG_LEVEL=debug
 ```
 
 This will show:
+
 - Exact endpoint URLs being called
 - Request/response details
 - Error messages from HCL API
@@ -153,6 +164,7 @@ This will show:
 ### Check Backend Logs
 
 While running the server:
+
 ```
 [AUTH-CONTROLLER] Login attempt for user: auroraadobetest
 [HCL-REST-AUTH] Attempting login for user: auroraadobetest
@@ -164,6 +176,7 @@ While running the server:
 ### Check Browser Console (F12)
 
 The login form shows:
+
 ```
 [LOGIN] Attempting login with: {username: 'auroraadobetest', ...}
 [LOGIN] Response status: 400
@@ -187,6 +200,7 @@ The login form shows:
 ## Contact & Support
 
 If the issue persists:
+
 1. Check HCL Commerce documentation for your version
 2. Verify credentials with HCL admin
 3. Check network connectivity to HCL VM

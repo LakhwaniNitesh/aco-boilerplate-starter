@@ -14,6 +14,7 @@ npm run start:proxy
 ## 🌐 Step 2: Start EDS Storefront (Already Running)
 
 Your EDS storefront should be running at:
+
 - **URL**: `http://localhost:3000`
 - **Start command**: `aem up --html-folder="./drafts/agents"`
 
@@ -27,14 +28,14 @@ Open DevTools console (F12) and run:
 
 ```javascript
 // Import auth service
-import { HCLAuthService } from 'http://localhost:3000/scripts/hcl-auth-service.js';
+import { HCLAuthService } from "http://localhost:3000/scripts/hcl-auth-service.js";
 
 // Try login
-const result = await HCLAuthService.login('test@example.com', 'password123');
-console.log('Auth Result:', result);
+const result = await HCLAuthService.login("test@example.com", "password123");
+console.log("Auth Result:", result);
 
 // Check if authenticated
-console.log('Authenticated:', HCLAuthService.isAuthenticated());
+console.log("Authenticated:", HCLAuthService.isAuthenticated());
 ```
 
 ✅ **Expected**: Console shows authentication status
@@ -48,37 +49,41 @@ Create a new file `drafts/agents/quick-test.html`:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Quick Cart Test</title>
     <script src="/scripts/scripts.js" type="module"></script>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Cart Test</h1>
     <button onclick="addItem()">Add Item</button>
     <button onclick="showCart()">Show Cart</button>
     <pre id="output"></pre>
 
     <script type="module">
-        import { CartStore } from '/scripts/cart-store.js';
-        
-        CartStore.subscribe((cart) => {
-            document.getElementById('output').textContent = JSON.stringify(cart, null, 2);
+      import { CartStore } from "/scripts/cart-store.js";
+
+      CartStore.subscribe((cart) => {
+        document.getElementById("output").textContent = JSON.stringify(
+          cart,
+          null,
+          2,
+        );
+      });
+
+      window.addItem = () => {
+        CartStore.addItem({
+          productId: "TEST-001",
+          name: "Test Product",
+          price: 99.99,
+          quantity: 1,
         });
-        
-        window.addItem = () => {
-            CartStore.addItem({
-                productId: 'TEST-001',
-                name: 'Test Product',
-                price: 99.99,
-                quantity: 1
-            });
-        };
-        
-        window.showCart = () => {
-            console.log('Current Cart:', CartStore.getCart());
-        };
+      };
+
+      window.showCart = () => {
+        console.log("Current Cart:", CartStore.getCart());
+      };
     </script>
-</body>
+  </body>
 </html>
 ```
 
@@ -95,29 +100,30 @@ Create `drafts/agents/components-test.html`:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Components Test</title>
-    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/styles.css" />
     <script src="/scripts/scripts.js" type="module"></script>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Components Test</h1>
-    
+
     <!-- Test Add to Cart Button -->
     <h2>Add to Cart Button</h2>
-    <div class="add-to-cart-hcl" 
-         data-product-id="PROD-001"
-         data-button-text="Add to Cart">
-    </div>
-    
+    <div
+      class="add-to-cart-hcl"
+      data-product-id="PROD-001"
+      data-button-text="Add to Cart"
+    ></div>
+
     <!-- Test Mini Cart -->
     <h2>Mini Cart</h2>
     <div class="hcl-mini-cart" data-max-items="5"></div>
-    
+
     <!-- Test Cart Page -->
     <h2>Cart Page</h2>
     <div class="hcl-cart-page"></div>
-</body>
+  </body>
 </html>
 ```
 
@@ -146,11 +152,13 @@ Quick verification that everything works:
 ## 🎯 Common Endpoints to Test
 
 ### Health Check
+
 ```bash
 curl http://localhost:3001/health
 ```
 
 ### Login (with curl)
+
 ```bash
 curl -X POST http://localhost:3001/api/hcl/login \
   -H "Content-Type: application/json" \
@@ -158,6 +166,7 @@ curl -X POST http://localhost:3001/api/hcl/login \
 ```
 
 ### Cart Operations (with curl)
+
 ```bash
 # Get cart
 curl http://localhost:3001/api/hcl/cart/get
@@ -173,6 +182,7 @@ curl -X POST http://localhost:3001/api/hcl/cart/add \
 ## 🔍 Troubleshooting Quick Fixes
 
 ### Backend Not Starting?
+
 ```powershell
 # Kill any existing process on port 3001
 Get-Process node | Where-Object { $_.Handles -like "*3001*" } | Stop-Process -Force
@@ -182,16 +192,19 @@ npm run start:proxy
 ```
 
 ### CORS Errors?
+
 ✓ Backend is configured with CORS enabled  
 ✓ Make sure requests come from http://localhost:3000  
 ✓ Check browser console for exact error
 
 ### Components Not Loading?
+
 ✓ Verify blocks are in `blocks/` directory  
 ✓ Check that scripts are loaded (F12 → Network tab)  
 ✓ Clear browser cache: `Ctrl+Shift+Delete`
 
 ### Cart Not Persisting?
+
 ✓ Check localStorage: Open DevTools → Application → Storage  
 ✓ Clear it: `localStorage.clear()` in console  
 ✓ Reload page
@@ -225,6 +238,7 @@ node api/load-test.mjs 10 100
 ## 🎓 Full Testing Guides
 
 For detailed testing procedures, see:
+
 - **Complete Guide**: `LOCALHOST_TESTING_GUIDE.md` (all scenarios)
 - **Deployment Info**: `DEPLOYMENT_GUIDE.md` (staging/production)
 - **Component Docs**: See individual block READMEs
@@ -241,7 +255,7 @@ When you see these, everything is working:
 ✅ Cart updates happen in real-time  
 ✅ No errors in console  
 ✅ Network requests succeed  
-✅ Tests pass with 80%+ coverage  
+✅ Tests pass with 80%+ coverage
 
 ---
 

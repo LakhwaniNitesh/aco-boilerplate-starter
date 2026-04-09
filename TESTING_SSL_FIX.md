@@ -5,9 +5,10 @@
 The 503 error you encountered was caused by **self-signed SSL certificate rejection** in Node.js.
 
 **Error Message:**
+
 ```
-Login failed with status 503. 
-Service error: request to https://20.40.52.251/store/715842834/logidentity 
+Login failed with status 503.
+Service error: request to https://20.40.52.251/store/715842834/logidentity
 failed, reason: self-signed certificate
 ```
 
@@ -34,8 +35,9 @@ const response = await fetch(endpoint, {
 ```
 
 Applied to:
+
 - ✅ Login request
-- ✅ Logout request  
+- ✅ Logout request
 - ✅ Token validation request
 
 ## How to Test Now
@@ -58,12 +60,14 @@ taskkill /PID <PID> /F
 Open three separate PowerShell windows in the project directory.
 
 **Terminal A - Backend (Port 3001):**
+
 ```powershell
 cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-starter"
 npm run dev:backend
 ```
 
 **Expected output:**
+
 ```
 [DEBUG] Loading .env from: ...\.env
 [DEBUG] Successfully loaded .env file
@@ -72,24 +76,28 @@ npm run dev:backend
 ```
 
 **Terminal B - Frontend (Port 3000):**
+
 ```powershell
 cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-starter"
 npm run dev:frontend
 ```
 
 **Expected output:**
+
 ```
 info: Starting AEM dev server v16.10.17
 info: Local AEM dev server up and running: http://localhost:3000/
 ```
 
 **Terminal C - Proxy (Port 8080):**
+
 ```powershell
 cd "c:\Users\MA432SL\OneDrive - EY\Documents\Projects\Adobe\ACO\aco-boilerplate-starter"
 npm run dev:proxy
 ```
 
 **Expected output:**
+
 ```
 ╔════════════════════════════════════════════════════════════════╗
 ║     Development Proxy Server Ready                            ║
@@ -102,6 +110,7 @@ npm run dev:proxy
 ### Step 3: Open Browser
 
 Open your browser and navigate to:
+
 ```
 http://localhost:8080
 ```
@@ -121,6 +130,7 @@ http://localhost:8080
 ### Step 5: Verify Success
 
 After clicking "Sign In", you should see:
+
 - ✅ Modal closes
 - ✅ Header shows "Welcome auroraadobetest!" or account menu
 - ✅ Login icon changes to account menu
@@ -133,12 +143,14 @@ After clicking "Sign In", you should see:
 ### Issue: Still Getting 503 Error
 
 **Solution 1: Restart Backend**
+
 - Kill the backend process (Terminal A)
 - Code changes are already in place
 - Run `npm run dev:backend` again
 - The new code with SSL certificate fix should load
 
 **Solution 2: Check Environment Variables**
+
 - Verify `.env` file has:
   ```
   HCL_HOST=https://20.40.52.251

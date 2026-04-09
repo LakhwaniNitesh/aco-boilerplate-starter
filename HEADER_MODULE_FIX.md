@@ -3,13 +3,15 @@
 ## Problem Discovered
 
 **Browser Console Error:**
+
 ```
-aem.js:552 failed to load module for header 
+aem.js:552 failed to load module for header
 TypeError: Cannot read properties of null (reading 'querySelectorAll')
     at renderAuthCombine (renderAuthCombine.js:217:31)
 ```
 
 **Impact:**
+
 1. Header module completely fails to load
 2. Navigation menu hidden
 3. Search bar hidden
@@ -23,15 +25,18 @@ TypeError: Cannot read properties of null (reading 'querySelectorAll')
 ## Root Cause
 
 In `renderAuthCombine.js` at line 216:
-```javascript
-const navListEl = navSections.querySelector('.default-content-wrapper > ul');
 
-const listItems = navListEl.querySelectorAll(  // ❌ LINE 217: navListEl is NULL!
-  '.default-content-wrapper > ul > li',
+```javascript
+const navListEl = navSections.querySelector(".default-content-wrapper > ul");
+
+const listItems = navListEl.querySelectorAll(
+  // ❌ LINE 217: navListEl is NULL!
+  ".default-content-wrapper > ul > li",
 );
 ```
 
 **Why it was null:**
+
 - The function expected to find `.default-content-wrapper > ul` inside the `.nav-tools` element
 - On certain page loads or HTML structure variations, this element doesn't exist
 - Calling `.querySelectorAll()` on a null value throws TypeError
@@ -128,16 +133,16 @@ This fix demonstrates the importance of validating DOM state before using it:
 
 ```javascript
 // ❌ BAD: Assumes DOM structure exists
-const element = parent.querySelector('selector');
-element.querySelectorAll('...'); // Crashes if element is null
+const element = parent.querySelector("selector");
+element.querySelectorAll("..."); // Crashes if element is null
 
 // ✅ GOOD: Validates before using
-const element = parent.querySelector('selector');
+const element = parent.querySelector("selector");
 if (!element) {
-  console.warn('Element not found');
+  console.warn("Element not found");
   return;
 }
-element.querySelectorAll('...'); // Safe
+element.querySelectorAll("..."); // Safe
 ```
 
 The header module is brittle without these checks because it depends on a specific HTML structure that may not always be present.

@@ -21,12 +21,13 @@ This caused HCL to reject all cart operations with **HTTP 401 Unauthorized**.
 **File Changed:** `api/utils/hcl-client.js` (Line 52)
 
 **Change:**
+
 ```javascript
 // Before
-Authorization: `Bearer ${accessToken}`
+Authorization: `Bearer ${accessToken}`;
 
 // After
-Cookie: `WCToken=${accessToken}`
+Cookie: `WCToken=${accessToken}`;
 ```
 
 Now the backend passes the authentication token in the format HCL expects.
@@ -51,12 +52,14 @@ Now the backend passes the authentication token in the format HCL expects.
 ### Check Network Tab (F12)
 
 **Request:**
+
 ```
 POST /api/hcl/cart/add
 Status: 200 OK ✅ (was 500 before, 401 without login)
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -98,11 +101,11 @@ All authenticated cart operations should now return **200 OK**, not **401 Unauth
 
 ## Complete Fix Timeline
 
-| Step | Issue | Status |
-|------|-------|--------|
-| 1 | Login returns 404 | ✅ Fixed (added /wcs/resources prefix) |
-| 2 | Login token not found | ✅ Fixed (case sensitivity: WCToken) |
-| 3 | Cart returns 401 | ✅ Fixed (Cookie header format) |
+| Step | Issue                 | Status                                 |
+| ---- | --------------------- | -------------------------------------- |
+| 1    | Login returns 404     | ✅ Fixed (added /wcs/resources prefix) |
+| 2    | Login token not found | ✅ Fixed (case sensitivity: WCToken)   |
+| 3    | Cart returns 401      | ✅ Fixed (Cookie header format)        |
 
 ## Architecture Now Works
 
@@ -123,15 +126,18 @@ User logs in
 **Documentation:** See `HCL_CART_401_UNAUTHORIZED_FIX.md` for detailed analysis
 
 **Git History:**
+
 - `947654a` - Fix Cookie header format
 - `a1ab316` - Add documentation
 
 **Test Command (Automated):**
+
 ```bash
 node test-cart-endpoint.js
 ```
 
 This will:
+
 1. Login with test credentials
 2. Get wcToken
 3. Add product to cart
@@ -142,6 +148,7 @@ This will:
 The fix is applied and committed. Try adding products to cart now - it should work!
 
 Any issues? Check:
+
 1. Are all 3 services running? (backend, frontend, proxy)
 2. Did you log in first?
 3. Check browser F12 Network tab for exact error

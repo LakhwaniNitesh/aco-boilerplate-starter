@@ -3,7 +3,9 @@
 ## Quick Test (5 minutes)
 
 ### Setup
+
 1. **Ensure your backend is running:**
+
    ```bash
    npm run dev
    ```
@@ -20,6 +22,7 @@
 ### Test Flow
 
 #### Step 1: Login
+
 1. Navigate to `/customer/login`
 2. Enter credentials:
    - Username: `auroraadobetest`
@@ -28,6 +31,7 @@
 4. Confirm: "Welcome, auroraadobetest" message appears
 
 #### Step 2: Verify Session Storage
+
 1. Open DevTools (`F12`)
 2. Go to **Application** tab → **Storage** → **Session Storage** → (Your site)
 3. Look for `hcl_auth` key
@@ -46,6 +50,7 @@
 5. ✅ If `sessionCookies` object is present with JSESSIONID and WC_PERSISTENT, login is working
 
 #### Step 3: Add to Cart
+
 1. Navigate to a product page (e.g., `/products/...`)
 2. Click **Add to Cart**
 3. Check browser console for logs:
@@ -59,6 +64,7 @@
 4. ✅ If you see "Added to HCL cart" without errors, the fix is working!
 
 #### Step 4: Verify Cart
+
 1. View the cart - product should be there
 2. Product should show correct price and quantity
 3. ✅ If cart displays correctly, authentication is successful
@@ -66,12 +72,14 @@
 ### What Logs to Look For (Success Indicators)
 
 **Success:**
+
 ```
 [CART-PROXY] ✓ Session cookies reset. Now using 2 cookies: JSESSIONID, WC_PERSISTENT
 [CART-PROXY] ✓ Added to HCL cart. Items: 1, Total: $25.99
 ```
 
 **Failure (Old Issue):**
+
 ```
 [ERROR] HCL API returned 400: "This request cannot run as a generic user."
 ```

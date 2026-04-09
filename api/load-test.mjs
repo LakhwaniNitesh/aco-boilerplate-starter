@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-import http from 'http';
+import http from "http";
 
 // Test configuration
 const config = {
-  host: 'localhost',
+  host: "localhost",
   port: 3001,
-  path: '/api/hcl/login',
-  username: 'auroraadobetest',
-  password: 'passw0rd',
+  path: "/api/hcl/login",
+  username: "auroraadobetest",
+  password: "passw0rd",
 };
 
 // Parse arguments
@@ -47,21 +47,21 @@ async function makeRequest(index) {
       hostname: config.host,
       port: config.port,
       path: config.path,
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload),
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(payload),
       },
     };
 
     const req = http.request(options, (res) => {
-      let data = '';
+      let data = "";
 
-      res.on('data', (chunk) => {
+      res.on("data", (chunk) => {
         data += chunk;
       });
 
-      res.on('end', () => {
+      res.on("end", () => {
         const responseTime = Date.now() - startTime;
         results.responseTimes.push(responseTime);
 
@@ -74,15 +74,15 @@ async function makeRequest(index) {
               index,
               token: parsed.token.substring(0, 50),
             });
-            process.stdout.write('.');
+            process.stdout.write(".");
           } else {
             results.failed += 1;
             results.errors.push({
               index,
               status: res.statusCode,
-              message: parsed.error || 'Unknown error',
+              message: parsed.error || "Unknown error",
             });
-            process.stdout.write('E');
+            process.stdout.write("E");
           }
         } catch (e) {
           results.failed += 1;
@@ -90,7 +90,7 @@ async function makeRequest(index) {
             index,
             message: `Parse error: ${e.message}`,
           });
-          process.stdout.write('F');
+          process.stdout.write("F");
         }
 
         results.total += 1;
@@ -100,7 +100,7 @@ async function makeRequest(index) {
       });
     });
 
-    req.on('error', (error) => {
+    req.on("error", (error) => {
       results.failed += 1;
       results.errors.push({
         index,
@@ -109,7 +109,7 @@ async function makeRequest(index) {
       results.total += 1;
       completedRequests += 1;
       activeRequests -= 1;
-      process.stdout.write('X');
+      process.stdout.write("X");
       resolve();
     });
 
@@ -120,13 +120,11 @@ async function makeRequest(index) {
 
 // Helper: calculate median
 function getMedian() {
-  if (results.responseTimes.length === 0) return 'N/A';
+  if (results.responseTimes.length === 0) return "N/A";
   const sorted = [...results.responseTimes].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   const median =
-    sorted.length % 2 === 0
-      ? (sorted[mid - 1] + sorted[mid]) / 2
-      : sorted[mid];
+    sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
   return median.toFixed(2);
 }
 
@@ -175,21 +173,23 @@ Testing...
           results.responseTimes.reduce((a, b) => a + b, 0) /
           results.responseTimes.length
         ).toFixed(2)
-      : 'N/A';
+      : "N/A";
 
   const minTime =
     results.responseTimes.length > 0
       ? Math.min(...results.responseTimes)
-      : 'N/A';
+      : "N/A";
 
   const maxTime =
     results.responseTimes.length > 0
       ? Math.max(...results.responseTimes)
-      : 'N/A';
+      : "N/A";
 
   const medianTime = getMedian();
   const successRate =
-    results.total > 0 ? ((results.success / results.total) * 100).toFixed(2) : '0.00';
+    results.total > 0
+      ? ((results.success / results.total) * 100).toFixed(2)
+      : "0.00";
   const requestsPerSec = (results.total / (totalTime / 1000)).toFixed(2);
 
   // eslint-disable-next-line no-console
@@ -214,7 +214,7 @@ Response Times:
 
 Token Validation:
   Tokens Generated:  ${results.tokens.length}
-  Sample Token:      ${results.tokens.length > 0 ? results.tokens[0].token : 'None'}
+  Sample Token:      ${results.tokens.length > 0 ? results.tokens[0].token : "None"}
 
 Errors:            ${results.errors.length}
   ${
@@ -222,13 +222,13 @@ Errors:            ${results.errors.length}
       ? results.errors
           .slice(0, 3)
           .map((e) => `- [${e.index}] ${e.message}`)
-          .join('\n  ')
-      : 'None'
+          .join("\n  ")
+      : "None"
   }
 
 Recommendations:
-  ${successRate >= 95 ? 'OK' : 'WARN'} Success rate: ${successRate}%
-  ${avgTime !== 'N/A' && parseFloat(avgTime) < 500 ? 'OK' : 'WARN'} Avg response: ${avgTime}ms
+  ${successRate >= 95 ? "OK" : "WARN"} Success rate: ${successRate}%
+  ${avgTime !== "N/A" && parseFloat(avgTime) < 500 ? "OK" : "WARN"} Avg response: ${avgTime}ms
 
 ==================================================
 Load test complete!
@@ -238,6 +238,6 @@ Load test complete!
 // Run
 runTest().catch((error) => {
   // eslint-disable-next-line no-console
-  console.error('Test failed:', error.message);
+  console.error("Test failed:", error.message);
   process.exit(1);
 });

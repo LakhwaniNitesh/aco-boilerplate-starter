@@ -14,6 +14,7 @@ HCL Commerce authentication requires **TWO components**:
 The original implementation was capturing and sending the tokens but **NOT capturing the session cookies from the login response**.
 
 **The Error Flow:**
+
 - Login succeeded → Tokens returned
 - Tokens sent to cart endpoint → HCL didn't recognize as authenticated
 - HCL responded with 400 "generic user" error
@@ -27,17 +28,17 @@ Implement **complete session cookie propagation** across three layers:
 
 ```javascript
 // Extract Set-Cookie headers from login response
-const setCookieHeader = response.headers.get('set-cookie');
+const setCookieHeader = response.headers.get("set-cookie");
 
 // Parse and store as sessionCookies object
 const sessionCookies = {};
 if (setCookieHeader) {
-  const cookieStrings = Array.isArray(setCookieHeader) 
-    ? setCookieHeader 
+  const cookieStrings = Array.isArray(setCookieHeader)
+    ? setCookieHeader
     : [setCookieHeader];
-  cookieStrings.forEach(cookieString => {
-    const parts = cookieString.split(';');
-    const [name, value] = parts[0].split('=');
+  cookieStrings.forEach((cookieString) => {
+    const parts = cookieString.split(";");
+    const [name, value] = parts[0].split("=");
     if (name && value) {
       sessionCookies[name.trim()] = value.trim();
     }
@@ -180,12 +181,14 @@ const hclResponse = await hclClient.addToCart(accessToken, productId, ...);
 ## Files Modified
 
 ### Backend (Server-side)
+
 1. `api/utils/hcl-rest-auth.js` - Capture Set-Cookie from login response
 2. `api/controllers/hcl-auth-controller.js` - Return sessionCookies to frontend
 3. `api/controllers/hcl-cart-controller.js` - Extract and initialize with sessionCookies
 4. `api/utils/hcl-client.js` - Enhanced logging for session cookie capture
 
 ### Frontend (Client-side)
+
 1. `scripts/hcl-commerce-auth.js` - Store/retrieve sessionCookies
 2. `scripts/hcl-commerce-api.js` - Include sessionCookies in API requests
 
@@ -217,6 +220,7 @@ cd484ec feat: Add comprehensive token verification logging to trace token flow
 ### Expected Log Output
 
 **Login:**
+
 ```
 [HCL-REST-AUTH] Captured session cookie from login: JSESSIONID
 [HCL-REST-AUTH] Captured session cookie from login: WC_PERSISTENT
@@ -224,6 +228,7 @@ cd484ec feat: Add comprehensive token verification logging to trace token flow
 ```
 
 **Add to Cart:**
+
 ```
 [CART-PROXY] Session cookies from login: 2 cookies
 [CART-PROXY] Initializing HCL client with 2 session cookies from login
@@ -234,32 +239,35 @@ cd484ec feat: Add comprehensive token verification logging to trace token flow
 
 ## Key Differences from Previous Approach
 
-| Aspect | Before | After |
-|--------|--------|-------|
-| **Session Cookies** | Not captured from login response | ✓ Captured from login Set-Cookie headers |
-| **Token Only** | Tokens sent but HCL didn't recognize user | ✓ Tokens + Cookies sent together |
-| **First Request** | Failed with 400 "generic user" | ✓ Succeeds with proper session cookies |
-| **Retry Logic** | Retried with bad cookies | Not needed - first request succeeds |
-| **Frontend Storage** | Token only | ✓ Token + Session Cookies |
-| **API Requests** | Only token in body | ✓ Token + Session Cookies in body |
+| Aspect               | Before                                    | After                                    |
+| -------------------- | ----------------------------------------- | ---------------------------------------- |
+| **Session Cookies**  | Not captured from login response          | ✓ Captured from login Set-Cookie headers |
+| **Token Only**       | Tokens sent but HCL didn't recognize user | ✓ Tokens + Cookies sent together         |
+| **First Request**    | Failed with 400 "generic user"            | ✓ Succeeds with proper session cookies   |
+| **Retry Logic**      | Retried with bad cookies                  | Not needed - first request succeeds      |
+| **Frontend Storage** | Token only                                | ✓ Token + Session Cookies                |
+| **API Requests**     | Only token in body                        | ✓ Token + Session Cookies in body        |
 
 ## Troubleshooting
 
 **If Add to Cart still fails:**
 
 1. **Check login response** - Verify Set-Cookie headers present:
+
    ```
    Backend logs should show:
    [HCL-REST-AUTH] Set-Cookie header from login: JSESSIONID=...
    ```
 
 2. **Check frontend storage** - Verify sessionCookies stored:
+
    ```javascript
    // Browser console
-   JSON.parse(sessionStorage.getItem('hcl_auth')).sessionCookies
+   JSON.parse(sessionStorage.getItem("hcl_auth")).sessionCookies;
    ```
 
 3. **Check cart request** - Verify cookies included:
+
    ```
    Backend logs should show:
    [CART-PROXY] Session cookies from login: 2 cookies
@@ -288,6 +296,7 @@ cd484ec feat: Add comprehensive token verification logging to trace token flow
 After fully implementing session cookie capture and transmission, cart requests **still failed** with "generic user" error **even though sessionCookies were being sent to the backend**.
 
 Logs showed:
+
 ```
 [CART-PROXY] sessionCookies value from body: {JSESSIONID: "...", WC_PERSISTENT: "..."}
 [CART-PROXY] Session cookies from login: 2 cookies
@@ -304,11 +313,12 @@ The issue was **singleton state persistence** in `hclClient`:
 ```javascript
 // BEFORE (Problematic Code in addToCart)
 if (bodySessionCookies && Object.keys(bodySessionCookies).length > 0) {
-  Object.assign(hclClient.sessionCookies, bodySessionCookies);  // MERGES, doesn't replace!
+  Object.assign(hclClient.sessionCookies, bodySessionCookies); // MERGES, doesn't replace!
 }
 ```
 
 **The Problem Scenario:**
+
 ```
 1. User A logs in → Backend stores {JSESSIONID_A, WC_PERSISTENT_A} in hclClient.sessionCookies
 2. User A adds to cart → Token A + Cookies A sent to HCL ✅ Works
@@ -333,17 +343,27 @@ ACTUAL PROBLEM: The token B is from User B's session, but if there's ANY stale d
 ```javascript
 // AFTER (Fixed Code)
 if (bodySessionCookies && Object.keys(bodySessionCookies).length > 0) {
-  console.log(`[CART-PROXY] Clearing old cookies and setting NEW cookies from request`);
-  console.log(`[CART-PROXY] Old cookies:`, JSON.stringify(hclClient.sessionCookies));
-  console.log(`[CART-PROXY] New cookies from body:`, JSON.stringify(bodySessionCookies));
-  
+  console.log(
+    `[CART-PROXY] Clearing old cookies and setting NEW cookies from request`,
+  );
+  console.log(
+    `[CART-PROXY] Old cookies:`,
+    JSON.stringify(hclClient.sessionCookies),
+  );
+  console.log(
+    `[CART-PROXY] New cookies from body:`,
+    JSON.stringify(bodySessionCookies),
+  );
+
   // CRITICAL: Clear all existing cookies first
   hclClient.sessionCookies = {};
-  
+
   // Then assign ONLY the cookies from this request
   Object.assign(hclClient.sessionCookies, bodySessionCookies);
-  
-  console.log(`[CART-PROXY] ✓ Session cookies reset. Now using ${Object.keys(hclClient.sessionCookies).length} cookies`);
+
+  console.log(
+    `[CART-PROXY] ✓ Session cookies reset. Now using ${Object.keys(hclClient.sessionCookies).length} cookies`,
+  );
 }
 ```
 
@@ -359,6 +379,7 @@ Modified `api/controllers/hcl-cart-controller.js` in all cart endpoints:
 ### Why This Works
 
 Each cart operation now:
+
 1. **Clears** → `hclClient.sessionCookies = {}`
 2. **Assigns Fresh** → `Object.assign(hclClient.sessionCookies, bodySessionCookies)`
 3. **Sends Unified** → Token + Fresh Cookies to HCL
@@ -377,5 +398,3 @@ Monitor these logs to confirm the fix is applied:
 ```
 
 If you see this in logs, the fix is working correctly.
-
-

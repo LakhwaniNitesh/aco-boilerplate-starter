@@ -9,10 +9,11 @@ The "add to cart" operation was failing with **HTTP 400: "This request cannot ru
 The `hclClient` singleton was maintaining **stale cookies** from previous requests. When a new cart request arrived with fresh cookies from the frontend:
 
 ```javascript
-Object.assign(hclClient.sessionCookies, bodySessionCookies);  // MERGES, doesn't replace
+Object.assign(hclClient.sessionCookies, bodySessionCookies); // MERGES, doesn't replace
 ```
 
 This pattern **merged** new cookies with old ones instead of replacing them. Result:
+
 - Token from User B's session
 - Cookies from User A's session (still in singleton)
 - HCL saw mismatch → Rejected as "generic user"
@@ -22,8 +23,8 @@ This pattern **merged** new cookies with old ones instead of replacing them. Res
 **Clear-then-assign pattern** - Completely replace cookies for each request:
 
 ```javascript
-hclClient.sessionCookies = {};  // Clear first
-Object.assign(hclClient.sessionCookies, bodySessionCookies);  // Then assign
+hclClient.sessionCookies = {}; // Clear first
+Object.assign(hclClient.sessionCookies, bodySessionCookies); // Then assign
 ```
 
 ## Files Modified
@@ -33,21 +34,25 @@ Object.assign(hclClient.sessionCookies, bodySessionCookies);  // Then assign
 **Changes in 3 commits:**
 
 #### Commit 0ea4aaa (Primary Fix)
+
 - Lines 116-127: Added clear-and-assign in `addToCart()`
 - Logs old cookies being cleared and new ones being set
 
 #### Commit e2a87f6 (Extended Fix)
+
 - Lines 158-163: Added sessionCookies support to `getCart()`
 - Lines 280-285: Added sessionCookies support to `removeFromCart()`
 - Lines 324-329: Added sessionCookies support to `updateCartItem()`
 
 #### Commit 99f86e4 (Documentation)
+
 - Updated `SESSION_COOKIE_FIX.md` with detailed explanation
 - Created `TEST_SESSION_COOKIE_FIX.md` with testing guide
 
 ## Testing
 
 ### Quick Verification (No Tools Needed)
+
 1. Login with test credentials
 2. Check DevTools → Application → Session Storage → `hcl_auth`
 3. Verify `sessionCookies` object contains `JSESSIONID` and `WC_PERSISTENT`
@@ -57,6 +62,7 @@ Object.assign(hclClient.sessionCookies, bodySessionCookies);  // Then assign
 ### Expected Logs
 
 **Success:**
+
 ```
 [CART-PROXY] Clearing old cookies and setting NEW cookies from request
 [CART-PROXY] Old cookies: {JSESSIONID: "...", WC_PERSISTENT: "..."}
@@ -66,6 +72,7 @@ Object.assign(hclClient.sessionCookies, bodySessionCookies);  // Then assign
 ```
 
 **Failure (Old Behavior):**
+
 ```
 [ERROR] HCL API returned 400: "This request cannot run as a generic user."
 ```
@@ -73,12 +80,14 @@ Object.assign(hclClient.sessionCookies, bodySessionCookies);  // Then assign
 ## Implementation Details
 
 ### Before Fix
+
 ```
 Cart Request 1: Token A + Cookies A ✅ Works
 Cart Request 2: Token B + {Cookies B + Old A} ❌ Mismatch
 ```
 
 ### After Fix
+
 ```
 Cart Request 1: Token A + Cookies A ✅ Works
 Cart Request 2: Clear singleton → Token B + Cookies B ✅ Works

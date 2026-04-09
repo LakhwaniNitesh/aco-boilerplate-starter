@@ -1,13 +1,13 @@
 /**
  * HCL Commerce REST API Authentication
- * 
+ *
  * Uses HCL Commerce Identity/Login REST API endpoints:
  * - POST /store/{storeId}/loginidentity - Authenticate user and get wcToken
  * - POST /store/{storeId}/guestidentity - Get guest token
- * 
+ *
  * References:
  * https://help.hcl-software.com/commerce/9.0.0/restapi/code/authentication_and_session_management.html
- * 
+ *
  * Token Lifecycle:
  * 1. User provides username/password
  * 2. POST to /store/{storeId}/loginidentity with logonId and password
@@ -17,8 +17,8 @@
  * 6. On logout, invalidate token
  */
 
-import fetch from 'node-fetch';
-import https from 'https';
+import fetch from "node-fetch";
+import https from "https";
 
 // Simple logger wrapper - using console for basic boilerplate server
 const logger = {
@@ -52,11 +52,11 @@ class HCLRestAuth {
   // Lazy initialization of environment variables
   _ensureInitialized() {
     if (!this._initialized) {
-      this._hclHost = process.env.HCL_HOST || 'http://localhost:8080';
-      this._hclStoreId = process.env.HCL_STORE_ID || 'B2CStore';
-      this._hclCatalogId = process.env.HCL_CATALOG_ID || '10001';
-      this._hclLanguageId = process.env.HCL_LANGUAGE_ID || '-1';
-      this._hclCurrencyId = process.env.HCL_CURRENCY_ID || '1';
+      this._hclHost = process.env.HCL_HOST || "http://localhost:8080";
+      this._hclStoreId = process.env.HCL_STORE_ID || "B2CStore";
+      this._hclCatalogId = process.env.HCL_CATALOG_ID || "10001";
+      this._hclLanguageId = process.env.HCL_LANGUAGE_ID || "-1";
+      this._hclCurrencyId = process.env.HCL_CURRENCY_ID || "1";
       this._initialized = true;
     }
   }
@@ -88,11 +88,11 @@ class HCLRestAuth {
 
   /**
    * Login to HCL Commerce using REST API
-   * 
+   *
    * Endpoint: POST /store/{storeId}/loginidentity
    * Body: { logonId, password }
    * Response: { wcToken, userId, email, displayName, ... }
-   * 
+   *
    * @param {string} username - HCL Commerce user/customer ID (logonId)
    * @param {string} password - User password
    * @returns {Promise<Object>} Authentication result with wcToken
@@ -116,39 +116,48 @@ class HCLRestAuth {
       ];
 
       let result = null;
-      
+
       for (const endpoint of endpoints) {
         logger.info(`[HCL-REST-AUTH] Trying endpoint: ${endpoint}`);
         result = await this._tryLoginEndpoint(username, password, endpoint);
-        
+
         if (result.success) {
-          logger.info(`[HCL-REST-AUTH] ✓ Successfully authenticated using endpoint: ${endpoint}`);
+          logger.info(
+            `[HCL-REST-AUTH] ✓ Successfully authenticated using endpoint: ${endpoint}`,
+          );
           return result;
         }
-        
+
         // Don't retry if it's a 401 (bad credentials)
         if (result.statusCode === 401) {
-          logger.error(`[HCL-REST-AUTH] Authentication failed (invalid credentials)`);
+          logger.error(
+            `[HCL-REST-AUTH] Authentication failed (invalid credentials)`,
+          );
           return result;
         }
-        
-        logger.warn(`[HCL-REST-AUTH] Endpoint failed with status ${result.statusCode}, trying next...`);
+
+        logger.warn(
+          `[HCL-REST-AUTH] Endpoint failed with status ${result.statusCode}, trying next...`,
+        );
       }
-      
+
       // All endpoints failed - return the last error
       logger.error(`[HCL-REST-AUTH] ⚠ All authentication endpoints failed`);
       logger.error(`[HCL-REST-AUTH] Please verify:`);
       logger.error(`[HCL-REST-AUTH]   1. HCL_HOST is correct: ${this.hclHost}`);
-      logger.error(`[HCL-REST-AUTH]   2. HCL_STORE_ID exists and is accessible: ${this.hclStoreId}`);
-      logger.error(`[HCL-REST-AUTH]   3. User exists in HCL Commerce: ${username}`);
+      logger.error(
+        `[HCL-REST-AUTH]   2. HCL_STORE_ID exists and is accessible: ${this.hclStoreId}`,
+      );
+      logger.error(
+        `[HCL-REST-AUTH]   3. User exists in HCL Commerce: ${username}`,
+      );
       logger.error(`[HCL-REST-AUTH] Last error: ${result.error}`);
-      
-      return result;
 
+      return result;
     } catch (error) {
       logger.error(`[HCL-REST-AUTH] Login error: ${error.message}`);
       logger.debug(`[HCL-REST-AUTH] Stack trace: ${error.stack}`);
-      
+
       return {
         success: false,
         error: `Authentication service error: ${error.message}`,
@@ -172,19 +181,21 @@ class HCLRestAuth {
 
       logger.info(`[HCL-REST-AUTH] Attempting login for user: ${username}`);
       logger.debug(`[HCL-REST-AUTH] Login endpoint: ${endpoint}`);
-      logger.debug(`[HCL-REST-AUTH] Request body (sanitized): logonId=${username}`);
+      logger.debug(
+        `[HCL-REST-AUTH] Request body (sanitized): logonId=${username}`,
+      );
 
       // Extract hostname from endpoint for Host header
       // HCL Commerce needs the Host header to match a configured virtual host
       const url = new URL(endpoint);
       const hostHeader = url.host; // This includes the port if present
-      
+
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Host': hostHeader, // Send Host header for virtual host routing
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Host: hostHeader, // Send Host header for virtual host routing
         },
         body: JSON.stringify(requestBody),
         timeout: 5000,
@@ -192,26 +203,34 @@ class HCLRestAuth {
       });
 
       const responseText = await response.text();
-      
+
       logger.debug(`[HCL-REST-AUTH] Response status: ${response.status}`);
-      
+
       // Capture Set-Cookie headers from login response
       // These should include JSESSIONID and WC_PERSISTENT
-      const setCookieHeader = response.headers.get('set-cookie');
-      logger.debug(`[HCL-REST-AUTH] Set-Cookie header from login: ${setCookieHeader}`);
+      const setCookieHeader = response.headers.get("set-cookie");
+      logger.debug(
+        `[HCL-REST-AUTH] Set-Cookie header from login: ${setCookieHeader}`,
+      );
 
       if (!response.ok) {
-        logger.warn(`[HCL-REST-AUTH] Login failed with status ${response.status}`);
+        logger.warn(
+          `[HCL-REST-AUTH] Login failed with status ${response.status}`,
+        );
         logger.debug(`[HCL-REST-AUTH] Error response: ${responseText}`);
-        
-        let errorDetail = 'Authentication failed';
+
+        let errorDetail = "Authentication failed";
         let statusCode = response.status;
-        
+
         try {
           const errorBody = JSON.parse(responseText);
           errorDetail = errorBody.message || errorBody.error || errorDetail;
           // Capture specific error codes
-          if (errorBody.errors && Array.isArray(errorBody.errors) && errorBody.errors[0]) {
+          if (
+            errorBody.errors &&
+            Array.isArray(errorBody.errors) &&
+            errorBody.errors[0]
+          ) {
             errorDetail = errorBody.errors[0].message || errorDetail;
           }
         } catch (e) {
@@ -231,100 +250,142 @@ class HCLRestAuth {
       try {
         responseBody = JSON.parse(responseText);
       } catch (e) {
-        logger.error(`[HCL-REST-AUTH] Failed to parse login response: ${e.message}`);
+        logger.error(
+          `[HCL-REST-AUTH] Failed to parse login response: ${e.message}`,
+        );
         return {
           success: false,
-          error: 'Invalid response format from HCL Commerce',
+          error: "Invalid response format from HCL Commerce",
           statusCode: 500,
         };
       }
 
       // Extract wcToken from response
       // HCL Commerce returns 'WCToken' (uppercase W), but also check common variations
-      const wcToken = responseBody.WCToken || responseBody.wcToken || responseBody.token || responseBody.accessToken;
-      
+      const wcToken =
+        responseBody.WCToken ||
+        responseBody.wcToken ||
+        responseBody.token ||
+        responseBody.accessToken;
+      // Extract wcTrustedToken from response - DIFFERENT from wcToken
+      const wcTrustedToken =
+        responseBody.WCTrustedToken ||
+        responseBody.wcTrustedToken ||
+        responseBody.trustedToken;
+
       if (!wcToken) {
-        logger.error('[HCL-REST-AUTH] No wcToken in response');
-        logger.debug(`[HCL-REST-AUTH] Full response body: ${JSON.stringify(responseBody, null, 2)}`);
+        logger.error("[HCL-REST-AUTH] No wcToken in response");
+        logger.debug(
+          `[HCL-REST-AUTH] Full response body: ${JSON.stringify(responseBody, null, 2)}`,
+        );
         return {
           success: false,
-          error: 'No authentication token received from HCL Commerce',
+          error: "No authentication token received from HCL Commerce",
           statusCode: 500,
         };
       }
 
       logger.info(`[HCL-REST-AUTH] ✓ Login successful for user: ${username}`);
-      logger.debug(`[HCL-REST-AUTH] Token received (truncated): ${wcToken.substring(0, 20)}...`);
-      logger.debug(`[HCL-REST-AUTH] Full response body: ${JSON.stringify(responseBody, null, 2)}`);
+      logger.debug(
+        `[HCL-REST-AUTH] Token received (truncated): ${wcToken.substring(0, 20)}...`,
+      );
+      logger.debug(
+        `[HCL-REST-AUTH] Full response body: ${JSON.stringify(responseBody, null, 2)}`,
+      );
 
       // Parse Set-Cookie header to extract session cookies
       // HCL returns multiple cookies, some with the same name (e.g., multiple WC_PERSISTENT)
       // We only need to store ONE of each type - we'll use the LAST occurrence as it's usually the most recent
       const sessionCookies = {};
       const allCookies = []; // Track all cookies for logging
-      
+
       if (setCookieHeader) {
         console.log(`[HCL-REST-AUTH] Processing Set-Cookie header`);
-        console.log(`[HCL-REST-AUTH] Set-Cookie header type: ${typeof setCookieHeader}`);
-        console.log(`[HCL-REST-AUTH] Set-Cookie header is array: ${Array.isArray(setCookieHeader)}`);
-        
+        console.log(
+          `[HCL-REST-AUTH] Set-Cookie header type: ${typeof setCookieHeader}`,
+        );
+        console.log(
+          `[HCL-REST-AUTH] Set-Cookie header is array: ${Array.isArray(setCookieHeader)}`,
+        );
+
         // setCookieHeader is a comma-separated string of cookies from HCL
         // Each cookie has format: "name=value; Path=...; HttpOnly; Secure"
         // Multiple cookies are separated by commas
-        
+
         let cookieArray = [];
         if (Array.isArray(setCookieHeader)) {
           cookieArray = setCookieHeader;
-          console.log(`[HCL-REST-AUTH] Got array with ${cookieArray.length} cookies`);
+          console.log(
+            `[HCL-REST-AUTH] Got array with ${cookieArray.length} cookies`,
+          );
         } else {
           // Split on commas
           // Format: "Cookie1=...; Path=/; HttpOnly, Cookie2=...; Path=/"
-          cookieArray = setCookieHeader.split(',').map(c => c.trim());
-          console.log(`[HCL-REST-AUTH] Split string into ${cookieArray.length} cookie fragments`);
+          cookieArray = setCookieHeader.split(",").map((c) => c.trim());
+          console.log(
+            `[HCL-REST-AUTH] Split string into ${cookieArray.length} cookie fragments`,
+          );
         }
-        
-        console.log(`[HCL-REST-AUTH] Parsing ${cookieArray.length} cookies from Set-Cookie header`);
-        
+
+        console.log(
+          `[HCL-REST-AUTH] Parsing ${cookieArray.length} cookies from Set-Cookie header`,
+        );
+
         cookieArray.forEach((cookieString, index) => {
           if (cookieString) {
             // Parse "name=value; Path=...; HttpOnly" format
-            const parts = cookieString.split(';');
-            const [name, value] = parts[0].split('=');
+            const parts = cookieString.split(";");
+            const [name, value] = parts[0].split("=");
             if (name && value) {
               const trimmedName = name.trim();
               const trimmedValue = value.trim();
               allCookies.push({ name: trimmedName, value: trimmedValue });
               sessionCookies[trimmedName] = trimmedValue;
-              
+
               // Debug log for each cookie
-              if (trimmedName === 'JSESSIONID') {
-                console.log(`[HCL-REST-AUTH] ✓ Cookie #${index + 1}: ${trimmedName}=${trimmedValue}`);
+              if (trimmedName === "JSESSIONID") {
+                console.log(
+                  `[HCL-REST-AUTH] ✓ Cookie #${index + 1}: ${trimmedName}=${trimmedValue}`,
+                );
                 console.log(`[HCL-REST-AUTH]   Full value: "${trimmedValue}"`);
                 console.log(`[HCL-REST-AUTH]   Length: ${trimmedValue.length}`);
-              } else if (trimmedName === 'WC_PERSISTENT') {
-                console.log(`[HCL-REST-AUTH] ✓ Cookie #${index + 1}: ${trimmedName}=${trimmedValue.substring(0, 30)}...`);
+              } else if (trimmedName === "WC_PERSISTENT") {
+                console.log(
+                  `[HCL-REST-AUTH] ✓ Cookie #${index + 1}: ${trimmedName}=${trimmedValue.substring(0, 30)}...`,
+                );
                 console.log(`[HCL-REST-AUTH]   Full value: "${trimmedValue}"`);
               } else {
-                console.log(`[HCL-REST-AUTH] ✓ Cookie #${index + 1}: ${trimmedName}=${trimmedValue.substring(0, 30)}...`);
+                console.log(
+                  `[HCL-REST-AUTH] ✓ Cookie #${index + 1}: ${trimmedName}=${trimmedValue.substring(0, 30)}...`,
+                );
               }
             }
           }
         });
-        
-        console.log(`[HCL-REST-AUTH] Total cookies parsed: ${Object.keys(sessionCookies).length}`);
-        console.log(`[HCL-REST-AUTH] Unique cookie names: ${Object.keys(sessionCookies).join(', ')}`);
-        console.log(`[HCL-REST-AUTH] Session cookies to send to frontend:`, sessionCookies);
+
+        console.log(
+          `[HCL-REST-AUTH] Total cookies parsed: ${Object.keys(sessionCookies).length}`,
+        );
+        console.log(
+          `[HCL-REST-AUTH] Unique cookie names: ${Object.keys(sessionCookies).join(", ")}`,
+        );
+        console.log(
+          `[HCL-REST-AUTH] Session cookies to send to frontend:`,
+          sessionCookies,
+        );
       }
 
       // Return standardized response (matches Adobe Commerce format)
-      return {
+      const returnData = {
         success: true,
         wcToken: wcToken,
+        wcTrustedToken: wcTrustedToken, // CRITICAL: Include the trusted token separately
         accessToken: wcToken, // Alias for consistency
+        trustedToken: wcTrustedToken, // Alias for consistency
         userId: responseBody.userId || responseBody.customerId,
         email: responseBody.email || responseBody.logonId,
-        firstName: responseBody.firstName || '',
-        lastName: responseBody.lastName || '',
+        firstName: responseBody.firstName || "",
+        lastName: responseBody.lastName || "",
         displayName: responseBody.displayName || username,
         expiresIn: responseBody.expiresIn || 3600, // Default 1 hour if not specified
         // Pass session cookies from login response to client
@@ -333,10 +394,26 @@ class HCLRestAuth {
         ...responseBody,
       };
 
+      console.log(
+        `[HCL-REST-AUTH] BEFORE RETURNING FROM login(), returnData contains:`,
+        {
+          hasWcToken: !!returnData.wcToken,
+          hasWcTrustedToken: !!returnData.wcTrustedToken,
+          hasTrustedToken: !!returnData.trustedToken,
+          wcTokenSample: returnData.wcToken
+            ? returnData.wcToken.substring(0, 30)
+            : "MISSING",
+          wcTrustedTokenSample: returnData.wcTrustedToken
+            ? returnData.wcTrustedToken.substring(0, 30)
+            : "MISSING",
+        },
+      );
+
+      return returnData;
     } catch (error) {
       logger.error(`[HCL-REST-AUTH] Endpoint error: ${error.message}`);
       logger.debug(`[HCL-REST-AUTH] Stack trace: ${error.stack}`);
-      
+
       return {
         success: false,
         error: `Service error: ${error.message}`,
@@ -347,35 +424,37 @@ class HCLRestAuth {
 
   /**
    * Logout from HCL Commerce using REST API
-   * 
+   *
    * Endpoint: POST /identity/v1/customers/logout
    * Headers: wcToken in Cookie or Header
    * Response: { logoutSuccessful: true/false }
-   * 
+   *
    * @param {string} wcToken - The authentication token to invalidate
    * @returns {Promise<Object>} Logout result
    */
   async logout(wcToken) {
     try {
       const logoutEndpoint = `${this.hclHost}/identity/v1/customers/logout`;
-      
-      logger.info('[HCL-REST-AUTH] Attempting logout');
+
+      logger.info("[HCL-REST-AUTH] Attempting logout");
 
       const response = await fetch(logoutEndpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Cookie': `WCToken=${wcToken}`, // Some HCL versions use cookie
-          'Authorization': `Bearer ${wcToken}`, // Some versions use header
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Cookie: `WCToken=${wcToken}`, // Some HCL versions use cookie
+          Authorization: `Bearer ${wcToken}`, // Some versions use header
         },
         timeout: 5000,
         agent: httpsAgent, // Use agent that accepts self-signed certificates
       });
 
       const responseText = await response.text();
-      
-      logger.debug(`[HCL-REST-AUTH] Logout response status: ${response.status}`);
+
+      logger.debug(
+        `[HCL-REST-AUTH] Logout response status: ${response.status}`,
+      );
 
       if (!response.ok) {
         logger.warn(`[HCL-REST-AUTH] Logout response: ${response.status}`);
@@ -390,14 +469,13 @@ class HCLRestAuth {
         responseBody = { logoutSuccessful: response.ok };
       }
 
-      logger.info('[HCL-REST-AUTH] ✓ Logout processed');
+      logger.info("[HCL-REST-AUTH] ✓ Logout processed");
 
       return {
         success: response.ok,
-        message: responseBody.message || 'Logout successful',
+        message: responseBody.message || "Logout successful",
         ...responseBody,
       };
-
     } catch (error) {
       logger.warn(`[HCL-REST-AUTH] Logout error: ${error.message}`);
       // Don't fail on logout errors - token might already be invalid
@@ -411,7 +489,7 @@ class HCLRestAuth {
   /**
    * Validate token is still valid
    * Can be called before making API requests to check token freshness
-   * 
+   *
    * @param {string} wcToken - Token to validate
    * @returns {Promise<Object>} Validation result
    */
@@ -420,34 +498,35 @@ class HCLRestAuth {
       // Try to call a simple endpoint that requires authentication
       // If token is invalid, we'll get 401
       const validateEndpoint = `${this.hclHost}/rest/model/v2/sites/${this.hclStoreId}/cart`;
-      
+
       const response = await fetch(validateEndpoint, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Accept': 'application/json',
-          'Cookie': `WCToken=${wcToken}`,
-          'Authorization': `Bearer ${wcToken}`,
+          Accept: "application/json",
+          Cookie: `WCToken=${wcToken}`,
+          Authorization: `Bearer ${wcToken}`,
         },
         timeout: 5000,
         agent: httpsAgent, // Use agent that accepts self-signed certificates
       });
 
       if (response.status === 401) {
-        logger.warn('[HCL-REST-AUTH] Token validation failed: 401 Unauthorized');
+        logger.warn(
+          "[HCL-REST-AUTH] Token validation failed: 401 Unauthorized",
+        );
         return {
           valid: false,
-          message: 'Token is invalid or expired',
+          message: "Token is invalid or expired",
           statusCode: 401,
         };
       }
 
-      logger.debug('[HCL-REST-AUTH] Token validation passed');
+      logger.debug("[HCL-REST-AUTH] Token validation passed");
       return {
         valid: true,
-        message: 'Token is valid',
+        message: "Token is valid",
         statusCode: response.status,
       };
-
     } catch (error) {
       logger.warn(`[HCL-REST-AUTH] Token validation error: ${error.message}`);
       return {
@@ -460,7 +539,7 @@ class HCLRestAuth {
   /**
    * Get HCL Commerce store configuration
    * Used for debugging and configuration validation
-   * 
+   *
    * @returns {Object} Current configuration
    */
   getConfig() {

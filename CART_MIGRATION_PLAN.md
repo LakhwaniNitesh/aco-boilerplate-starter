@@ -1,14 +1,17 @@
 # Cart Migration Plan: From Custom File Storage to HCL Commerce API
 
 ## Overview
+
 Migrate cart system from custom file-based storage to use HCL Commerce REST APIs directly, following Adobe Commerce drop-in patterns.
 
 ## Current State
+
 - **Cart Storage:** File-based (`api/.cart-storage/test-cart-localhost.json`)
 - **Frontend Sync:** localStorage + event listeners
 - **Data Source:** HCL Commerce (only for display, not for persistence)
 
 ## Target State (Adobe Commerce Pattern)
+
 - **Cart Storage:** HCL Commerce only (single source of truth)
 - **Frontend Sync:** sessionStorage (temporary) + HCL API calls
 - **Data Source:** HCL Commerce (for both persistence and display)
@@ -17,34 +20,44 @@ Migrate cart system from custom file-based storage to use HCL Commerce REST APIs
 ## Implementation Strategy
 
 ### Phase 1: Backend Proxy Updates (Minimal Changes)
+
 **File:** `api/controllers/hcl-cart-controller.js`
+
 - Remove file-based storage logic
 - Convert to direct HCL Commerce API proxy
 - Keep same endpoints: `/api/hcl/cart/add`, `/api/hcl/cart`, `/api/hcl/cart/clear`
 - Request flow: Frontend → Backend Proxy → HCL Commerce → Response to Frontend
 
 ### Phase 2: Frontend Cart State (Simplification)
+
 **Current:** `scripts/simple-cart-state.js` (localStorage-based)
 **New:** Update to use HCL Commerce as source of truth
+
 - Keep same export interface: `getCartState()`, `updateCartState()`, `subscribeToCart()`
 - Remove localStorage persistence
 - Source data only from HCL Commerce responses
 
 ### Phase 3: Mini-Cart Block (No Breaking Changes)
+
 **File:** `blocks/commerce-mini-cart/commerce-mini-cart.js`
+
 - Continue using `getCartState()` - interface unchanged
 - Remove localStorage restore logic
 - Fetch cart on page load via `/api/hcl/cart` (proxy calls HCL)
 - Subscribe to cart updates (same pattern as before)
 
 ### Phase 4: Cart Page Block (No Breaking Changes)
+
 **File:** `blocks/commerce-cart/commerce-cart.js`
+
 - Continue using `getCartState()` - interface unchanged
 - Fetch cart on page load via `/api/hcl/cart`
 - Render with HCL Commerce data (same logic as before)
 
 ### Phase 5: Add-to-Cart Button (No Breaking Changes)
+
 **File:** `blocks/product-details/product-details.js`
+
 - Continue posting to `/api/hcl/cart/add` - endpoint unchanged
 - Backend now proxies to HCL Commerce instead of file storage
 - Response handling remains same
@@ -62,7 +75,9 @@ Migrate cart system from custom file-based storage to use HCL Commerce REST APIs
 ## Detailed Implementation Steps
 
 ### Step 1: Update HCL Cart Controller
+
 Replace file-based logic with HCL API calls:
+
 ```
 - addToCart() → proxy to HCL REST API
 - getCart() → proxy to HCL REST API
@@ -71,7 +86,9 @@ Replace file-based logic with HCL API calls:
 ```
 
 ### Step 2: Update Simple Cart State
+
 Simplify to sync-only:
+
 ```
 - Fetch cart from `/api/hcl/cart`
 - Store in memory for UI
@@ -80,7 +97,9 @@ Simplify to sync-only:
 ```
 
 ### Step 3: Frontend Components
+
 No logic changes needed:
+
 ```
 - Mini-cart: Call updateCartState() on init + subscribe
 - Cart page: Call getCartState() on load
@@ -90,6 +109,7 @@ No logic changes needed:
 ## API Contracts (Unchanged from Frontend Perspective)
 
 ### Backend Endpoints (Frontend → Backend)
+
 ```
 POST /api/hcl/cart/add
   Request: { partNumber, sku, quantity, accessToken }
@@ -104,6 +124,7 @@ DELETE /api/hcl/cart/clear
 ```
 
 ### Frontend State Interface (Unchanged)
+
 ```
 getCartState() → { cartId, items[], total }
 updateCartState(cart) → void
@@ -128,6 +149,7 @@ subscribeToCart(listener) → unsubscribe function
 ## Rollback Plan
 
 If HCL Commerce API is unavailable:
+
 - Backend returns 503 Service Unavailable
 - Frontend shows error message
 - No fallback to file storage (intentional - forces HCL connectivity)

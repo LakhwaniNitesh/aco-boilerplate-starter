@@ -9,6 +9,7 @@ This guide helps you test the HCL Commerce integration with your local EDS store
 ## ✅ Prerequisites
 
 Before starting, verify you have:
+
 - [ ] EDS storefront running locally (with `aem up`)
 - [ ] Node.js v16+ and npm v7+
 - [ ] HCL Commerce backend services accessible
@@ -32,6 +33,7 @@ npm run start:proxy
 ```
 
 **Expected Output:**
+
 ```
 ✓ Backend server running on http://localhost:3001
 ✓ Health check available at http://localhost:3001/health
@@ -39,6 +41,7 @@ npm run start:proxy
 ```
 
 **Verify it's running:**
+
 ```powershell
 # In another terminal
 Invoke-WebRequest -Uri "http://localhost:3001/health" -Method GET
@@ -83,34 +86,38 @@ Create a new test page at `drafts/agents/auth-test.html`:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Auth Test</title>
-    <script src="https://localhost:3000/scripts/scripts.js" type="module"></script>
-</head>
-<body>
+    <script
+      src="https://localhost:3000/scripts/scripts.js"
+      type="module"
+    ></script>
+  </head>
+  <body>
     <div id="auth-status"></div>
     <div id="login-form"></div>
     <script type="module">
-        import { HCLAuthService } from '/scripts/hcl-auth-service.js';
-        
-        // Test login
-        const email = 'test@example.com';
-        const password = 'testpass123';
-        
-        const result = await HCLAuthService.login(email, password);
-        console.log('Auth Result:', result);
-        
-        // Display status
-        document.getElementById('auth-status').innerHTML = `
+      import { HCLAuthService } from "/scripts/hcl-auth-service.js";
+
+      // Test login
+      const email = "test@example.com";
+      const password = "testpass123";
+
+      const result = await HCLAuthService.login(email, password);
+      console.log("Auth Result:", result);
+
+      // Display status
+      document.getElementById("auth-status").innerHTML = `
             <p>Authenticated: ${HCLAuthService.isAuthenticated()}</p>
-            <p>Token: ${HCLAuthService.getToken() ? 'Present' : 'Missing'}</p>
+            <p>Token: ${HCLAuthService.getToken() ? "Present" : "Missing"}</p>
         `;
     </script>
-</body>
+  </body>
 </html>
 ```
 
 **2. Access the test page:**
+
 - Open: `http://localhost:3000/auth-test.html`
 - Check console (F12) for auth results
 - Expected: Successful authentication or clear error message
@@ -124,52 +131,56 @@ Create a new test page at `drafts/agents/auth-test.html`:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Cart Test</title>
-    <script src="https://localhost:3000/scripts/scripts.js" type="module"></script>
-</head>
-<body>
+    <script
+      src="https://localhost:3000/scripts/scripts.js"
+      type="module"
+    ></script>
+  </head>
+  <body>
     <div id="cart-info"></div>
     <div id="actions"></div>
     <script type="module">
-        import { CartStore, useCart, useAddToCart } from '/scripts/cart-store.js';
-        
-        // Subscribe to cart changes
-        CartStore.subscribe((cart) => {
-            console.log('Cart Updated:', cart);
-            document.getElementById('cart-info').innerHTML = `
+      import { CartStore, useCart, useAddToCart } from "/scripts/cart-store.js";
+
+      // Subscribe to cart changes
+      CartStore.subscribe((cart) => {
+        console.log("Cart Updated:", cart);
+        document.getElementById("cart-info").innerHTML = `
                 <h2>Cart Status</h2>
                 <p>Items: ${cart.items.length}</p>
                 <p>Total: $${cart.total.toFixed(2)}</p>
                 <pre>${JSON.stringify(cart, null, 2)}</pre>
             `;
-        });
-        
-        // Test adding a product
-        document.getElementById('actions').innerHTML = `
+      });
+
+      // Test adding a product
+      document.getElementById("actions").innerHTML = `
             <button onclick="addTestProduct()">Add Test Product</button>
             <button onclick="clearCart()">Clear Cart</button>
         `;
-        
-        window.addTestProduct = async () => {
-            const { addItem } = useAddToCart();
-            await addItem({
-                productId: 'TEST-001',
-                name: 'Test Product',
-                price: 99.99,
-                quantity: 1
-            });
-        };
-        
-        window.clearCart = () => {
-            CartStore.clear();
-        };
+
+      window.addTestProduct = async () => {
+        const { addItem } = useAddToCart();
+        await addItem({
+          productId: "TEST-001",
+          name: "Test Product",
+          price: 99.99,
+          quantity: 1,
+        });
+      };
+
+      window.clearCart = () => {
+        CartStore.clear();
+      };
     </script>
-</body>
+  </body>
 </html>
 ```
 
 **2. Test the page:**
+
 - Open: `http://localhost:3000/cart-test.html`
 - Click "Add Test Product" button
 - Verify cart updates in real-time
@@ -186,25 +197,26 @@ Create `drafts/agents/test-add-to-cart.html`:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Add to Cart Test</title>
-    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/styles.css" />
     <script src="/scripts/scripts.js" type="module"></script>
-</head>
-<body>
+  </head>
+  <body>
     <header>Test: Add to Cart Button</header>
-    
-    <div class="add-to-cart-hcl" 
-         data-product-id="TEST-PRODUCT-001"
-         data-button-text="Add to Cart"
-         data-loading-text="Adding..."
-         data-success-text="Added!">
-    </div>
-    
+
+    <div
+      class="add-to-cart-hcl"
+      data-product-id="TEST-PRODUCT-001"
+      data-button-text="Add to Cart"
+      data-loading-text="Adding..."
+      data-success-text="Added!"
+    ></div>
+
     <footer>
-        <p>Check console (F12) for debug output</p>
+      <p>Check console (F12) for debug output</p>
     </footer>
-</body>
+  </body>
 </html>
 ```
 
@@ -215,24 +227,25 @@ Create `drafts/agents/test-mini-cart.html`:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Mini Cart Test</title>
-    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/styles.css" />
     <script src="/scripts/scripts.js" type="module"></script>
-</head>
-<body>
+  </head>
+  <body>
     <header>Test: Mini Cart Display</header>
-    
-    <div class="hcl-mini-cart" 
-         data-show-heading="true"
-         data-max-items="3"
-         data-hide-empty="false">
-    </div>
-    
+
+    <div
+      class="hcl-mini-cart"
+      data-show-heading="true"
+      data-max-items="3"
+      data-hide-empty="false"
+    ></div>
+
     <footer>
-        <p>Add items using the Add to Cart button, they should appear here</p>
+      <p>Add items using the Add to Cart button, they should appear here</p>
     </footer>
-</body>
+  </body>
 </html>
 ```
 
@@ -243,20 +256,20 @@ Create `drafts/agents/test-cart-page.html`:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Cart Page Test</title>
-    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/styles.css" />
     <script src="/scripts/scripts.js" type="module"></script>
-</head>
-<body>
+  </head>
+  <body>
     <header>Test: Full Cart Page</header>
-    
+
     <div class="hcl-cart-page"></div>
-    
+
     <footer>
-        <p>Full cart management interface</p>
+      <p>Full cart management interface</p>
     </footer>
-</body>
+  </body>
 </html>
 ```
 
@@ -285,6 +298,7 @@ Press **F12** in browser to open DevTools:
 ### Common Issues & Solutions
 
 #### Issue 1: Backend not responding
+
 ```powershell
 # Verify backend is running
 Get-Process node | Where-Object { $_.CommandLine -like "*3001*" }
@@ -294,6 +308,7 @@ npm run start:proxy
 ```
 
 #### Issue 2: CORS errors
+
 ```javascript
 // Check if backend includes proper CORS headers
 // Solution: Backend should have CORS enabled
@@ -301,9 +316,10 @@ npm run start:proxy
 ```
 
 #### Issue 3: Cart not persisting
+
 ```javascript
 // Check localStorage
-console.log(localStorage.getItem('cart'));
+console.log(localStorage.getItem("cart"));
 
 // Clear and retry
 localStorage.clear();
@@ -337,6 +353,7 @@ npm test -- --coverage
 ```
 
 ### Expected Coverage
+
 ```
 Statements   : 82% ( 500+ lines covered )
 Branches     : 82% ( edge cases covered )
@@ -351,11 +368,13 @@ Lines        : 82% ( code execution verified )
 ### Test API Endpoints
 
 #### Health Check
+
 ```powershell
 Invoke-WebRequest -Uri "http://localhost:3001/health" -Method GET
 ```
 
 #### Login Endpoint
+
 ```powershell
 $body = @{
     username = "test@example.com"
@@ -369,6 +388,7 @@ Invoke-WebRequest -Uri "http://localhost:3001/api/hcl/login" `
 ```
 
 #### Add to Cart Endpoint
+
 ```powershell
 $body = @{
     productId = "TEST-001"
@@ -401,6 +421,7 @@ node api/load-test.mjs 10 100
 ```
 
 ### Expected Output
+
 ```
 Load Test Results:
   Total Requests: 1000
@@ -442,17 +463,20 @@ curl -X GET http://localhost:3001/api/hcl/cart/get \
 ## 📱 Testing Responsive Design
 
 ### Desktop Testing
+
 - Open DevTools (F12)
 - Default viewport (1920x1080)
 - Test all components at full width
 
 ### Tablet Testing
+
 - DevTools → Device Toolbar
 - Select "iPad" or "iPad Pro"
 - Verify responsive layout
 - Test touch interactions
 
 ### Mobile Testing
+
 - DevTools → Device Toolbar
 - Select "iPhone 12" or similar
 - Verify mobile layout
@@ -463,6 +487,7 @@ curl -X GET http://localhost:3001/api/hcl/cart/get \
 ## 🎯 Testing Checklist
 
 ### Authentication Flow
+
 - [ ] User can log in with valid credentials
 - [ ] Token is stored in sessionStorage
 - [ ] Token auto-refreshes before expiry
@@ -470,6 +495,7 @@ curl -X GET http://localhost:3001/api/hcl/cart/get \
 - [ ] Unauthenticated users cannot access cart
 
 ### Cart Operations
+
 - [ ] Add product to cart
 - [ ] Update item quantity
 - [ ] Remove item from cart
@@ -478,6 +504,7 @@ curl -X GET http://localhost:3001/api/hcl/cart/get \
 - [ ] Multiple items display correctly
 
 ### Component Display
+
 - [ ] Add-to-cart button renders correctly
 - [ ] Mini-cart shows item count badge
 - [ ] Mini-cart updates in real-time
@@ -486,6 +513,7 @@ curl -X GET http://localhost:3001/api/hcl/cart/get \
 - [ ] Checkout button is clickable
 
 ### Error Handling
+
 - [ ] Invalid login shows error message
 - [ ] Network errors are caught and displayed
 - [ ] Invalid product IDs are handled
@@ -493,6 +521,7 @@ curl -X GET http://localhost:3001/api/hcl/cart/get \
 - [ ] Missing required fields are validated
 
 ### Performance
+
 - [ ] Page load time < 2 seconds
 - [ ] Cart updates in < 100ms
 - [ ] No memory leaks after extended use
@@ -508,6 +537,7 @@ curl -X GET http://localhost:3001/api/hcl/cart/get \
 In your EDS authoring system, create a page with your blocks:
 
 **Option 1: Using Block Markup**
+
 ```html
 <div class="section">
   <div class="default">
@@ -531,6 +561,7 @@ In your EDS authoring system, create a page with your blocks:
 ```
 
 **Option 2: Using Word/Google Docs**
+
 - Create a page in your authoring tool
 - Insert block sections with metadata
 - Publish and view in EDS
@@ -547,23 +578,27 @@ Document your findings:
 ## Local Testing Report - [Date]
 
 ### Environment
+
 - EDS Version: [version]
 - Node: [version]
 - Backend Port: 3001
 - Test Duration: [time]
 
 ### Test Results
+
 - Components Tested: 4/4 ✓
 - Functionality: [% pass]
 - Performance: [avg response time]
 - Errors: [count]
 
 ### Issues Found
+
 1. [Issue description]
    - Impact: [severity]
    - Workaround: [if any]
 
 ### Recommendations
+
 - [Recommendation 1]
 - [Recommendation 2]
 ```
@@ -610,7 +645,7 @@ npm test -- --watch
 
 ```javascript
 // In browser console
-localStorage.setItem('debug', 'true');
+localStorage.setItem("debug", "true");
 location.reload();
 
 // You'll see verbose logging for all operations
@@ -645,7 +680,7 @@ Your local testing is successful when:
 ✓ Tests pass with 80%+ coverage  
 ✓ No console errors or warnings  
 ✓ Load test shows acceptable performance  
-✓ All documentation matches actual behavior  
+✓ All documentation matches actual behavior
 
 ---
 

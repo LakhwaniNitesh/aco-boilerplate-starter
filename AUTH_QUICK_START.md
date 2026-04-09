@@ -9,6 +9,7 @@ This guide will help you test the real HCL Commerce REST API authentication with
 ## Option A: Test with Real HCL Commerce (Recommended)
 
 ### Prerequisites
+
 - ✅ VPN access to HCL Commerce VM
 - ✅ HCL_HOST is reachable (https://20.40.52.251)
 - ✅ Test credentials: `auroraadobetest` / `passw0rd`
@@ -27,6 +28,7 @@ npm run start:proxy
 ```
 
 **Expected Output:**
+
 ```
 ╔════════════════════════════════════════════════════════╗
 ║  🛒 HCL Commerce Proxy Server                          ║
@@ -72,14 +74,14 @@ curl -X POST http://localhost:3001/api/hcl/login \
 
 ```javascript
 // test-auth.mjs
-const response = await fetch('http://localhost:3001/api/hcl/login', {
-  method: 'POST',
+const response = await fetch("http://localhost:3001/api/hcl/login", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    username: 'auroraadobetest',
-    password: 'passw0rd',
+    username: "auroraadobetest",
+    password: "passw0rd",
   }),
 });
 
@@ -94,6 +96,7 @@ node test-auth.mjs
 ### Step 3: Expected Response
 
 **Success (200):**
+
 ```json
 {
   "success": true,
@@ -109,6 +112,7 @@ node test-auth.mjs
 ```
 
 **Failure (401):**
+
 ```json
 {
   "success": false,
@@ -159,6 +163,7 @@ npm run start:proxy
 ### Test Login with Mock Credentials
 
 **Available Test Users:**
+
 - `auroraadobetest` / `passw0rd`
 - `adobetest1` / `passw0rd`
 - `adobetest2` / `passw0rd`
@@ -220,8 +225,8 @@ The login block should be added at `blocks/commerce-login/`:
 ```javascript
 // blocks/commerce-login/commerce-login.js
 export default async function decorate(block) {
-  const wcToken = sessionStorage.getItem('hcl_wcToken');
-  
+  const wcToken = sessionStorage.getItem("hcl_wcToken");
+
   if (wcToken) {
     // Show logout button
     block.innerHTML = `
@@ -241,24 +246,24 @@ export default async function decorate(block) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  
-  const response = await fetch('/api/hcl/login', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({username, password})
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  const response = await fetch("/api/hcl/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
   });
-  
+
   const data = await response.json();
   if (data.success) {
-    sessionStorage.setItem('hcl_wcToken', data.wcToken);
+    sessionStorage.setItem("hcl_wcToken", data.wcToken);
     location.reload();
   }
 }
 
 function logout() {
-  sessionStorage.removeItem('hcl_wcToken');
+  sessionStorage.removeItem("hcl_wcToken");
   location.reload();
 }
 ```
@@ -269,28 +274,28 @@ In any block that needs authentication (product-details, mini-cart, etc.):
 
 ```javascript
 async function addToCart(productData) {
-  const wcToken = sessionStorage.getItem('hcl_wcToken');
-  
+  const wcToken = sessionStorage.getItem("hcl_wcToken");
+
   if (!wcToken) {
-    alert('Please login first');
+    alert("Please login first");
     return;
   }
 
-  const response = await fetch('/api/hcl/cart/add', {
-    method: 'POST',
+  const response = await fetch("/api/hcl/cart/add", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'X-WC-Token': wcToken
+      "Content-Type": "application/json",
+      "X-WC-Token": wcToken,
     },
-    body: JSON.stringify(productData)
+    body: JSON.stringify(productData),
   });
 
   const data = await response.json();
   if (data.success) {
-    console.log('Item added to cart');
+    console.log("Item added to cart");
   } else if (response.status === 401) {
-    alert('Session expired. Please login again.');
-    sessionStorage.removeItem('hcl_wcToken');
+    alert("Session expired. Please login again.");
+    sessionStorage.removeItem("hcl_wcToken");
   }
 }
 ```
@@ -314,6 +319,7 @@ taskkill /PID <PID> /F
 ### Error: "Connection refused" to HCL_HOST
 
 **Solutions:**
+
 1. Check VPN connection is active
 2. Verify HCL_HOST in .env: `https://20.40.52.251`
 3. Check firewall allows HTTPS to that host
@@ -322,6 +328,7 @@ taskkill /PID <PID> /F
 ### Error: "Invalid username or password"
 
 **Solutions:**
+
 1. Double-check credentials: `auroraadobetest` / `passw0rd`
 2. Verify username is correct (case-sensitive)
 3. Try alternative test users: `adobetest1` / `passw0rd`
@@ -330,6 +337,7 @@ taskkill /PID <PID> /F
 ### Error: "No wcToken in response"
 
 **Solution:** The HCL Commerce API returned unexpected response format. Check:
+
 1. HCL version is 9.0 (as per documentation)
 2. Endpoint is correct: `/identity/v1/customers/login`
 3. Check console logs on backend for detailed error
@@ -337,6 +345,7 @@ taskkill /PID <PID> /F
 ### Server won't start with "Cannot find module"
 
 **Solution:**
+
 ```bash
 # Reinstall dependencies
 npm install
@@ -394,11 +403,13 @@ npm run dev
 ## Files Created/Modified
 
 **New Files:**
+
 - `api/utils/hcl-rest-auth.js` - Real HCL REST API integration
 - `HCL_AUTHENTICATION_GUIDE.md` - Detailed authentication documentation
 - `PHASE_1_TESTING_COMPLETE.md` - Testing phase summary
 
 **Modified Files:**
+
 - `api/controllers/hcl-auth-controller.js` - Added logout, validate endpoints
 - `api/server.js` - Added new authentication endpoints
 - `api/utils/mock-hcl-auth.js` - Added test credentials

@@ -3,16 +3,20 @@
 ## Phase 1: Browser Refresh & Header Verification (2 minutes)
 
 ### Step 1: Hard Refresh Browser
+
 ```
 Windows/Linux: Ctrl+F5
 Mac: Cmd+Shift+R
 ```
+
 This clears the cache and loads the new JavaScript with the fetch interceptor.
 
 ### Step 2: Verify Header is Visible
+
 Navigate to: `http://localhost:8080/`
 
 You should now see:
+
 - ✅ **Left**: Adobe Commerce logo and navigation menu
 - ✅ **Center**: Search bar
 - ✅ **Right**: Account button (person icon), Cart icon
@@ -25,6 +29,7 @@ You should now see:
 ## Phase 2: Login & Session Storage (5 minutes)
 
 ### Step 3: Open Developer Tools Console
+
 ```
 F12 → Console tab
 ```
@@ -40,6 +45,7 @@ Clear any previous logs (click the trash icon).
 ### Step 5: Monitor Console During Login
 
 **Expected logs IN ORDER:**
+
 ```
 [HCL-AUTH-ADAPTER] Intercepted auth request to: <URL>
 [HCL-AUTH-ADAPTER] Detected login request for: auroraadobetest
@@ -55,11 +61,13 @@ Clear any previous logs (click the trash icon).
 **If you see red error**: ❌ Something is still wrong, take a screenshot of the error.
 
 ### Step 6: Enter Credentials
+
 - Username: `auroraadobetest`
 - Password: `passw0rd`
 - Click **Sign In**
 
 ### Step 7: Wait for Success Message
+
 You should see: **"Welcome, auroraadobetest!"**
 
 ---
@@ -101,6 +109,7 @@ You should see a key called `hcl_auth`.
 ### Step 10: Navigate to a Product Page
 
 Click on a product, or go directly to:
+
 ```
 http://localhost:8080/products/budget-laptop-CLA022_220101/CLA022_220101
 ```
@@ -119,6 +128,7 @@ Find the product quantity selector and **"Add to Cart"** button.
 ### Step 13: Monitor Console & Click Add to Cart
 
 **Expected logs:**
+
 ```
 [PDP] Adding to HCL cart with accessToken
 [PDP] Raw hcl_auth from sessionStorage: {"token":"1007002...", ...}
@@ -140,6 +150,7 @@ Find the product quantity selector and **"Add to Cart"** button.
 In your backend terminal (running `npm run dev:backend`), look for these logs:
 
 **FIRST attempt (should fail with generic user error):**
+
 ```
 [CART-PROXY] sessionCookies value from body: {JSESSIONID: "0000...", WC_PERSISTENT: "..."}
 [CART-PROXY] Session cookies from login: 2 cookies
@@ -148,6 +159,7 @@ In your backend terminal (running `npm run dev:backend`), look for these logs:
 **If you see non-empty sessionCookies object**: ✅ Frontend sent cookies!
 
 **Second attempt (after getting generic user error, backend captures cookies from response):**
+
 ```
 [DEBUG] Session cookies captured so far: {JSESSIONID: "...", WC_PERSISTENT: "..."}
 [DEBUG] Retrying with any captured session cookies...
@@ -159,6 +171,7 @@ On the second attempt, the cart should succeed.
 ### Step 15: Check Frontend for Success
 
 Back in browser, you should see:
+
 - ✅ **"Product added to cart!"** message (green success notification)
 - OR modal closes and product page shows updated state
 
@@ -181,16 +194,19 @@ Back in browser, you should see:
 ## If Something Fails
 
 ### Header Still Missing?
+
 1. Check console for red errors
 2. Look for "TypeError" or "Cannot assign to property"
 3. Hard refresh again (might need to clear more cache: Ctrl+Shift+Delete)
 
 ### sessionStorage.hcl_auth Not Found?
+
 1. Check console for `[HCL-AUTH-ADAPTER]` logs
 2. If missing, the fetch interceptor isn't working
 3. Verify hclAuthAdapter.js imported in renderAuthCombine.js and renderAuthDropdown.js
 
 ### Cart Still Failing?
+
 1. Check browser console for logs about sessionCookies
 2. Check if sessionCookies empty or present in sessionStorage
 3. Backend should show what it received in `[CART-PROXY] sessionCookies value from body:`

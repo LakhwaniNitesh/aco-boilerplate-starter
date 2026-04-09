@@ -1,26 +1,29 @@
-export default {
+module.exports = {
   root: true,
-  extends: 'airbnb-base',
+  extends: "airbnb-base",
   env: {
     browser: true,
   },
-  parser: '@babel/eslint-parser',
+  parser: "@babel/eslint-parser",
   parserOptions: {
     allowImportExportEverywhere: true,
-    sourceType: 'module',
+    sourceType: "module",
     requireConfigFile: false,
   },
   rules: {
-    'import/extensions': ['error', { js: 'always' }], // require js file extensions in imports
-    'linebreak-style': ['error', 'unix'], // enforce unix linebreaks
-    'no-param-reassign': [2, { props: false }], // allow modifying properties of param
-    'no-use-before-define': [2, { functions: false }],
-    'no-console': [
-      'error',
+    "import/extensions": ["error", { js: "always" }], // require js file extensions in imports
+    "linebreak-style": ["error", "unix"], // enforce unix linebreaks
+    "no-param-reassign": [2, { props: false }], // allow modifying properties of param
+    "no-use-before-define": [2, { functions: false }],
+    "no-console": [
+      "error",
       {
-        allow: ['warn', 'error', 'info', 'debug'],
+        allow: ["warn", "error", "info", "debug"],
       },
     ],
-    'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    "no-unused-vars": [
+      "error",
+      { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+    ],
   },
 };

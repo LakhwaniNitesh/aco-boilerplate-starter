@@ -3,6 +3,7 @@
 ## Problem
 
 You received a **404 error** with message:
+
 ```
 A WebGroup/Virtual Host to handle /store/715842834/logidentity has not been defined.
 ```
@@ -18,18 +19,23 @@ Two issues were preventing successful login:
 ## Solution Applied ✅
 
 ### Endpoint Fixed
+
 **Before (Wrong):**
+
 ```javascript
 /wcs/resources/store/{storeId}/loginidentity
 ```
 
 **After (Correct):**
+
 ```javascript
 /store/{storeId}/loginidentity  // Primary endpoint per HCL REST API docs
 ```
 
 ### Request Body Fixed
+
 **Before (Wrong):**
+
 ```javascript
 {
   "logonId": "auroraadobetest",
@@ -38,6 +44,7 @@ Two issues were preventing successful login:
 ```
 
 **After (Correct):**
+
 ```javascript
 {
   "logonId": "auroraadobetest",
@@ -46,6 +53,7 @@ Two issues were preventing successful login:
 ```
 
 ### Endpoint Priority (Fallback Order)
+
 1. ✅ `/store/{storeId}/loginidentity` - **Primary (per HCL API docs)**
 2. `/store/{storeId}/loginidentity?responseFormat=json` - With response format
 3. `/wcs/v2/store/{storeId}/customers/login` - REST API v2 format
@@ -56,18 +64,18 @@ Two issues were preventing successful login:
 
 ```javascript
 const requestBody = {
-  logonId: username,              // User email/ID
-  logonPassword: password,         // User password (HCL field name)
+  logonId: username, // User email/ID
+  logonPassword: password, // User password (HCL field name)
 };
 
 const response = await fetch(endpoint, {
-  method: 'POST',
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    "Content-Type": "application/json",
+    Accept: "application/json",
   },
   body: JSON.stringify(requestBody),
-  agent: httpsAgent,  // For self-signed cert support
+  agent: httpsAgent, // For self-signed cert support
 });
 ```
 
@@ -78,6 +86,7 @@ Based on official HCL Commerce REST API documentation:
 **Endpoint:** `POST /store/{storeId}/loginidentity`
 
 **Request Body:**
+
 ```json
 {
   "logonId": "username",
@@ -86,6 +95,7 @@ Based on official HCL Commerce REST API documentation:
 ```
 
 **Response (Success - 200):**
+
 ```json
 {
   "wcTrustedToken": "...",
@@ -96,6 +106,7 @@ Based on official HCL Commerce REST API documentation:
 ```
 
 **Response (Error - 401):**
+
 ```json
 {
   "errors": [
@@ -109,6 +120,7 @@ Based on official HCL Commerce REST API documentation:
 ## Testing
 
 1. **Restart backend:**
+
    ```powershell
    npm run dev:backend
    ```
@@ -144,6 +156,7 @@ fix: Use correct HCL REST API endpoint and request body format
 ## Next Steps
 
 The login should now work correctly:
+
 1. Backend tries `/store/{id}/loginidentity` endpoint
 2. Sends `logonId` and `logonPassword` fields
 3. HCL Commerce responds with token

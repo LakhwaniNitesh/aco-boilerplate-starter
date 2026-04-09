@@ -3,6 +3,7 @@
 ## 🔴 BEFORE (Broken)
 
 ### User Experience
+
 ```
 1. Click "Sign In"
 2. Enter: auroraadobetest / passw0rd
@@ -13,6 +14,7 @@
 ```
 
 ### Backend Logs
+
 ```
 [AUTH-CONTROLLER] Login attempt for user: auroraadobetest
 [INFO] [HCL-REST-AUTH] Trying endpoint: .../wcs/resources/store/.../loginidentity
@@ -25,6 +27,7 @@ POST /api/hcl/login - 404
 ```
 
 ### Root Cause
+
 ```javascript
 // ❌ CODE LOOKING FOR: wcToken (lowercase w)
 const wcToken = responseBody.wcToken || responseBody.token || ...;
@@ -47,6 +50,7 @@ if (!wcToken) {
 ## 🟢 AFTER (Fixed)
 
 ### User Experience
+
 ```
 1. Click "Sign In"
 2. Enter: auroraadobetest / passw0rd
@@ -59,6 +63,7 @@ if (!wcToken) {
 ```
 
 ### Backend Logs
+
 ```
 [AUTH-CONTROLLER] Login attempt for user: auroraadobetest
 [INFO] [HCL-REST-AUTH] Trying endpoint: .../wcs/resources/store/.../loginidentity
@@ -70,6 +75,7 @@ POST /api/hcl/login - 200 ✅
 ```
 
 ### Root Cause Fixed
+
 ```javascript
 // ✅ CODE NOW CHECKS: WCToken first (correct case)
 const wcToken = responseBody.WCToken || responseBody.wcToken || ...;
@@ -108,14 +114,14 @@ wcToken                      WCToken
 
 ### Impact
 
-| Aspect | Before | After |
-|--------|--------|-------|
-| **HTTP Status** | 404 (Not Found) | 200 (Success) ✅ |
-| **Token Extracted** | No ❌ | Yes ✅ |
-| **Error Message** | "No wcToken in response" | None - Success! |
-| **User Can Login** | No ❌ | Yes ✅ |
-| **Session Created** | No ❌ | Yes ✅ |
-| **Header Updated** | No ❌ | Yes - Shows name ✅ |
+| Aspect              | Before                   | After               |
+| ------------------- | ------------------------ | ------------------- |
+| **HTTP Status**     | 404 (Not Found)          | 200 (Success) ✅    |
+| **Token Extracted** | No ❌                    | Yes ✅              |
+| **Error Message**   | "No wcToken in response" | None - Success!     |
+| **User Can Login**  | No ❌                    | Yes ✅              |
+| **Session Created** | No ❌                    | Yes ✅              |
+| **Header Updated**  | No ❌                    | Yes - Shows name ✅ |
 
 ---
 
@@ -159,9 +165,9 @@ wcToken                      WCToken
 ```javascript
 const obj = { WCToken: "abc" };
 
-obj.wcToken  // undefined ❌ (different property)
-obj.WCToken  // "abc" ✅ (exact match)
-obj.WCTOKEN  // undefined ❌ (different property)
+obj.wcToken; // undefined ❌ (different property)
+obj.WCToken; // "abc" ✅ (exact match)
+obj.WCTOKEN; // undefined ❌ (different property)
 ```
 
 ### It's Like Spelling
@@ -180,6 +186,7 @@ These are different!
 ### Always Check Exact Case
 
 When parsing JSON/API responses:
+
 1. ✅ Check documentation for exact property names
 2. ✅ Look at actual response in browser/logs
 3. ✅ Match case exactly
@@ -189,11 +196,11 @@ When parsing JSON/API responses:
 
 ```javascript
 // Check all likely variations
-const value = 
-  obj.ExactCase ||      // Try exact case first
-  obj.camelCase ||      // Common variation
-  obj.snake_case ||     // Another variation
-  null;                 // Default if none found
+const value =
+  obj.ExactCase || // Try exact case first
+  obj.camelCase || // Common variation
+  obj.snake_case || // Another variation
+  null; // Default if none found
 ```
 
 ---
@@ -203,6 +210,7 @@ const value =
 ### Proof It Works
 
 **Test Script Output:**
+
 ```
 🧪 Testing token extraction with case-sensitive property names
 
@@ -233,11 +241,11 @@ const value =
 
 ## All Issues Fixed (This Session)
 
-| # | Issue | Root Cause | Fix | Commit |
-|---|-------|-----------|-----|--------|
-| 1 | 404 Endpoint Not Found | Missing `/wcs/resources` prefix | Added prefix to path | `bd20962` |
-| 2 | Virtual host error | No Host header | Added Host header | `da2aa15` |
-| 3 | "No token" error | Case sensitivity (wcToken vs WCToken) | Check uppercase first | `d2e1c43` |
+| #   | Issue                  | Root Cause                            | Fix                   | Commit    |
+| --- | ---------------------- | ------------------------------------- | --------------------- | --------- |
+| 1   | 404 Endpoint Not Found | Missing `/wcs/resources` prefix       | Added prefix to path  | `bd20962` |
+| 2   | Virtual host error     | No Host header                        | Added Host header     | `da2aa15` |
+| 3   | "No token" error       | Case sensitivity (wcToken vs WCToken) | Check uppercase first | `d2e1c43` |
 
 ---
 

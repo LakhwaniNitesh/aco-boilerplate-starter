@@ -5,37 +5,38 @@ import {
   Icon,
   Button,
   provider as UI,
-} from '@dropins/tools/components.js';
-import { events } from '@dropins/tools/event-bus.js';
-import * as pdpApi from '@dropins/storefront-pdp/api.js';
-import { render as pdpRendered } from '@dropins/storefront-pdp/render.js';
+} from "@dropins/tools/components.js";
+import { events } from "@dropins/tools/event-bus.js";
+import * as pdpApi from "@dropins/storefront-pdp/api.js";
+import { render as pdpRendered } from "@dropins/storefront-pdp/render.js";
 
 // Containers
-import ProductHeader from '@dropins/storefront-pdp/containers/ProductHeader.js';
-import ProductPrice from '@dropins/storefront-pdp/containers/ProductPrice.js';
-import ProductShortDescription from '@dropins/storefront-pdp/containers/ProductShortDescription.js';
-import ProductOptions from '@dropins/storefront-pdp/containers/ProductOptions.js';
-import ProductQuantity from '@dropins/storefront-pdp/containers/ProductQuantity.js';
-import ProductDescription from '@dropins/storefront-pdp/containers/ProductDescription.js';
-import ProductAttributes from '@dropins/storefront-pdp/containers/ProductAttributes.js';
-import ProductGallery from '@dropins/storefront-pdp/containers/ProductGallery.js';
+import ProductHeader from "@dropins/storefront-pdp/containers/ProductHeader.js";
+import ProductPrice from "@dropins/storefront-pdp/containers/ProductPrice.js";
+import ProductShortDescription from "@dropins/storefront-pdp/containers/ProductShortDescription.js";
+import ProductOptions from "@dropins/storefront-pdp/containers/ProductOptions.js";
+import ProductQuantity from "@dropins/storefront-pdp/containers/ProductQuantity.js";
+import ProductDescription from "@dropins/storefront-pdp/containers/ProductDescription.js";
+import ProductAttributes from "@dropins/storefront-pdp/containers/ProductAttributes.js";
+import ProductGallery from "@dropins/storefront-pdp/containers/ProductGallery.js";
 
 // Libs
-import { fetchPlaceholders, setJsonLd } from '../../scripts/commerce.js';
+import { fetchPlaceholders, setJsonLd } from "../../scripts/commerce.js";
+import { hclAuthService } from "../../scripts/hcl-commerce-auth.js";
 
 // Initializers
-import { IMAGES_SIZES } from '../../scripts/initializers/pdp.js';
-import '../../scripts/initializers/cart.js';
-import { rootLink } from '../../scripts/scripts.js';
+import { IMAGES_SIZES } from "../../scripts/initializers/pdp.js";
+import "../../scripts/initializers/cart.js";
+import { rootLink } from "../../scripts/scripts.js";
 
 // Cart state management
-import { cartStore, ACTIONS } from '../../scripts/cart-manager.js';
-import { updateCartState } from '../../scripts/simple-cart-state.js';
+import { cartStore, ACTIONS } from "../../scripts/cart-manager.js";
+import { updateCartState } from "../../scripts/simple-cart-state.js";
 
 export default async function decorate(block) {
   try {
     // eslint-disable-next-line no-underscore-dangle
-    const product = events._lastEvent?.['pdp/data']?.payload ?? null;
+    const product = events._lastEvent?.["pdp/data"]?.payload ?? null;
     const labels = await fetchPlaceholders();
 
     // Layout
@@ -64,18 +65,28 @@ export default async function decorate(block) {
       </div>
     `);
 
-    const $alert = fragment.querySelector('.product-details__alert');
-    const $gallery = fragment.querySelector('.product-details__gallery');
-    const $header = fragment.querySelector('.product-details__header');
-    const $price = fragment.querySelector('.product-details__price');
-    const $galleryMobile = fragment.querySelector('.product-details__right-column .product-details__gallery');
-    const $shortDescription = fragment.querySelector('.product-details__short-description');
-    const $options = fragment.querySelector('.product-details__options');
-    const $quantity = fragment.querySelector('.product-details__quantity');
-    const $addToCart = fragment.querySelector('.product-details__buttons__add-to-cart');
-    const $addToWishlist = fragment.querySelector('.product-details__buttons__add-to-wishlist');
-    const $description = fragment.querySelector('.product-details__description');
-    const $attributes = fragment.querySelector('.product-details__attributes');
+    const $alert = fragment.querySelector(".product-details__alert");
+    const $gallery = fragment.querySelector(".product-details__gallery");
+    const $header = fragment.querySelector(".product-details__header");
+    const $price = fragment.querySelector(".product-details__price");
+    const $galleryMobile = fragment.querySelector(
+      ".product-details__right-column .product-details__gallery",
+    );
+    const $shortDescription = fragment.querySelector(
+      ".product-details__short-description",
+    );
+    const $options = fragment.querySelector(".product-details__options");
+    const $quantity = fragment.querySelector(".product-details__quantity");
+    const $addToCart = fragment.querySelector(
+      ".product-details__buttons__add-to-cart",
+    );
+    const $addToWishlist = fragment.querySelector(
+      ".product-details__buttons__add-to-wishlist",
+    );
+    const $description = fragment.querySelector(
+      ".product-details__description",
+    );
+    const $attributes = fragment.querySelector(".product-details__attributes");
 
     block.appendChild(fragment);
 
@@ -96,282 +107,357 @@ export default async function decorate(block) {
       _description,
       _attributes,
     ] = await Promise.all([
-    // Gallery (Mobile)
-    pdpRendered.render(ProductGallery, {
-      controls: 'dots',
-      arrows: true,
-      peak: false,
-      gap: 'small',
-      loop: false,
-      imageParams: {
-        ...IMAGES_SIZES,
-      },
-    })($galleryMobile),
+      // Gallery (Mobile)
+      pdpRendered.render(ProductGallery, {
+        controls: "dots",
+        arrows: true,
+        peak: false,
+        gap: "small",
+        loop: false,
+        imageParams: {
+          ...IMAGES_SIZES,
+        },
+      })($galleryMobile),
 
-    // Gallery (Desktop)
-    pdpRendered.render(ProductGallery, {
-      controls: 'thumbnailsColumn',
-      arrows: true,
-      peak: true,
-      gap: 'small',
-      loop: false,
-      imageParams: {
-        ...IMAGES_SIZES,
-      },
-    })($gallery),
+      // Gallery (Desktop)
+      pdpRendered.render(ProductGallery, {
+        controls: "thumbnailsColumn",
+        arrows: true,
+        peak: true,
+        gap: "small",
+        loop: false,
+        imageParams: {
+          ...IMAGES_SIZES,
+        },
+      })($gallery),
 
-    // Header
-    pdpRendered.render(ProductHeader, {})($header),
+      // Header
+      pdpRendered.render(ProductHeader, {})($header),
 
-    // Price
-    pdpRendered.render(ProductPrice, {})($price),
+      // Price
+      pdpRendered.render(ProductPrice, {})($price),
 
-    // Short Description
-    pdpRendered.render(ProductShortDescription, {})($shortDescription),
+      // Short Description
+      pdpRendered.render(ProductShortDescription, {})($shortDescription),
 
-    // Configuration - Swatches
-    pdpRendered.render(ProductOptions, { hideSelectedValue: false })($options),
+      // Configuration - Swatches
+      pdpRendered.render(ProductOptions, { hideSelectedValue: false })(
+        $options,
+      ),
 
-    // Configuration  Quantity
-    pdpRendered.render(ProductQuantity, {})($quantity),
+      // Configuration  Quantity
+      pdpRendered.render(ProductQuantity, {})($quantity),
 
-    // Configuration – Button - Add to Cart
-    UI.render(Button, {
-      children: labels.PDP?.Product?.AddToCart?.label,
-      icon: Icon({ source: 'Cart' }),
-      onClick: async () => {
-        try {
-          addToCart.setProps((prev) => ({
-            ...prev,
-            children: labels.Custom?.AddingToCart?.label,
-            disabled: true,
-          }));
+      // Configuration – Button - Add to Cart
+      UI.render(Button, {
+        children: labels.PDP?.Product?.AddToCart?.label,
+        icon: Icon({ source: "Cart" }),
+        onClick: async () => {
+          try {
+            addToCart.setProps((prev) => ({
+              ...prev,
+              children: labels.Custom?.AddingToCart?.label,
+              disabled: true,
+            }));
 
-          // get the current selection values
-          const values = pdpApi.getProductConfigurationValues();
-          const valid = pdpApi.isProductConfigurationValid();
+            // get the current selection values
+            const values = pdpApi.getProductConfigurationValues();
+            const valid = pdpApi.isProductConfigurationValid();
 
-          // add the product to the cart
-          if (valid) {
-            // Get access token for HCL Commerce
-            const getAccessToken = () => {
-              try {
-                // Check various possible token storage keys
-                return sessionStorage.getItem('hcl_wcToken') 
-                  || sessionStorage.getItem('hcl-access-token') 
-                  || localStorage.getItem('hcl_wcToken')
-                  || localStorage.getItem('hcl-access-token');
-              } catch (e) {
-                return null;
+            // add the product to the cart
+            if (valid) {
+              // Get access token from consolidated hcl_auth storage
+              const getAccessToken = () => {
+                try {
+                  // Use consolidated hcl_auth key
+                  const authData = JSON.parse(
+                    sessionStorage.getItem("hcl_auth") || "{}",
+                  );
+                  console.log(
+                    "[PDP] getAccessToken() - authData from sessionStorage:",
+                    {
+                      hasToken: !!authData.token,
+                      tokenSample: authData.token
+                        ? authData.token.substring(0, 30)
+                        : "MISSING",
+                    },
+                  );
+                  return authData.token || null;
+                } catch (e) {
+                  console.error("[PDP] getAccessToken() error:", e);
+                  return null;
+                }
+              };
+
+              const accessToken = getAccessToken();
+              console.log(
+                "[PDP] accessToken retrieved:",
+                accessToken ? "✓" : "✗",
+              );
+              if (!accessToken) {
+                // Show a login prompt/link
+                if (inlineAlert) {
+                  inlineAlert.remove();
+                }
+                inlineAlert = await UI.render(InLineAlert, {
+                  type: "error",
+                  heading: "Authentication Required",
+                  description:
+                    "Please log in first before adding items to your cart. Click the Sign In button in the header.",
+                  icon: Icon({ source: "Warning" }),
+                  "aria-live": "assertive",
+                  role: "alert",
+                  onDismiss: () => {
+                    inlineAlert?.remove();
+                  },
+                })($alert);
+
+                // Scroll alert into view
+                $alert.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+
+                addToCart.setProps((prev) => ({
+                  ...prev,
+                  children: labels.PDP?.Product?.AddToCart?.label,
+                  disabled: false,
+                }));
+                return;
               }
-            };
 
-            const accessToken = getAccessToken();
-            if (!accessToken) {
-              // Show a login prompt/link
-              if (inlineAlert) {
-                inlineAlert.remove();
+              console.log("[PDP] Adding to HCL cart with tokens");
+
+              // CRITICAL: Get both tokens and session cookies from auth service
+              const trustedToken = hclAuthService.getTrustedToken();
+              const sessionCookies = hclAuthService.getSessionCookies();
+
+              console.log("[PDP] Retrieved from auth service:", {
+                hasAccessToken: !!accessToken,
+                hasTrustedToken: !!trustedToken,
+                hasSessionCookies: !!sessionCookies,
+                sessionCookieKeys: Object.keys(sessionCookies || {}),
+              });
+
+              if (!trustedToken) {
+                console.error("[PDP] ERROR: trustedToken is missing!");
+                if (inlineAlert) {
+                  inlineAlert.remove();
+                }
+                inlineAlert = await UI.render(InLineAlert, {
+                  type: "error",
+                  heading: "Authentication Error",
+                  description:
+                    "Missing authentication token. Please log in again.",
+                  icon: Icon({ source: "Warning" }),
+                  "aria-live": "assertive",
+                  role: "alert",
+                  onDismiss: () => {
+                    inlineAlert?.remove();
+                  },
+                })($alert);
+
+                $alert.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+
+                addToCart.setProps((prev) => ({
+                  ...prev,
+                  children: labels.PDP?.Product?.AddToCart?.label,
+                  disabled: false,
+                }));
+                return;
               }
+
+              const cartResponse = await fetch("/api/hcl/cart/add", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  partNumber: values?.sku,
+                  sku: values?.sku,
+                  quantity: values?.quantity || 1,
+                  accessToken,
+                  trustedToken, // CRITICAL: Include trusted token
+                  sessionCookies, // CRITICAL: Include session cookies
+                }),
+              });
+
+              if (!cartResponse.ok) {
+                throw new Error(
+                  `Failed to add product to cart: ${cartResponse.statusText}`,
+                );
+              }
+
+              const result = await cartResponse.json();
+              console.log("[PDP] Add to cart response:", result);
+
+              if (!result.success) {
+                throw new Error(
+                  result.error ||
+                    result.message ||
+                    "Failed to add product to cart",
+                );
+              }
+
+              // Success! Show success message and update mini-cart
+              inlineAlert?.remove();
               inlineAlert = await UI.render(InLineAlert, {
-                type: 'error',
-                heading: 'Authentication Required',
-                description: 'Please log in first before adding items to your cart. Click the Sign In button in the header.',
-                icon: Icon({ source: 'Warning' }),
-                'aria-live': 'assertive',
-                role: 'alert',
+                heading: "Success",
+                description: `${values?.name || "Product"} added to cart!`,
+                icon: Icon({ source: "CheckCircle" }),
+                "aria-live": "polite",
+                role: "status",
                 onDismiss: () => {
-                  inlineAlert?.remove();
+                  inlineAlert.remove();
                 },
               })($alert);
-              
+
               // Scroll alert into view
               $alert.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
+                behavior: "smooth",
+                block: "center",
               });
-              
-              addToCart.setProps((prev) => ({
-                ...prev,
-                children: labels.PDP?.Product?.AddToCart?.label,
-                disabled: false,
-              }));
-              return;
-            }
 
-            console.log('[PDP] Adding to HCL cart with accessToken');
-            
-            // CRITICAL: Also retrieve and send session cookies from login
-            let sessionCookies = {};
-            try {
-              const rawAuthData = sessionStorage.getItem('hcl_auth');
-              console.log('[PDP] Raw hcl_auth from sessionStorage:', rawAuthData);
-              
-              const authData = JSON.parse(rawAuthData || '{}');
-              console.log('[PDP] Parsed authData:', JSON.stringify(authData, null, 2));
-              
-              if (authData.sessionCookies) {
-                sessionCookies = authData.sessionCookies;
-                console.log('[PDP] Retrieved session cookies for cart request:', Object.keys(sessionCookies));
-                console.log('[PDP] Session cookies content:', JSON.stringify(sessionCookies, null, 2));
+              // Update cart state from HCL response to sync mini-cart
+              if (result.cart) {
+                const { updateCartState } =
+                  await import("../../scripts/simple-cart-state.js");
+                updateCartState(result.cart);
+                console.log(
+                  "[PDP] ✓ Cart state updated from add-to-cart response",
+                );
               } else {
-                console.warn('[PDP] No session cookies found in hcl_auth');
-                console.warn('[PDP] authData keys:', Object.keys(authData));
+                // Fallback: fetch full cart if not in response
+                try {
+                  const { fetchCartFromHCL } =
+                    await import("../../scripts/simple-cart-state.js");
+                  const fullCart = await fetchCartFromHCL(accessToken);
+                  if (fullCart) {
+                    const { updateCartState: updateState } =
+                      await import("../../scripts/simple-cart-state.js");
+                    updateState(fullCart);
+                    console.log(
+                      "[PDP] ✓ Cart state updated from fetch-cart fallback",
+                    );
+                  }
+                } catch (error) {
+                  console.warn("[PDP] Could not fetch cart:", error);
+                }
               }
-            } catch (e) {
-              console.error('[PDP] Error retrieving session cookies:', e);
-            }
-            
-            const cartResponse = await fetch('/api/hcl/cart/add', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                partNumber: values?.sku,
-                sku: values?.sku,
-                quantity: values?.quantity || 1,
-                accessToken,
-                sessionCookies,  // CRITICAL: Include session cookies
-              }),
-            });
 
-            if (!cartResponse.ok) {
-              throw new Error(`Failed to add product to cart: ${cartResponse.statusText}`);
+              // Wait a moment before resetting button
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+
+              return; // Exit early on success
             }
 
-            const result = await cartResponse.json();
-            console.log('[PDP] Add to cart response:', result);
-            
-            if (!result.success) {
-              throw new Error(result.error || result.message || 'Failed to add product to cart');
-            }
-
-            // Success! Show success message and update mini-cart
+            // If not valid, throw error
+            throw new Error(
+              "Please select all required options before adding to cart",
+            );
+          } catch (error) {
+            // add alert message
             inlineAlert?.remove();
             inlineAlert = await UI.render(InLineAlert, {
-              heading: 'Success',
-              description: `${values?.name || 'Product'} added to cart!`,
-              icon: Icon({ source: 'CheckCircle' }),
-              'aria-live': 'polite',
-              role: 'status',
+              heading: "Error",
+              description: error.message,
+              icon: Icon({ source: "Warning" }),
+              "aria-live": "assertive",
+              role: "alert",
               onDismiss: () => {
                 inlineAlert.remove();
               },
             })($alert);
 
-            // Scroll alert into view
+            // Scroll the alertWrapper into view
             $alert.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
+              behavior: "smooth",
+              block: "center",
             });
+          } finally {
+            addToCart.setProps((prev) => ({
+              ...prev,
+              children: labels.PDP?.Product?.AddToCart?.label,
+              disabled: false,
+            }));
+          }
+        },
+      })($addToCart),
 
-            // Update cart state from HCL response to sync mini-cart
-            if (result.cart) {
-              const { updateCartState } = await import('../../scripts/simple-cart-state.js');
-              updateCartState(result.cart);
-              console.log('[PDP] ✓ Cart state updated, mini-cart should sync');
+      // Configuration - Add to Wishlist
+      UI.render(Button, {
+        icon: Icon({ source: "Heart" }),
+        variant: "secondary",
+        "aria-label": labels.Custom?.AddToWishlist?.label,
+        onClick: async () => {
+          try {
+            addToWishlist.setProps((prev) => ({
+              ...prev,
+              disabled: true,
+              "aria-label": labels.Custom?.AddingToWishlist?.label,
+            }));
+
+            const values = pdpApi.getProductConfigurationValues();
+
+            if (values?.sku) {
+              const wishlist = await import("../../scripts/wishlist/api.js");
+              await wishlist.addToWishlist(values.sku);
             }
-            
-            // Wait a moment before resetting button
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            return; // Exit early on success
+          } catch (error) {
+            console.error(error);
+          } finally {
+            addToWishlist.setProps((prev) => ({
+              ...prev,
+              disabled: false,
+              "aria-label": labels.Custom?.AddToWishlist?.label,
+            }));
           }
+        },
+      })($addToWishlist),
 
-          // If not valid, throw error
-          throw new Error('Please select all required options before adding to cart');
-        } catch (error) {
-          // add alert message
-          inlineAlert?.remove();
-          inlineAlert = await UI.render(InLineAlert, {
-            heading: 'Error',
-            description: error.message,
-            icon: Icon({ source: 'Warning' }),
-            'aria-live': 'assertive',
-            role: 'alert',
-            onDismiss: () => {
-              inlineAlert.remove();
-            },
-          })($alert);
+      // Description
+      pdpRendered.render(ProductDescription, {})($description),
 
-          // Scroll the alertWrapper into view
-          $alert.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-        } finally {
-          addToCart.setProps((prev) => ({
-            ...prev,
-            children: labels.PDP?.Product?.AddToCart?.label,
-            disabled: false,
-          }));
+      // Attributes
+      pdpRendered.render(ProductAttributes, {})($attributes),
+    ]);
+
+    // Lifecycle Events
+    events.on(
+      "pdp/valid",
+      (valid) => {
+        // update add to cart button disabled state based on product selection validity
+        addToCart.setProps((prev) => ({ ...prev, disabled: !valid }));
+      },
+      { eager: true },
+    );
+
+    // Set JSON-LD and Meta Tags
+    events.on(
+      "aem/lcp",
+      () => {
+        if (product) {
+          setJsonLdProduct(product);
+          setMetaTags(product);
+          document.title = product.name;
         }
       },
-    })($addToCart),
+      { eager: true },
+    );
 
-    // Configuration - Add to Wishlist
-    UI.render(Button, {
-      icon: Icon({ source: 'Heart' }),
-      variant: 'secondary',
-      'aria-label': labels.Custom?.AddToWishlist?.label,
-      onClick: async () => {
-        try {
-          addToWishlist.setProps((prev) => ({
-            ...prev,
-            disabled: true,
-            'aria-label': labels.Custom?.AddingToWishlist?.label,
-          }));
-
-          const values = pdpApi.getProductConfigurationValues();
-
-          if (values?.sku) {
-            const wishlist = await import('../../scripts/wishlist/api.js');
-            await wishlist.addToWishlist(values.sku);
-          }
-        } catch (error) {
-          console.error(error);
-        } finally {
-          addToWishlist.setProps((prev) => ({
-            ...prev,
-            disabled: false,
-            'aria-label': labels.Custom?.AddToWishlist?.label,
-          }));
-        }
-      },
-    })($addToWishlist),
-
-    // Description
-    pdpRendered.render(ProductDescription, {})($description),
-
-    // Attributes
-    pdpRendered.render(ProductAttributes, {})($attributes),
-  ]);
-
-  // Lifecycle Events
-  events.on('pdp/valid', (valid) => {
-    // update add to cart button disabled state based on product selection validity
-    addToCart.setProps((prev) => ({ ...prev, disabled: !valid }));
-  }, { eager: true });
-
-  // Set JSON-LD and Meta Tags
-  events.on('aem/lcp', () => {
-    if (product) {
-      setJsonLdProduct(product);
-      setMetaTags(product);
-      document.title = product.name;
-    }
-  }, { eager: true });
-
-  return Promise.resolve();
+    return Promise.resolve();
   } catch (error) {
-    console.error('Error rendering product details:', error);
+    console.error("Error rendering product details:", error);
     // Show error message to user
-    const $alert = block.querySelector('.product-details__alert');
+    const $alert = block.querySelector(".product-details__alert");
     if ($alert) {
       const errorFragment = document.createRange().createContextualFragment(`
         <div class="product-details__error" style="padding: 1rem; background-color: #fff3cd; border: 1px solid #ffc107; color: #856404; border-radius: 0.25rem;">
           <p><strong>Error loading product details:</strong></p>
-          <p>${error.message || 'Unable to load product information. Please try again later.'}</p>
+          <p>${error.message || "Unable to load product information. Please try again later."}</p>
         </div>
       `);
       $alert.appendChild(errorFragment);
@@ -392,10 +478,11 @@ async function setJsonLdProduct(product) {
     attributes,
   } = product;
   const amount = priceRange?.minimum?.final?.amount || price?.final?.amount;
-  const brand = attributes.find((attr) => attr.name === 'brand');
+  const brand = attributes.find((attr) => attr.name === "brand");
 
   // get variants
-  const { data } = await pdpApi.fetchGraphQl(`
+  const { data } = await pdpApi.fetchGraphQl(
+    `
     query GET_PRODUCT_VARIANTS($sku: String!) {
       variants(sku: $sku) {
         variants {
@@ -415,50 +502,58 @@ async function setJsonLdProduct(product) {
         }
       }
     }
-  `, {
-    method: 'GET',
-    variables: { sku },
-  });
+  `,
+    {
+      method: "GET",
+      variables: { sku },
+    },
+  );
 
   const variants = data?.variants?.variants || [];
 
   const ldJson = {
-    '@context': 'http://schema.org',
-    '@type': 'Product',
+    "@context": "http://schema.org",
+    "@type": "Product",
     name,
     description,
     image: images[0]?.url,
     offers: [],
     productID: sku,
     brand: {
-      '@type': 'Brand',
+      "@type": "Brand",
       name: brand?.value,
     },
     url: new URL(rootLink(`/products/${urlKey}/${sku}`), window.location),
     sku,
-    '@id': new URL(rootLink(`/products/${urlKey}/${sku}`), window.location),
+    "@id": new URL(rootLink(`/products/${urlKey}/${sku}`), window.location),
   };
 
   if (variants.length > 1) {
-    ldJson.offers.push(...variants.map((variant) => ({
-      '@type': 'Offer',
-      name: variant.product.name,
-      image: variant.product.images[0]?.url,
-      price: variant.product.price.final.amount.value,
-      priceCurrency: variant.product.price.final.amount.currency,
-      availability: variant.product.inStock ? 'http://schema.org/InStock' : 'http://schema.org/OutOfStock',
-      sku: variant.product.sku,
-    })));
+    ldJson.offers.push(
+      ...variants.map((variant) => ({
+        "@type": "Offer",
+        name: variant.product.name,
+        image: variant.product.images[0]?.url,
+        price: variant.product.price.final.amount.value,
+        priceCurrency: variant.product.price.final.amount.currency,
+        availability: variant.product.inStock
+          ? "http://schema.org/InStock"
+          : "http://schema.org/OutOfStock",
+        sku: variant.product.sku,
+      })),
+    );
   } else {
     ldJson.offers.push({
-      '@type': 'Offer',
+      "@type": "Offer",
       price: amount?.value,
       priceCurrency: amount?.currency,
-      availability: inStock ? 'http://schema.org/InStock' : 'http://schema.org/OutOfStock',
+      availability: inStock
+        ? "http://schema.org/InStock"
+        : "http://schema.org/OutOfStock",
     });
   }
 
-  setJsonLd(ldJson, 'product');
+  setJsonLd(ldJson, "product");
 }
 
 function createMetaTag(property, content, type) {
@@ -472,15 +567,15 @@ function createMetaTag(property, content, type) {
       return;
     }
     meta.setAttribute(type, property);
-    meta.setAttribute('content', content);
+    meta.setAttribute("content", content);
     return;
   }
   if (!content) {
     return;
   }
-  meta = document.createElement('meta');
+  meta = document.createElement("meta");
   meta.setAttribute(type, property);
-  meta.setAttribute('content', content);
+  meta.setAttribute("content", content);
   document.head.appendChild(meta);
 }
 
@@ -489,20 +584,23 @@ function setMetaTags(product) {
     return;
   }
 
-  const price = product.prices.final.minimumAmount ?? product.prices.final.amount;
+  const price =
+    product.prices.final.minimumAmount ?? product.prices.final.amount;
 
-  createMetaTag('title', product.metaTitle || product.name, 'name');
-  createMetaTag('description', product.metaDescription, 'name');
-  createMetaTag('keywords', product.metaKeyword, 'name');
+  createMetaTag("title", product.metaTitle || product.name, "name");
+  createMetaTag("description", product.metaDescription, "name");
+  createMetaTag("keywords", product.metaKeyword, "name");
 
-  createMetaTag('og:type', 'product', 'property');
-  createMetaTag('og:description', product.shortDescription, 'property');
-  createMetaTag('og:title', product.metaTitle || product.name, 'property');
-  createMetaTag('og:url', window.location.href, 'property');
-  const mainImage = product?.images?.filter((image) => image.roles.includes('thumbnail'))[0];
+  createMetaTag("og:type", "product", "property");
+  createMetaTag("og:description", product.shortDescription, "property");
+  createMetaTag("og:title", product.metaTitle || product.name, "property");
+  createMetaTag("og:url", window.location.href, "property");
+  const mainImage = product?.images?.filter((image) =>
+    image.roles.includes("thumbnail"),
+  )[0];
   const metaImage = mainImage?.url || product?.images[0]?.url;
-  createMetaTag('og:image', metaImage, 'property');
-  createMetaTag('og:image:secure_url', metaImage, 'property');
-  createMetaTag('product:price:amount', price.value, 'property');
-  createMetaTag('product:price:currency', price.currency, 'property');
+  createMetaTag("og:image", metaImage, "property");
+  createMetaTag("og:image:secure_url", metaImage, "property");
+  createMetaTag("product:price:amount", price.value, "property");
+  createMetaTag("product:price:currency", price.currency, "property");
 }

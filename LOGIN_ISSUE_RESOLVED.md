@@ -11,19 +11,22 @@
 ## ✅ What We Fixed
 
 ### 1. Enhanced Error Handling in Backend
+
 - ✅ Added automatic fallback endpoint detection
 - ✅ Improved error messages showing exact failure reason
 - ✅ Added context about what went wrong
 
 **File:** `api/utils/hcl-rest-auth.js`
+
 ```javascript
 // Now tries primary endpoint first
-if (!result.success && result.error.includes('tenant')) {
+if (!result.success && result.error.includes("tenant")) {
   // Tries alternative endpoint: /identity/v1/customers/login
 }
 ```
 
 ### 2. Created Diagnostic Endpoint
+
 - ✅ GET `/api/hcl/auth/diagnose` shows current configuration
 - ✅ Displays both login endpoint options
 - ✅ Shows current authentication mode (MOCK vs REAL)
@@ -31,6 +34,7 @@ if (!result.success && result.error.includes('tenant')) {
 **File:** `api/controllers/hcl-auth-controller.js`
 
 ### 3. Added Troubleshooting Documentation
+
 - ✅ `HCL_TROUBLESHOOTING.md` - Comprehensive troubleshooting guide
 - ✅ `LOGIN_ERROR_RESOLUTION.md` - Step-by-step resolution
 - ✅ `test-hcl-login.ps1` - PowerShell diagnostic script
@@ -49,10 +53,12 @@ USE_REAL_HCL_AUTH=false
 ```
 
 **Test credentials:**
+
 - Username: `auroraadobetest`
 - Password: `passw0rd`
 
 **Command:**
+
 ```powershell
 npm start
 ```
@@ -64,6 +70,7 @@ npm start
 **Requires HCL VM online at `https://20.40.52.251`**
 
 **Steps:**
+
 1. Verify HCL VM is running
 2. Update `.env`:
    ```env
@@ -79,16 +86,19 @@ npm start
 ## 🔍 Diagnostic Tools
 
 ### Check Configuration
+
 ```bash
 curl http://localhost:3001/api/hcl/auth/diagnose
 ```
 
 ### Test HCL Connectivity
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File test-hcl-login.ps1
 ```
 
 ### Verify Network to HCL VM
+
 ```powershell
 Test-Connection 20.40.52.251 -Count 1
 ```
@@ -97,14 +107,14 @@ Test-Connection 20.40.52.251 -Count 1
 
 ## 📊 Current Status
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| Backend Server | ✅ Running | Port 3001 |
-| Mock Authentication | ✅ Ready | 3 test users configured |
-| Real HCL Auth Code | ✅ Ready | Requires HCL VM online |
-| Diagnostic Endpoint | ✅ Ready | GET /api/hcl/auth/diagnose |
-| Error Handling | ✅ Enhanced | Better fallback endpoints |
-| Documentation | ✅ Complete | 3 new troubleshooting guides |
+| Component           | Status      | Details                      |
+| ------------------- | ----------- | ---------------------------- |
+| Backend Server      | ✅ Running  | Port 3001                    |
+| Mock Authentication | ✅ Ready    | 3 test users configured      |
+| Real HCL Auth Code  | ✅ Ready    | Requires HCL VM online       |
+| Diagnostic Endpoint | ✅ Ready    | GET /api/hcl/auth/diagnose   |
+| Error Handling      | ✅ Enhanced | Better fallback endpoints    |
+| Documentation       | ✅ Complete | 3 new troubleshooting guides |
 
 ---
 
@@ -144,6 +154,7 @@ NEW FILES:
 ## 📖 Next Steps
 
 ### For Development
+
 1. ✅ **Now:** Use mock authentication
    ```env
    USE_REAL_HCL_AUTH=false
@@ -153,6 +164,7 @@ NEW FILES:
 4. ✅ **Build:** Rest of application features
 
 ### When Ready for Real HCL
+
 1. ⏳ **Verify:** HCL VM is online and accessible
 2. ⏳ **Confirm:** Store ID (`715842834`) exists
 3. ⏳ **Confirm:** User exists with correct credentials
@@ -184,6 +196,7 @@ HCL Commerce REST API Response:
 ```
 
 This error occurs when:
+
 1. **Store ID doesn't exist** - `HCL_STORE_ID=715842834` not in HCL
 2. **User can't access store** - User lacks permissions
 3. **API endpoint is wrong** - Trying wrong endpoint path
@@ -192,6 +205,7 @@ This error occurs when:
 ### Why It Happened
 
 Network connectivity test showed:
+
 ```
 Error: Unable to connect to the remote server
 URL: https://20.40.52.251/store/715842834/loginidentity
