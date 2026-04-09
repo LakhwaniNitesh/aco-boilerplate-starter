@@ -485,7 +485,7 @@ class HCLClient {
         JSON.stringify(requestBody, null, 2),
       );
 
-      const response = await this.request(
+      const deleteResponse = await this.request(
         "PUT",
         deleteUrl,
         requestBody,
@@ -494,7 +494,16 @@ class HCLClient {
       );
 
       console.log(`[HCL-CLIENT] ✓ Item removed successfully`);
-      return response;
+
+      // IMPORTANT: The delete endpoint response might not include full cart details
+      // Fetch the updated cart to get accurate item list and totals
+      console.log(
+        `[HCL-CLIENT] Fetching updated cart after item removal...`,
+      );
+      const updatedCart = await this.getCart(accessToken, trustedToken);
+
+      // Return the updated full cart instead of the delete response
+      return updatedCart;
     } catch (error) {
       console.error("❌ Remove from cart failed:", error);
       console.error("❌ Error details:", error);
