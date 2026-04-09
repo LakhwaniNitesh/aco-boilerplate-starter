@@ -295,7 +295,18 @@ class HCLRestAuth {
               const trimmedValue = value.trim();
               allCookies.push({ name: trimmedName, value: trimmedValue });
               sessionCookies[trimmedName] = trimmedValue;
-              console.log(`[HCL-REST-AUTH] ✓ Cookie #${index + 1}: ${trimmedName}=${trimmedValue.substring(0, 30)}...`);
+              
+              // Debug log for each cookie
+              if (trimmedName === 'JSESSIONID') {
+                console.log(`[HCL-REST-AUTH] ✓ Cookie #${index + 1}: ${trimmedName}=${trimmedValue}`);
+                console.log(`[HCL-REST-AUTH]   Full value: "${trimmedValue}"`);
+                console.log(`[HCL-REST-AUTH]   Length: ${trimmedValue.length}`);
+              } else if (trimmedName === 'WC_PERSISTENT') {
+                console.log(`[HCL-REST-AUTH] ✓ Cookie #${index + 1}: ${trimmedName}=${trimmedValue.substring(0, 30)}...`);
+                console.log(`[HCL-REST-AUTH]   Full value: "${trimmedValue}"`);
+              } else {
+                console.log(`[HCL-REST-AUTH] ✓ Cookie #${index + 1}: ${trimmedName}=${trimmedValue.substring(0, 30)}...`);
+              }
             }
           }
         });

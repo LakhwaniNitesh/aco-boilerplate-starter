@@ -82,14 +82,21 @@ class HCLClient {
           'Content-Type': 'application/json',
           Accept: 'application/json',
           Host: url.hostname,
+          // Send WCToken as custom header (some HCL versions prefer this)
+          ...(decodedToken && { 'X-IBM-WCToken': decodedToken }),
           ...(cookieHeader && { Cookie: cookieHeader }),
         },
         agent,
       };
 
       console.log(`[DEBUG] ${method} ${url.toString()}`);
-      if (cookieHeader) {
-        console.log(`[DEBUG] Auth: Cookie header with tokens + session cookies`);
+      if (cookieHeader || decodedToken) {
+        console.log(`[DEBUG] Auth: Sending headers:`);
+        if (decodedToken) {
+          console.log(`[DEBUG]   X-IBM-WCToken: ${decodedToken.substring(0, 40)}...`);
+        }
+        if (cookieHeader) {
+          console.log(`[DEBUG]   Cookie: ${cookieHeader.substring(0, 100)}...`);
         if (decodedToken) {
           console.log(`[DEBUG] ╔════════════════════════════════════════`);
           console.log(`[DEBUG] ║ TOKEN BEING SENT TO HCL`);
