@@ -454,19 +454,54 @@ class HCLClient {
    */
   async removeFromCart(accessToken, orderId, itemId, trustedToken = null) {
     try {
-      // CRITICAL: HCL Commerce DELETE endpoint pattern
-      // The endpoint is /cart/@self/cart_item/{orderItemId}
-      // Must be a DELETE request to remove the item from cart
-      // OrderItemId is the unique identifier for the line item in the cart
-      const deleteUrl = `${this.baseUrl}/cart/@self/cart_item/${itemId}?responseFormat=json`;
+      // Step 1: Get current cart to see all items
+      console.log(
+        `[HCL-CLIENT] Step 1: Fetching current cart to identify items to keep...`,
+      );
+      const currentCart = await this.request(
+        "GET",
+        `${this.baseUrl}/cart/@self?responseFormat=json`,
+        null,
+        accessToken,
+        trustedToken,
+      );
 
-      console.log(`[HCL-CLIENT] Removing item ${itemId} from cart ${orderId}`);
-      console.log(`[HCL-CLIENT] DELETE URL: ${deleteUrl}`);
+      // Step 2: Build orderItem array with all items EXCEPT the one to remove
+      // HCL Commerce doesn't have a DELETE endpoint - removal is done by PUTting
+      // the updated cart with the item excluded
+      const itemsToKeep = (currentCart.orderItem || []).filter(
+        (item) => String(item.orderItemId) !== String(itemId),
+      );
 
+      console.log(
+        `[HCL-CLIENT] Step 2: Found ${currentCart.orderItem?.length || 0} items total`,
+      );
+      console.log(`[HCL-CLIENT] Removing item ${itemId}, keeping ${itemsToKeep.length} items`);
+
+      // Step 3: Prepare request body with remaining items
+      const requestBody = {
+        orderId: ".",
+        x_calculatedOrder: "0",
+        orderItem: itemsToKeep.map((item) => ({
+          orderItemId: item.orderItemId,
+          quantity: String(item.quantity),
+          partNumber: item.partNumber,
+        })),
+        x_inventoryValidation: true,
+      };
+
+      console.log(
+        `[HCL-CLIENT] Step 3: Sending PUT request to update cart with ${itemsToKeep.length} items`,
+      );
+      console.log(
+        `[HCL-CLIENT] PUT URL: ${this.baseUrl}/cart?langId=1&responseFormat=json`,
+      );
+
+      // Step 4: Update cart by PUT with remaining items
       const response = await this.request(
-        "DELETE",
-        deleteUrl,
-        null, // DELETE requests typically don't have a body
+        "PUT",
+        `${this.baseUrl}/cart?langId=1&responseFormat=json`,
+        requestBody,
         accessToken,
         trustedToken,
       );
